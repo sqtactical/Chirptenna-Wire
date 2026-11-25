@@ -25,8 +25,15 @@ def _diseno(args) -> Diseno:
     if not args.tipo or args.f_MHz is None:
         sys.exit("falta el tipo y la frecuencia (o --desde diseno.json)")
     plano = {"papel": args.papel, "unidades": args.unidades, "idioma": args.idioma or "es"}
-    return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=args.cable,
-                   vf_medido=args.vf_medido, conector=args.conector, **plano)
+    cable, vf = args.cable, args.vf_medido
+    if args.cable_medido:
+        from .cables import leer_cable_medido
+        with open(args.cable_medido, encoding="utf-8") as f:
+            medido = leer_cable_medido(f.read())
+        vf = medido["vf"]
+        cable = cable or medido.get("cable") or None      # el nombre del archivo es libre: solo vale si es uno de la tabla
+    return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=cable,
+                   vf_medido=vf, conector=args.conector, **plano)
 
 
 class _Ayuda(argparse.HelpFormatter):
@@ -59,6 +66,7 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--diametro", type=float, default=2.0, help="diámetro del alambre en mm (2)")
         s.add_argument("--cable", help="cable coaxial de las antenas de coaxial (RG-58 por defecto)")
         s.add_argument("--vf-medido", type=float, help="factor de velocidad medido del cable (sustituye al de catálogo)")
+        s.add_argument("--cable-medido", help="JSON del VF medido con Chirptenna VNA (sustituye a --vf-medido)")
         s.add_argument("--conector", choices=("SO-239", "N"), help="conector del ground plane (SO-239 por defecto)")
         s.add_argument("--desde", help="diseno.json guardado antes")
         s.add_argument("--sin-motor", action="store_true", help="cotas de partida, sin ajustar con PyNEC")

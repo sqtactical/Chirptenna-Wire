@@ -141,7 +141,9 @@
   "Dos dipolos cruzados a 90° y una línea de λ/4 entre sus centros: polarización circular · coaxial de 50 Ω": "Deux dipôles croisés à 90° et une ligne λ/4 entre leurs centres : polarisation circulaire · coaxial 50 Ω",
   "Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz).": "Deux dipôles en croix avec une ligne λ/4 : polarisation circulaire (satellites, 137 MHz).",
   "Eje aislante (PVC o madera barnizada)": "Support isolant (PVC ou bois verni)",
+  "El archivo no es una medida de cable de Chirptenna VNA.": "Le fichier n'est pas une mesure de câble de Chirptenna VNA.",
   "El brazo corto mide {0} {1} desde el fondo de la U: no cabe entero a 1:1 en A4 (A3 y mosaico, más adelante).": "Le brin court mesure {0} {1} depuis le fond de la U : il ne tient pas en entier à 1:1 sur A4 (A3 et mosaïque, plus tard).",
+  "El factor de velocidad del archivo no es creíble.": "Le facteur de vitesse du fichier n'est pas crédible.",
   "El patrón del coaxial no cabe a escala: usa las cotas.": "Le gabarit du coaxial ne tient pas à l'échelle : utilise les cotes.",
   "Elegir antena": "Choisir l'antenne",
   "Elige el tipo de antena": "Choisis le type d'antenne",
@@ -312,6 +314,7 @@
   "Unidades": "Unités",
   "VF medido (opcional)": "VF mesuré (facultatif)",
   "VF {0} ({1})": "VF {0} ({1})",
+  "VF {0} cargado{1}.": "VF {0} chargé{1}.",
   "VISTA GENERAL": "VUE D'ENSEMBLE",
   "Varilla del cono, Ø {0} mm": "Tige du cône, Ø {0} mm",
   "Varilla del disco, Ø {0} mm": "Tige du disque, Ø {0} mm",
@@ -422,6 +425,7 @@
   "Ø {0} mm · coaxial {1}": "Ø {0} mm · coaxial {1}",
   "Ø {0} mm · {1}": "Ø {0} mm · {1}",
   "— otra —": "— autre —",
+  "…o carga el archivo de Chirptenna VNA": "…ou charge le fichier de Chirptenna VNA",
   "← brazo (sigue)": "← brin (suite)"
  }
 }

@@ -145,6 +145,20 @@ $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };
 $('abrir').onclick = () => $('archivo').click();
+// VF medido con Chirptenna VNA: el archivo `chirptenna-cable` rellena el campo (mismo criterio que wire.cables.leer_cable_medido).
+$('vf-archivo').onchange = async () => {
+  const aviso = $('vf-aviso'); aviso.textContent = '';
+  const f = $('vf-archivo').files[0];
+  if (!f) return;
+  try {
+    const d = JSON.parse((await f.text()).replace(/^﻿/, ''));
+    if (!d || d.formato !== 'chirptenna-cable') throw new Error(T('El archivo no es una medida de cable de Chirptenna VNA.'));
+    if (!(typeof d.vf === 'number' && d.vf > 0.3 && d.vf <= 1)) throw new Error(T('El factor de velocidad del archivo no es creíble.'));
+    $('vf').value = d.vf;
+    aviso.textContent = T('VF {0} cargado{1}.', d.vf, d.nombre ? ` (${d.nombre})` : '');
+    if (typeof generar === 'function') generar();
+  } catch (e) { aviso.textContent = e.message; }
+};
 $('archivo').onchange = async () => {
   const f = $('archivo').files[0];
   if (!f) return;

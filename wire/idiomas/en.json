@@ -141,7 +141,9 @@
   "Dos dipolos cruzados a 90° y una línea de λ/4 entre sus centros: polarización circular · coaxial de 50 Ω": "Two dipoles crossed at 90° and a λ/4 line between their centres: circular polarisation · 50 Ω coax",
   "Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz).": "Two crossed dipoles with a λ/4 line: circular polarisation (satellites, 137 MHz).",
   "Eje aislante (PVC o madera barnizada)": "Insulating boom (PVC or varnished wood)",
+  "El archivo no es una medida de cable de Chirptenna VNA.": "The file is not a cable measurement from Chirptenna VNA.",
   "El brazo corto mide {0} {1} desde el fondo de la U: no cabe entero a 1:1 en A4 (A3 y mosaico, más adelante).": "The short arm measures {0} {1} from the bottom of the U: it does not fit whole at 1:1 on A4 (A3 and tiling, later).",
+  "El factor de velocidad del archivo no es creíble.": "The velocity factor in the file is not credible.",
   "El patrón del coaxial no cabe a escala: usa las cotas.": "The coax template does not fit at scale: use the dimensions.",
   "Elegir antena": "Choose antenna",
   "Elige el tipo de antena": "Choose the antenna type",
@@ -312,6 +314,7 @@
   "Unidades": "Units",
   "VF medido (opcional)": "Measured VF (optional)",
   "VF {0} ({1})": "VF {0} ({1})",
+  "VF {0} cargado{1}.": "VF {0} loaded{1}.",
   "VISTA GENERAL": "GENERAL VIEW",
   "Varilla del cono, Ø {0} mm": "Cone rod, Ø {0} mm",
   "Varilla del disco, Ø {0} mm": "Disc rod, Ø {0} mm",
@@ -422,6 +425,7 @@
   "Ø {0} mm · coaxial {1}": "Ø {0} mm · coax {1}",
   "Ø {0} mm · {1}": "Ø {0} mm · {1}",
   "— otra —": "— other —",
+  "…o carga el archivo de Chirptenna VNA": "…or load the Chirptenna VNA file",
   "← brazo (sigue)": "← arm (continues)"
  }
 }

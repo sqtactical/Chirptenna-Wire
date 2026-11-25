@@ -64,3 +64,21 @@ def cable(nombre: str) -> Cable:
     if nombre not in CABLES:
         raise ValueError(f"cable desconocido: {nombre} (hay: {', '.join(CABLES)})")
     return CABLES[nombre]
+
+
+def leer_cable_medido(texto: str) -> dict:
+    """VF medido que descarga Chirptenna VNA («Coaxial y stubs» → «Descargar el VF para Chirptenna Wire»).
+
+    Devuelve el diccionario validado (`vf`, `nombre`, …). Falla con ValueError si no es de ese formato o el VF no es creíble.
+    """
+    import json
+    try:
+        d = json.loads(texto.lstrip("﻿"))
+    except ValueError as e:
+        raise ValueError(f"el archivo del cable no es JSON: {e}") from None
+    if not isinstance(d, dict) or d.get("formato") != "chirptenna-cable":
+        raise ValueError("el archivo no es una medida de cable de Chirptenna VNA (falta formato «chirptenna-cable»)")
+    vf = d.get("vf")
+    if not isinstance(vf, (int, float)) or isinstance(vf, bool) or not 0.3 < vf <= 1:
+        raise ValueError(f"el factor de velocidad medido no es creíble: {vf!r} (debe estar entre 0,3 y 1)")
+    return d

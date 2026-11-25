@@ -141,7 +141,9 @@
   "Dos dipolos cruzados a 90° y una línea de λ/4 entre sus centros: polarización circular · coaxial de 50 Ω": "Zwei um 90° gekreuzte Dipole und eine λ/4-Leitung zwischen ihren Mitten: zirkulare Polarisation · 50-Ω-Koax",
   "Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz).": "Zwei gekreuzte Dipole mit einer λ/4-Leitung: zirkulare Polarisation (Satelliten, 137 MHz).",
   "Eje aislante (PVC o madera barnizada)": "Isolierender Ausleger (PVC oder lackiertes Holz)",
+  "El archivo no es una medida de cable de Chirptenna VNA.": "Die Datei ist keine Kabelmessung von Chirptenna VNA.",
   "El brazo corto mide {0} {1} desde el fondo de la U: no cabe entero a 1:1 en A4 (A3 y mosaico, más adelante).": "Der kurze Arm misst {0} {1} ab dem Boden der U: er passt nicht ganz im Maßstab 1:1 auf A4 (A3 und Kacheln folgen später).",
+  "El factor de velocidad del archivo no es creíble.": "Der Verkürzungsfaktor in der Datei ist nicht glaubwürdig.",
   "El patrón del coaxial no cabe a escala: usa las cotas.": "Die Koax-Schablone passt nicht maßstäblich: die Maße verwenden.",
   "Elegir antena": "Antenne wählen",
   "Elige el tipo de antena": "Antennentyp wählen",
@@ -312,6 +314,7 @@
   "Unidades": "Einheiten",
   "VF medido (opcional)": "Gemessener VF (optional)",
   "VF {0} ({1})": "VF {0} ({1})",
+  "VF {0} cargado{1}.": "VF {0} geladen{1}.",
   "VISTA GENERAL": "GESAMTANSICHT",
   "Varilla del cono, Ø {0} mm": "Kegelstab, Ø {0} mm",
   "Varilla del disco, Ø {0} mm": "Scheibenstab, Ø {0} mm",
@@ -422,6 +425,7 @@
   "Ø {0} mm · coaxial {1}": "Ø {0} mm · Koax {1}",
   "Ø {0} mm · {1}": "Ø {0} mm · {1}",
   "— otra —": "— andere —",
+  "…o carga el archivo de Chirptenna VNA": "…oder die Datei von Chirptenna VNA laden",
   "← brazo (sigue)": "← Arm (weiter)"
  }
 }
