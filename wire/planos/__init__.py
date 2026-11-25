@@ -11,6 +11,7 @@ from dataclasses import asdict
 from datetime import date
 
 from ..diseno import Diseno
+from ..i18n import tr, usar
 from . import comun, coaxial, dipolo, jpole
 from .hoja import Hoja, Plano
 from .paginacion import decidir_papel
@@ -22,12 +23,13 @@ GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.ho
 
 def generar(diseno: Diseno, fecha: str | None = None) -> Plano:
     fecha = fecha or date.today().strftime("%d-%m-%Y")
-    hojas = GENERADORES[diseno.tipo](diseno, fecha)
-    for n, hoja in enumerate(hojas, start=1):
-        escala = "1:1 (ver cada vista)" if _tiene_escala_1_1(hoja) else "Sin escala"
-        if n == 1 and diseno.tipo == "dipolo":
-            escala = "varias: ver cada vista"
-        comun.cajetin(hoja, diseno, escala, n, len(hojas), fecha)
+    with usar(diseno.plano.idioma):
+        hojas = GENERADORES[diseno.tipo](diseno, fecha)
+        for n, hoja in enumerate(hojas, start=1):
+            escala = tr("1:1 (ver cada vista)") if _tiene_escala_1_1(hoja) else tr("Sin escala")
+            if n == 1 and diseno.tipo == "dipolo":
+                escala = tr("varias: ver cada vista")
+            comun.cajetin(hoja, diseno, escala, n, len(hojas), fecha)
     return Plano(hojas, diseno.nombre)
 
 

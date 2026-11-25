@@ -9,18 +9,24 @@ from __future__ import annotations
 import json
 
 from . import nec, planos
+from .i18n import IDIOMAS, tr, usar
 from .cables import CABLES
 from .diseno import BANDAS, ESTADOS, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
 
 VERSION_API = 1
 
 
-def catalogo() -> str:
+def catalogo(idioma: str = "es") -> str:
+    with usar(idioma if idioma in IDIOMAS else "es"):
+        return _catalogo()
+
+
+def _catalogo() -> str:
     return json.dumps({
         "version_api": VERSION_API,
-        "tipos": [{"clave": c, "nombre": n} for c, n in TIPOS.items()],
+        "tipos": [{"clave": c, "nombre": tr(n)} for c, n in TIPOS.items()],
         "estados": list(ESTADOS),
-        "bandas": [{"nombre": n, "f_min": a, "f_max": b} for n, a, b in BANDAS],
+        "bandas": [{"nombre": tr(n), "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},
         "coaxial": {"tipos": list(TIPOS_COAXIAL), "cables": [{"nombre": c.nombre, "vf": c.vf} for c in CABLES.values()]},
     }, ensure_ascii=False)
@@ -28,9 +34,13 @@ def catalogo() -> str:
 
 def _diseno(entrada: str) -> Diseno:
     datos = json.loads(entrada)
+    idioma = datos.get("idioma")
     if "diseno" in datos:  # un diseno.json abierto desde el escritorio
-        return Diseno.desde_dict(datos["diseno"])
-    plano = {k: datos[k] for k in ("papel", "unidades") if k in datos}
+        diseno = Diseno.desde_dict(datos["diseno"])
+        if idioma in IDIOMAS:
+            diseno.plano.idioma = idioma
+        return diseno
+    plano = {k: datos[k] for k in ("papel", "unidades", "idioma") if k in datos}
     return disenar(datos["tipo"], float(datos["f_MHz"]), float(datos.get("diametro_mm", 2.0)), ajustar=False,
                    cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), **plano)
 
@@ -40,11 +50,16 @@ def disenar_json(entrada: str) -> str:
     return _diseno(entrada).a_json()
 
 
+def _nombre_tipo(diseno: Diseno) -> str:
+    with usar(diseno.plano.idioma):
+        return diseno.nombre_tipo
+
+
 def plano_svg(entrada: str) -> str:
     """Igual entrada → {nombre, estado, hojas: [svg…]}."""
     diseno = _diseno(entrada)
     plano = planos.generar(diseno)
-    return json.dumps({"nombre": diseno.nombre, "estado": diseno.estado, "tipo": diseno.nombre_tipo,
+    return json.dumps({"nombre": diseno.nombre, "estado": diseno.estado, "tipo": _nombre_tipo(diseno),
                        "f_MHz": diseno.f_MHz, "hojas": [planos.a_svg(h) for h in plano.hojas],
                        "diseno": diseno.a_dict()}, ensure_ascii=False)
 

@@ -1,4 +1,4 @@
-﻿"""W2.5: ajuste de la CoCo. La red en L es matemática pura (no necesita motor); el ajuste completo, sí."""
+"""W2.5: ajuste de la CoCo. La red en L es matemática pura (no necesita motor); el ajuste completo, sí."""
 
 import pytest
 

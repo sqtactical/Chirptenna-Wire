@@ -60,6 +60,11 @@ def construir(salida: str) -> None:
     os.makedirs(img, exist_ok=True)
     for n in ("logo-wire.svg", "logo-wire-oscuro.svg", "grillo-wire.svg", "favicon-32.png", "icono-192.png"):
         shutil.copy(os.path.join(RAIZ, "img", n), img)
+    idiomas = os.path.join(salida, "idiomas")           # los mismos catálogos que usa Python, para la interfaz
+    os.makedirs(idiomas, exist_ok=True)
+    for a in os.listdir(os.path.join(RAIZ, "wire", "idiomas")):
+        if a.endswith(".json"):
+            shutil.copy(os.path.join(RAIZ, "wire", "idiomas", a), idiomas)
     lista = nucleo()
     comprobar(lista)
     os.makedirs(os.path.join(salida, "py"), exist_ok=True)

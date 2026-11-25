@@ -18,10 +18,13 @@ from .diseno import TIPOS, Diseno, disenar
 def _diseno(args) -> Diseno:
     if args.desde:
         with open(args.desde, encoding="utf-8") as f:
-            return Diseno.desde_json(f.read())
+            diseno = Diseno.desde_json(f.read())
+        if getattr(args, "idioma", None):
+            diseno.plano.idioma = args.idioma
+        return diseno
     if not args.tipo or args.f_MHz is None:
         sys.exit("falta el tipo y la frecuencia (o --desde diseno.json)")
-    plano = {"papel": args.papel, "unidades": args.unidades}
+    plano = {"papel": args.papel, "unidades": args.unidades, "idioma": args.idioma or "es"}
     return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=args.cable,
                    vf_medido=args.vf_medido, **plano)
 
@@ -63,8 +66,9 @@ def main(argv: list[str] | None = None) -> int:
         if nombre == "plano":
             s.add_argument("--papel", choices=("A4", "A3"), default="A4")
             s.add_argument("--unidades", choices=("mm", "pulgadas"), default="mm")
+            s.add_argument("--idioma", choices=("es", "en", "fr", "de"), help="idioma del plano (es por defecto)")
         else:
-            s.set_defaults(papel="A4", unidades="mm")
+            s.set_defaults(papel="A4", unidades="mm", idioma=None)
     args = p.parse_args(argv)
     diseno = _diseno(args)
 

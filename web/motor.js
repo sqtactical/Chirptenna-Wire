@@ -36,7 +36,7 @@ onmessage = async (ev) => {
   const { id, fn, arg } = ev.data;
   try {
     await listo;
-    const r = fn === 'catalogo' ? api.catalogo() : api[fn](arg);
+    const r = fn === 'catalogo' ? api.catalogo(arg) : api[fn](arg);
     if (fn === 'plano_pdf') {
       const bytes = r.toJs();
       r.destroy();

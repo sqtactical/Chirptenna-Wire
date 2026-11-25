@@ -8,12 +8,50 @@ let siguiente = 1;
 let actual = null;       // {entrada, plano}
 let hojaActual = 0;
 let coaxial = { tipos: [], cables: [] };
+let TEXTOS = {};
+let IDIOMA = 'es';
+
+// Idiomas: el castellano es el texto fuente y la clave (como en el código Python); wire/idiomas/<código>.json los traduce.
+function T(texto, ...args) {
+  const t = IDIOMA !== 'es' && TEXTOS[texto] ? TEXTOS[texto] : texto;
+  return t.replace(/\{(\d+)\}/g, (m, i) => (args[i] !== undefined ? args[i] : m));
+}
+const estadoTxt = (e) => ({ 'Sin validar': T('Sin validar'), 'Simulado': T('Simulado'), 'Medido': T('Medido') }[e] || e);
+
+function aplicarIdioma() {
+  document.documentElement.lang = IDIOMA;
+  document.querySelectorAll('[data-t]').forEach((e) => {
+    if (e.dataset.t0 === undefined) e.dataset.t0 = e.getAttribute('data-t') || e.textContent.trim();
+    e.innerHTML = T(e.dataset.t0);
+  });
+  document.querySelectorAll('[data-t-placeholder]').forEach((e) => { e.placeholder = T(e.dataset.tPlaceholder); });
+  document.querySelectorAll('[data-t-title]').forEach((e) => { e.title = T(e.dataset.tTitle); });
+}
+
+async function cargarIdioma(codigo) {
+  TEXTOS = {};
+  if (codigo !== 'es') {
+    try { TEXTOS = (await (await fetch(`idiomas/${codigo}.json`)).json()).textos; } catch (e) { codigo = 'es'; }
+  }
+  IDIOMA = codigo;
+  $('idioma').value = codigo;
+  try { localStorage.setItem('idioma', codigo); } catch (e) { /* sin almacenamiento */ }
+  aplicarIdioma();
+}
+
+function idiomaInicial() {
+  const url = new URLSearchParams(location.search).get('idioma');
+  let guardado = null;
+  try { guardado = localStorage.getItem('idioma'); } catch (e) { /* sin almacenamiento */ }
+  const navegador = (navigator.language || 'es').slice(0, 2);
+  return [url, guardado, navegador].find((c) => ['es', 'en', 'fr', 'de'].includes(c)) || 'es';
+}
 
 trabajador.onmessage = (ev) => {
   const m = ev.data;
-  if (m.progreso) { $('progreso').textContent = m.progreso; return; }
-  if (m.listo) { $('progreso').textContent = 'Listo.'; $('generar').disabled = false; iniciar(); return; }
-  if (m.fallo) { $('progreso').textContent = 'No se pudo cargar Python: ' + m.fallo; return; }
+  if (m.progreso) { $('progreso').textContent = T(m.progreso); return; }
+  if (m.listo) { $('progreso').textContent = T('Listo.'); $('generar').disabled = false; iniciar().then(() => generar()); return; }
+  if (m.fallo) { $('progreso').textContent = T('No se pudo cargar Python: {0}', m.fallo); return; }
   const p = pendientes.get(m.id);
   if (!p) return;
   pendientes.delete(m.id);
@@ -37,27 +75,29 @@ function guardar(nombre, contenido, tipo) {
 
 function entrada() {
   return JSON.stringify({ tipo: $('tipo').value, f_MHz: parseFloat($('f').value), diametro_mm: parseFloat($('diametro').value),
-                          papel: $('papel').value, unidades: $('unidades').value,
+                          papel: $('papel').value, unidades: $('unidades').value, idioma: IDIOMA,
                           cable: $('cable').value || null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null });
 }
 
 async function iniciar() {
-  const c = await llamar('catalogo');
+  const c = await llamar('catalogo', IDIOMA);
+  const tipoActual = $('tipo').value;
   $('tipo').innerHTML = c.tipos.map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
-  $('banda').innerHTML += c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
+  $('banda').innerHTML = '<option value="" data-t>— otra —</option>' + c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
   coaxial = c.coaxial;
   $('cable').innerHTML = c.coaxial.cables.map((k) => `<option value="${k.nombre}">${k.nombre} (VF ${k.vf})</option>`).join('');
   $('papel').innerHTML = c.plano.papel.map((p) => `<option>${p}</option>`).join('');
   $('unidades').innerHTML = c.plano.unidades.map((p) => `<option>${p}</option>`).join('');
-  generar();
+  if (tipoActual) $('tipo').value = tipoActual;
+  aplicarIdioma();
 }
 
 function mostrar(plano) {
   hojaActual = Math.min(hojaActual, plano.hojas.length - 1);
   $('titulo').textContent = `${plano.tipo} · ${plano.f_MHz} MHz`;
-  $('estado').textContent = plano.estado;
+  $('estado').textContent = estadoTxt(plano.estado);
   $('cabecera').classList.remove('oculto');
-  $('hojas').innerHTML = plano.hojas.map((_, i) => `<button data-i="${i}"${i === hojaActual ? ' disabled' : ''}>Hoja ${i + 1}</button>`).join('');
+  $('hojas').innerHTML = plano.hojas.map((_, i) => `<button data-i="${i}"${i === hojaActual ? ' disabled' : ''}>${T('Hoja {0}', i + 1)}</button>`).join('');
   $('hojas').classList.toggle('oculto', plano.hojas.length < 2);
   $('vista').innerHTML = plano.hojas[hojaActual];
   $('descargas').classList.remove('oculto');
@@ -66,17 +106,22 @@ function mostrar(plano) {
 async function generar(textoEntrada) {
   $('generar').disabled = true;
   try {
-    const e = textoEntrada || entrada();
+    const e = textoEntrada ? JSON.stringify({ ...JSON.parse(textoEntrada), idioma: IDIOMA }) : entrada();
     const plano = await llamar('plano_svg', e);
-    actual = { entrada: textoEntrada ? e : JSON.stringify({ diseno: plano.diseno }), plano };
+    actual = { entrada: JSON.stringify({ diseno: plano.diseno, idioma: IDIOMA }), plano };
     mostrar(plano);
   } catch (err) {
-    $('progreso').textContent = 'Error: ' + err.message;
+    $('progreso').textContent = T('Error: {0}', err.message);
   } finally {
     $('generar').disabled = false;
   }
 }
 
+$('idioma').onchange = async () => {
+  await cargarIdioma($('idioma').value);
+  $('progreso').textContent = T('Listo.');
+  if (actual) { await iniciar(); await generar(JSON.stringify({ diseno: actual.plano.diseno })); }
+};
 $('tipo').onchange = () => $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value));
 $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
@@ -94,7 +139,7 @@ $('archivo').onchange = async () => {
     $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
     $('papel').value = d.plano.papel; $('unidades').value = d.plano.unidades;
   } catch (err) {
-    $('progreso').textContent = 'No se pudo abrir el diseño: ' + err.message;
+    $('progreso').textContent = T('No se pudo abrir el diseño: {0}', err.message);
   }
   $('archivo').value = '';
 };
@@ -110,3 +155,5 @@ $('tema').onclick = () => {
   try { localStorage.setItem('tema', raiz.dataset.tema); } catch (e) { /* sin almacenamiento */ }
 };
 try { const t = localStorage.getItem('tema'); if (t) document.documentElement.dataset.tema = t; } catch (e) { /* sin almacenamiento */ }
+
+cargarIdioma(idiomaInicial());

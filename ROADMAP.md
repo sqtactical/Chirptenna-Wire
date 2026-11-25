@@ -43,7 +43,7 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 
 - [ ] W3.1 Esqueleto NiceGUI con pestañas Elegir, Diseño, Simulación, Plano, Medir
 - [ ] W3.2 Vista previa del plano en SVG y descargas (PDF, SVG, `.nec`, `diseno.json`)
-- [ ] W3.3 Idiomas (es, en, fr, de) con el esquema de Chirptenna
+- [x] W3.3 Idiomas (es, en, fr, de) con el esquema de Chirptenna — 25-11-2026 (`wire/i18n.py` con `tr()`, catálogos `wire/idiomas/*.json`, extractor `herramientas/i18n.py faltan` que pasa `pruebas/test_idiomas.py` en la CI; planos, CLI `--idioma` y web; traducciones hechas por Claude, **a revisar por hablantes nativos**; falta la interfaz de escritorio, que aún no existe (W3.1))
 - [ ] W3.4 Enlace con Chirptenna VNA (`?f=&banda=&nombre=`) y estado «Medido»
 - [ ] W3.5 Instalación para usuarios (script o instrucciones) y README con capturas
 

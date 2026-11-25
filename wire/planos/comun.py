@@ -7,8 +7,9 @@ from dataclasses import replace
 
 from .. import __version__
 from ..diseno import Diseno, banda_de
+from ..i18n import separador_decimal, tr
 from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PT, ROJO, TINTA, VERDE, Hoja, Imagen, Linea, Polilinea, Rect,
-                   Texto)
+                   Texto, ancho_texto)
 
 URL = "github.com/sqtactical/Chirptenna-Wire"
 LICENCIA = "CC BY-NC 4.0"
@@ -16,28 +17,28 @@ REGLA_MM = 80.0  # cabe junto al cajetín en A4 vertical
 
 
 def fmt(v: float, decimales: int = 1) -> str:
-    return f"{v:.{decimales}f}".replace(".", ",").replace("-", "−")
+    return f"{v:.{decimales}f}".replace(".", separador_decimal()).replace("-", "−")
 
 
 def frecuencia(f_MHz: float) -> str:
     """145 → «145», 433,92 → «433,92»."""
-    return fmt(f_MHz, 3).rstrip("0").rstrip(",")
+    return fmt(f_MHz, 3).rstrip("0").rstrip(separador_decimal())
 
 
 def longitud(mm: float, diseno: Diseno, decimales: int = 1) -> str:
     """Cota en las unidades del plano (la escala 1:1 no cambia, solo el texto)."""
     if diseno.plano.unidades == "pulgadas":
-        return f"{fmt(mm / 25.4, 2)} in"
+        return tr("{0} in", fmt(mm / 25.4, 2))
     return fmt(mm, decimales)
 
 
 def unidad(diseno: Diseno) -> str:
-    return "pulgadas" if diseno.plano.unidades == "pulgadas" else "mm"
+    return tr("pulgadas") if diseno.plano.unidades == "pulgadas" else "mm"
 
 
 def texto_banda(f_MHz: float) -> str:
     b = banda_de(f_MHz)
-    return f"banda {b[0]}" if b else "fuera de las bandas iniciales"
+    return tr("banda {0}", tr(b[0])) if b else tr("fuera de las bandas iniciales")
 
 
 def hoja_a4(diseno: Diseno, titulo: str, subtitulo: str, apaisada: bool = False) -> Hoja:
@@ -52,7 +53,7 @@ def hoja_a4(diseno: Diseno, titulo: str, subtitulo: str, apaisada: bool = False)
         Linea(10, 27, ancho - 10, 27, TINTA, 0.18),
     )
     if diseno.estado != "Medido":
-        hoja.anadir(Texto(ancho - 14, 18, diseno.estado.upper(), 6, ROJO, "negrita", "derecha"))
+        hoja.anadir(Texto(ancho - 14, 18, tr(diseno.estado).upper(), 6, ROJO, "negrita", "derecha"))
     return hoja
 
 
@@ -66,26 +67,29 @@ def cajetin(hoja: Hoja, diseno: Diseno, escala: str, n: int, total: int, fecha: 
     hoja.escala = escala
     elementos = [Rect(x0, y0, x1 - x0, y1 - y0, TINTA, 0.28), Rect(xl, y0, x1 - xl, y1 - y0, TINTA, 0.18),
                  Imagen(xl + 2, y0 + 2, 26, 33, etiqueta="cajetin"),
-                 Texto((xl + x1) / 2, y1 - 3, "Chirptenna Wire", 5.6, estilo="negrita", ancla="centro")]
+                 Texto((xl + x1) / 2, y1 - 3, tr("Chirptenna Wire"), 5.6, estilo="negrita", ancla="centro")]
     banda = banda_de(diseno.f_MHz)
-    material = f"Ø {fmt(diseno.diametro_mm, 1)} mm · {diseno.material}"
-    estado = {"Simulado": "Simulado, sin medir", "Medido": "Medido", "Sin validar": "Sin validar"}[diseno.estado]
+    if diseno.cable:
+        material = tr("Ø {0} mm · coaxial {1}", fmt(diseno.diametro_mm, 1), diseno.cable["nombre"])
+    else:
+        material = tr("Ø {0} mm · {1}", fmt(diseno.diametro_mm, 1), tr(diseno.material))
+    estado = {"Simulado": tr("Simulado, sin medir"), "Medido": tr("Medido"), "Sin validar": tr("Sin validar")}[diseno.estado]
     campos = [
-        ("Diseño", diseno.nombre),
-        ("Tipo", diseno.nombre_tipo),
-        ("Frecuencia", f"{frecuencia(diseno.f_MHz)} MHz"
-                       + (f" · {banda[0]} ({fmt(banda[1], 0)}–{fmt(banda[2], 0)})" if banda else "")),
-        ("Material", material),
-        ("Escala", escala),
-        ("Hoja", f"{n} de {total} · {hoja.papel}"),
-        ("Fecha", fecha),
-        ("Versión", f"Chirptenna Wire {__version__}"),
-        ("Estado", estado),
-        ("Licencia", f"{LICENCIA} (diseños)"),
-        ("Proyecto", URL),
+        (tr("Diseño"), diseno.nombre),
+        (tr("Tipo"), diseno.nombre_tipo),
+        (tr("Frecuencia"), tr("{0} MHz", frecuencia(diseno.f_MHz))
+                       + (tr(" · {0} ({1}–{2})", tr(banda[0]), fmt(banda[1], 0), fmt(banda[2], 0)) if banda else "")),
+        (tr("Material"), material),
+        (tr("Escala"), escala),
+        (tr("Hoja"), tr("{0} de {1} · {2}", n, total, hoja.papel)),
+        (tr("Fecha"), fecha),
+        (tr("Versión"), tr("Chirptenna Wire {0}", __version__)),
+        (tr("Estado"), estado),
+        (tr("Licencia"), tr("{0} (diseños)", LICENCIA)),
+        (tr("Proyecto"), URL),
     ]
     if diseno.cable:
-        campos.insert(4, ("Cable", f"{diseno.cable['nombre']} · VF {fmt(diseno.cable['vf'], 2)} ({diseno.cable['vf_origen']})"))
+        campos.insert(4, (tr("Cable"), tr("{0} · VF {1} ({2})", diseno.cable['nombre'], fmt(diseno.cable['vf'], 2), tr(diseno.cable['vf_origen']))))
     paso = (y1 - y0 - 2.5) / len(campos)
     for i, (clave, valor) in enumerate(campos):
         yy = y0 + 4.2 + i * paso
@@ -98,16 +102,15 @@ def cajetin(hoja: Hoja, diseno: Diseno, escala: str, n: int, total: int, fecha: 
 
 def regla(hoja: Hoja, x: float, y: float) -> None:
     """Regla de comprobación de 80 mm y rectángulo de 20 × 7 mm, con el aviso de imprimir al 100 %."""
-    seccion(hoja, x, y, "COMPRUEBA LA ESCALA", "Mide antes de usar los detalles 1:1")
+    seccion(hoja, x, y, tr("COMPRUEBA LA ESCALA"), tr("Mide antes de usar los detalles 1:1"))
     yb = y + 22
     hoja.anadir(Rect(x, y + 8, 20, 7, TINTA, 0.15, etiqueta="regla:cuadro"),
-                Texto(x + 23, y + 12.5, "20 × 7 mm", 5.5, GRIS),
+                Texto(x + 23, y + 12.5, tr("20 × 7 mm"), 5.5, GRIS),
                 Rect(x, yb, REGLA_MM, 0.8, None, relleno=TINTA, etiqueta="regla:barra"))
     for mm in range(0, int(REGLA_MM) + 1, 10):
         hoja.anadir(Linea(x + mm, yb - 1.5, x + mm, yb + 0.8, TINTA, 0.15),
                     Texto(x + mm, yb + 4, str(mm), 4.8, GRIS, ancla="centro"))
-    hoja.anadir(Texto(x, yb + 10, f"Si la regla no mide {REGLA_MM:.0f} mm, imprime al 100 % («tamaño real»,\n"
-                                  "sin «ajustar a la página») y vuelve a medir.", 5.6))
+    hoja.anadir(Texto(x, yb + 10, tr("Si la regla no mide {0:.0f} mm, imprime al 100 % («tamaño real»,\nsin «ajustar a la página») y vuelve a medir.", REGLA_MM), 5.6))
 
 
 def _paso_bonito(rango: float, divisiones: int = 5) -> float:
@@ -160,14 +163,22 @@ def grafica_roe(hoja: Hoja, x: float, y: float, ancho: float, alto: float, f: li
 
 def tabla(hoja: Hoja, x: float, y: float, columnas: list[float], cabecera: list[str], filas: list[list[str]],
           ancho: float) -> float:
-    """Tabla sencilla; devuelve la y debajo de la última fila."""
-    for c, t in zip(columnas, cabecera):
-        hoja.anadir(Texto(x + c, y, t, 6.5, estilo="negrita"))
+    """Tabla sencilla; devuelve la y debajo de la última fila. Si un texto no cabe en su columna (otro idioma), baja
+    el cuerpo de la letra hasta que quepa."""
+    limites = [c - 1.5 for c in columnas[1:]] + [ancho]
+
+    def tam(texto: str, k: int, base: float, estilo: str = "normal") -> float:
+        disponible = limites[k] - columnas[k]
+        w = ancho_texto(texto, base, estilo)
+        return base if w <= disponible else max(4.4, base * disponible / w)
+
+    for k, (c, t) in enumerate(zip(columnas, cabecera)):
+        hoja.anadir(Texto(x + c, y, t, tam(t, k, 6.5, "negrita"), estilo="negrita"))
     hoja.anadir(Linea(x, y + 1.5, x + ancho, y + 1.5, TINTA, 0.14))
     yy = y + 6
     for fila in filas:
-        for c, t in zip(columnas, fila):
-            hoja.anadir(Texto(x + c, yy, t, 6.3))
+        for k, (c, t) in enumerate(zip(columnas, fila)):
+            hoja.anadir(Texto(x + c, yy, t, tam(t, k, 6.3)))
         yy += 5
     return yy
 

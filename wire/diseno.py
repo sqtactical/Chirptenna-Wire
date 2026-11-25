@@ -10,13 +10,14 @@ import json
 from dataclasses import asdict, dataclass, field, fields
 
 from . import generadores
+from .i18n import N_, tr
 from .modelo import Modelo
 
 TIPOS = {
-    "dipolo": "Dipolo de media onda",
-    "jpole": "J-pole",
-    "manga": "Dipolo de manga de coaxial",
-    "coco": "Colineal CoCo de coaxial",
+    "dipolo": N_("Dipolo de media onda"),
+    "jpole": N_("J-pole"),
+    "manga": N_("Dipolo de manga de coaxial"),
+    "coco": N_("Colineal CoCo de coaxial"),
 }
 
 TIPOS_COAXIAL = ("manga", "coco")
@@ -28,14 +29,14 @@ ESTADOS = ("Simulado", "Medido", "Sin validar")
 SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
-    ("banda aérea", 118.0, 137.0),
-    ("2 m", 144.0, 146.0),
-    ("banda marina VHF", 156.0, 162.1),
-    ("70 cm", 430.0, 440.0),
-    ("PMR446", 446.0, 446.2),
-    ("LoRa 868", 863.0, 870.0),
-    ("LoRa 915", 902.0, 928.0),
-    ("ADS-B", 1089.0, 1091.0),
+    (N_("banda aérea"), 118.0, 137.0),
+    (N_("2 m"), 144.0, 146.0),
+    (N_("banda marina VHF"), 156.0, 162.1),
+    (N_("70 cm"), 430.0, 440.0),
+    (N_("PMR446"), 446.0, 446.2),
+    (N_("LoRa 868"), 863.0, 870.0),
+    (N_("LoRa 915"), 902.0, 928.0),
+    (N_("ADS-B"), 1089.0, 1091.0),
 ]
 
 
@@ -92,7 +93,7 @@ class Diseno:
     diametro_mm: float
     geometria: dict
     nombre: str = ""
-    material: str = "varilla de latón o aluminio"
+    material: str = N_("varilla de latón o aluminio")
     resultados: dict | None = None
     estado: str = "Sin validar"
     plano: ConfigPlano = field(default_factory=ConfigPlano)
@@ -115,7 +116,7 @@ class Diseno:
 
     @property
     def nombre_tipo(self) -> str:
-        return TIPOS[self.tipo]
+        return tr(TIPOS[self.tipo])
 
     @property
     def sobrante_mm(self) -> float:

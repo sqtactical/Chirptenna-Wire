@@ -1,4 +1,4 @@
-﻿"""W2.6: planos de las antenas de coaxial (manga y CoCo): cable y VF en el cajetín, tramos y pelados, pulgadas."""
+"""W2.6: planos de las antenas de coaxial (manga y CoCo): cable y VF en el cajetín, tramos y pelados, pulgadas."""
 
 import json
 import os
