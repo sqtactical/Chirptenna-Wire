@@ -57,8 +57,8 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 
 ## Fase 5 · Web lite
 
-- [ ] W5.1 Empaquetar el núcleo para Pyodide (sin PyNEC) y comprobar que genera los planos
-- [ ] W5.2 Interfaz web (galería, parámetros, vista SVG, descargas)
+- [x] W5.1 Empaquetar el núcleo para Pyodide (sin PyNEC) y comprobar que genera los planos (`wire/web_api.py`, `herramientas/construir_web.py`, `pruebas/test_web.py`; 25-11-2026)
+- [ ] W5.2 Interfaz web (galería, parámetros, vista SVG, descargas): primera versión hecha en `web/` (tipo, banda, parámetros, hojas SVG, PDF, SVG, `.nec`, `diseno.json`, abrir un `diseno.json` de escritorio, tema claro/oscuro; verificada en el navegador el 25-11-2026). Faltan idiomas, miniaturas en la galería y probar en móvil real
 - [ ] W5.3 Simulación en el navegador: investigar nec2c en WebAssembly (decisión del usuario)
 - [ ] W5.4 Publicación en GitHub Pages y prueba en navegador en la CI
 
