@@ -85,8 +85,11 @@ Por capas, para que haya algo útil desde el principio:
    nec2c compilado como ejecutable y leyendo su salida).
 4. **Interfaz de escritorio** con NiceGUI, como Chirptenna (mismo esquema de pestañas: elegir, diseño, simulación,
    plano, medir).
-5. **Web después**: nec2c compilado a WebAssembly en el navegador, o la web solo con diseño y planos y la simulación en
-   escritorio. Decidir cuando el escritorio funcione.
+5. **Web lite después** (decidido el 25-11: habrá escritorio y web lite): como mínimo, diseño y planos en el navegador
+   con el mismo núcleo en Pyodide; la simulación en la web (nec2c en WebAssembly) se decide cuando el escritorio
+   funcione. **Los planos (A4 con cajetín y logo, 1:1 para lo doblado, A3 o mosaico de A4 para lo grande) salen del mismo
+   generador en las dos versiones: diseño en [`PLANOS.md`](PLANOS.md).** Por eso el núcleo (modelo, generadores, planos)
+   debe ser Python puro que corra en Pyodide; PyNEC solo en el motor de escritorio.
 
 **Idiomas**: el esquema de Chirptenna (castellano como texto fuente y clave; `en`, `fr`, `de`; `faltan` en la CI).
 **Licencias**: AGPL-3.0 para el código y CC BY-NC 4.0 para los diseños publicados. **Relación con los otros
