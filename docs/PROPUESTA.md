@@ -1,123 +1,155 @@
-# Chirptenna Wire · propuesta de alcance (25-11-2026)
+# Chirptenna Wire · propuesta de alcance (25-11-2026, revisada)
 
-Spin-off de [Chirptenna](https://github.com/sqtactical/chirptenna) para **antenas de varilla, tubo e hilo** (J-pole,
-ground plane, dipolo, discone, Yagi): da el **plano de construcción** (cotas, lista de corte, materiales y montaje) para
-una frecuencia, con la simulación que lo respalda. Tiene su propio repositorio, como Chirptenna VNA, porque cambian el
-usuario, el motor y la salida. Este documento es la propuesta: no hay nada hecho todavía. Las rutas que se citan
-(`antenas/hilos.py`, `pruebas/test_verdad.py`) son del repositorio de Chirptenna.
+Spin-off de [Chirptenna](https://github.com/sqtactical/chirptenna) para **antenas de alambre, varilla y coaxial**: da el
+**plano de construcción** (cotas, lista de corte, materiales y montaje) para una frecuencia, con la **simulación** que lo
+respalda. Tiene su propio repositorio, como Chirptenna VNA, porque cambian el usuario, el motor y la salida. Las rutas
+que se citan (`antenas/hilos.py`, `antenas/geometria.py`, `vna/medir_latiguillo.py`, `pruebas/test_verdad.py`) son del
+repositorio de Chirptenna.
+
+**Cambios respecto a la primera versión (25-11)**: entran las antenas de **coaxial** (dipolo de coaxial y colineal
+CoCo) y la **J-pole de Koch**; la simulación es parte central del producto, así que el motor va **primero en escritorio**
+(PyNEC) y la web después; el primer paso es **exportar a `.nec`**; se añade la **identidad visual** (apartado 9).
 
 ## 1. Para quién y para qué
 
-- **Usuario**: radioaficionado o maker que construye su antena con material de ferretería (varilla de latón o de
-  aluminio, tubo de cobre, hilo, varillas de soldar, cinta métrica) y no va a diseñar una PCB.
+- **Usuario**: radioaficionado o maker que construye su antena con material de ferretería (alambre, varilla de latón o
+  de aluminio, tubo de cobre, cable coaxial) y no va a diseñar una PCB.
 - **Problema**: las calculadoras que hay dan dos o tres longitudes con fórmulas fijas, sin tener en cuenta el diámetro
-  del material ni el conector, y sin decir cuánto se mueve la frecuencia al recortar.
+  del material, el factor de velocidad del cable que tiene el usuario ni cuánto se mueve la frecuencia al recortar.
 - **Qué aporta Chirptenna Wire**:
   - un plano acotado que se puede imprimir;
-  - la longitud calculada con el diámetro real (método de momentos, no una fórmula);
+  - longitudes calculadas con el diámetro real y, en las de coaxial, con el **factor de velocidad medido** del cable;
   - un margen de recorte con «cortar X mm sube Y MHz»;
-  - la curva de ROE y el diagrama simulados;
+  - la curva de ROE, la impedancia y el diagrama simulados;
+  - el `.nec` del diseño, para abrirlo en 4nec2 o xnec2c;
   - el paso a Chirptenna VNA para medirla y ajustarla.
 
-## 2. Alcance de la primera versión
+## 2. Tipos
 
-**Tipos** (los cinco clásicos; ningún tipo más hasta medir al menos dos):
+| Orden | Tipo | Material | Por qué en ese orden | Detalle del plano |
+|---|---|---|---|---|
+| 1 | Dipolo de 1/2 onda | alambre o varilla | Valida el motor contra la teoría | Brazos, hueco central, choke de coaxial (vueltas y diámetro) |
+| 2 | J-pole | alambre o varilla | La más pedida; se mide fácil | Brazo largo, brazo corto, separación y punto de toma, con margen para moverla |
+| 3 | Dipolo de coaxial | coaxial | Primera prueba de malla + línea de transmisión | Dónde se pela, largo de cada mitad, choke |
+| 4 | Colineal CoCo | coaxial | Depende del factor de velocidad: se valida con un cable medido | Tramos, cruces vivo–malla, tramo final y choke |
+| 5 | J-pole de Koch | alambre | Reutiliza la curva de Koch de Chirptenna (`antenas/geometria.py`) | Plantilla 1:1 para doblar el alambre |
+| 6 | Discone | varillas | Banda ancha; la más difícil de validar | Disco y cono con 8–16 varillas, ángulo del cono y frecuencia mínima |
 
-| Tipo | Por qué | Detalle del plano |
-|---|---|---|
-| Ground plane de 1/4 de onda | La más construida; referencia para validar el motor | Radiador, 3–4 radiales con su ángulo (0–45°) y conector SO-239/N |
-| Dipolo de 1/2 onda | Teoría conocida; segunda referencia | Brazos, hueco central y choke de coaxial (número de vueltas y diámetro) |
-| J-pole | Pedida; sin radiales; muy popular en 2 m y 70 cm | Brazo largo, brazo corto, separación y punto de toma, con margen para mover la toma |
-| Discone | Pedida; banda ancha para escáner y SDR | Disco y cono modelados con varillas (8–16), ángulo del cono y frecuencia mínima |
-| Yagi de varillas | Más ganancia; plantilla de taladrado del boom | Elementos, separaciones, boom (madera o PVC; metálico con corrección) y alimentación |
+Después, si los anteriores se han medido: ground plane de 1/4 de onda con radiales y Yagi de varillas (plantilla de
+taladrado del boom).
 
 **Bandas iniciales**: 2 m (144–146 MHz), 70 cm (430–440 MHz), PMR446, banda marina VHF, banda aérea (118–137 MHz),
-LoRa 868/915 MHz y ADS-B 1090 MHz. **Fuera de la primera versión**: HF (las longitudes y los planos de masa cambian
-el problema), quad, log-periódica, hélice, Moxon de hilo y antenas activas.
+LoRa 868/915 MHz y ADS-B 1090 MHz. **Fuera**: HF, quad, log-periódica, hélice, Moxon de hilo y antenas activas.
 
-**Entradas**:
-- frecuencia o banda;
-- material: diámetro de la varilla o del tubo, o un predefinido como «varilla de soldar de 2,4 mm» o «tubo de cobre de 15 mm»;
-- conector;
-- montaje (mástil metálico o no, altura aproximada);
-- unidades en mm o en pulgadas.
+**Entradas**: frecuencia o banda; material (diámetro del alambre o la varilla, o un predefinido); en las de coaxial, el
+cable (RG-58, RG-213, LMR-400, Aircell 7… con su VF de catálogo, o el VF medido); conector; montaje (mástil metálico o
+no, altura aproximada); unidades en mm o en pulgadas.
 
 **Salidas**:
-1. **Plano acotado** en SVG y PDF (A4/Carta): vista general, detalle de la alimentación y tabla de cotas. A escala 1:1
-   cuando cabe (plantilla de taladrado del boom de la Yagi, detalle de la toma de la J-pole).
-2. **Lista de corte**: cada pieza con su longitud final y la longitud para cortar (con sobrante para ajustar), y la
-   sensibilidad (MHz por mm).
+1. **Plano acotado** en SVG y PDF (A4/Carta), con detalle de la alimentación y tabla de cotas; a escala 1:1 cuando cabe.
+2. **Lista de corte** con la longitud final, la de cortar (con sobrante) y la sensibilidad (MHz por mm).
 3. **Lista de materiales** y guía de montaje paso a paso.
-4. **Resultados simulados**: ROE/S11 en la banda, impedancia, ganancia y diagrama, con el aviso de lo que no se modela.
-5. **`diseno.json`** para reabrir el diseño y un enlace a Chirptenna VNA con la frecuencia y la banda ya puestas
-   (`?f=&banda=&nombre=`, el mismo contrato que usa Chirptenna).
+4. **Resultados simulados**: ROE/S11, impedancia, ganancia y diagrama, con el aviso de lo que no se modela.
+5. **`.nec`** del modelo, **`diseno.json`** para reabrirlo y un enlace a Chirptenna VNA con la frecuencia y la banda
+   puestas (`?f=&banda=&nombre=`, el contrato que ya usa Chirptenna).
 
-## 3. Motor de cálculo
+## 3. Cómo se modela
 
-Para hilos y varillas en el aire lo adecuado es el **método de momentos de hilo fino (NEC2)**, no la FDTD de openEMS:
-una J-pole o una ground plane se resuelve en milisegundos y cabe en el navegador. Opciones, por orden de preferencia:
+Todo son **hilos con radio** y **líneas de transmisión**, que es lo que resuelve NEC2 (método de momentos de hilo fino):
 
-1. **nec2c (C, dominio público) compilado a WebAssembly** con Emscripten. Es el estándar de facto: lo que calcula es
-   comparable con 4nec2, EZNEC y xnec2c, que usan los radioaficionados. Riesgo: hay que montar y mantener la compilación;
-   comprobar antes si ya existe una compilación a WASM mantenida y con licencia compatible.
-2. **Motor propio en numpy bajo Pyodide**, ampliando `antenas/hilos.py` de Chirptenna. Hoy solo admite hilos paralelos
-   al eje z, sin uniones ni plano de masa. Haría falta: segmentos en 3D, uniones de varios hilos, plano de masa por
-   imágenes, cargas concentradas y pérdidas del conductor. Es más trabajo y menos contrastable que NEC2. Sirve de
-   respaldo o de segundo motor para comparar.
+- **Alambre y varilla**: segmentos de hilo con su radio. Las curvas de Koch son hilos doblados; la discone es una rejilla
+  de varillas.
+- **Coaxial**: la cara exterior de la malla radia y es un hilo con el radio de la malla; el interior es una línea de
+  transmisión (tarjeta `TL`) de la impedancia del cable, con longitud eléctrica = longitud física / VF. Los cruces de la
+  CoCo son líneas que unen el vivo de un tramo con la malla del siguiente. Así se modela la CoCo en 4nec2.
+- **Factor de velocidad**: es lo que más pesa en la CoCo (0,66 en PE macizo, ~0,82–0,85 en espumado). Se puede medir
+  con `vna/medir_latiguillo.py` de Chirptenna (o un asistente equivalente en Chirptenna VNA): el plano sale con el VF real.
+- **Cable de bajada**: en la CoCo y el dipolo de coaxial, la malla del cable que baja al equipo también radia (modo
+  común). Se añade como un hilo más hasta el choke, y el plano incluye el choke.
 
-En cualquier caso, la CI compara contra **nec2c de escritorio** y contra la teoría (dipolo λ/2: resonancia a ~0,47–0,48 λ
-y R ≈ 70–73 Ω; ground plane con radiales a 45°: R ≈ 50 Ω), igual que `pruebas/test_verdad.py` en Chirptenna.
+**Límites que hay que decir en la interfaz**: hilo fino (radio ≪ λ: un tubo de 15 mm a 1090 MHz ya está al límite);
+las líneas `TL` de NEC2 no tienen pérdidas (en una CoCo larga hay que estimarlas aparte); en la J-pole de Koch los
+segmentos deben ser cortos frente a λ pero varias veces más largos que el radio del alambre, lo que limita la iteración;
+el mástil y el suelo solo cuentan si se modelan; los contactos y soldaduras no son ideales.
 
-**Límites que hay que decir en la interfaz**:
-- hilo fino: el radio debe ser mucho menor que λ, así que un tubo de 15 mm a 1090 MHz ya está al límite;
-- la discone es una rejilla de varillas, no superficies continuas;
-- no se modelan las corrientes por la malla del coaxial (el choke se recomienda, no se simula);
-- el mástil y el suelo solo se tienen en cuenta si se modelan;
-- el contacto entre tramos telescópicos o tornillos no es ideal.
+## 4. Motor y arquitectura
 
-## 4. Arquitectura
+Por capas, para que haya algo útil desde el principio:
 
-- **Solo web** (GitHub Pages), sin instalador: núcleo en Python, que corre con Pyodide (el mismo patrón que la web lite
-  de Chirptenna), o en JS si el motor final es nec2c en WASM. Se puede usar sin conexión una vez cargada.
-- El núcleo también se usa por línea de comandos, para la CI y para generar tablas.
-- **Idiomas**: el mismo esquema de Chirptenna (el castellano como texto fuente y clave; `en`, `fr` y `de`; la
-  herramienta `faltan` en la CI).
-- **Licencias**: el código con AGPL-3.0 y los diseños publicados con CC BY-NC 4.0, como Chirptenna.
-- **Relación con los otros proyectos**: se copian las piezas (catálogos de idioma, estilo de la web), no se depende de
-  Chirptenna como librería. Enlaces cruzados: desde Chirptenna, «¿la quieres de varilla?», y desde las dos herramientas
-  a Chirptenna VNA para medir.
+1. **Núcleo en Python**: modelo de hilos (puntos, radio, uniones, líneas de transmisión, puerto, cargas) y generadores
+   de cada tipo. Sin dependencias pesadas; también por línea de comandos.
+2. **Exportador `.nec`** (tarjetas GW, GE, GN, EX, TL, LD, FR, RP): el usuario puede simular en 4nec2 o xnec2c desde el
+   primer día, y sirve para contrastar nuestro motor.
+3. **Motor en escritorio con PyNEC** (interfaz de Python de necpp, que deriva de NEC2): ROE, impedancia, ganancia y
+   diagrama en milisegundos. **Comprobar en la fase 0 que PyNEC instala en Windows con el Python que se use** (si no,
+   nec2c compilado como ejecutable y leyendo su salida).
+4. **Interfaz de escritorio** con NiceGUI, como Chirptenna (mismo esquema de pestañas: elegir, diseño, simulación,
+   plano, medir).
+5. **Web después**: nec2c compilado a WebAssembly en el navegador, o la web solo con diseño y planos y la simulación en
+   escritorio. Decidir cuando el escritorio funcione.
+
+**Idiomas**: el esquema de Chirptenna (castellano como texto fuente y clave; `en`, `fr`, `de`; `faltan` en la CI).
+**Licencias**: AGPL-3.0 para el código y CC BY-NC 4.0 para los diseños publicados. **Relación con los otros
+proyectos**: se copian las piezas (catálogos de idioma, estilo, curva de Koch), no se depende de Chirptenna como librería;
+enlaces cruzados entre las tres herramientas.
 
 ## 5. Validación (antes de ampliar)
 
-- **v0.1**: ground plane y dipolo; el motor coincide con nec2c a ≤ 0,5 % en la resonancia y con la teoría.
-- **Medir antes de la v0.2**: una ground plane de 868 MHz y una J-pole de 2 m o 70 cm, construidas con el plano y medidas
-  con el NanoVNA. Criterio: resonancia a ≤ 2 % de la simulada. Si no se cumple, se corrige el modelo antes de añadir
-  tipos (la lección de Chirptenna: no ampliar antes de medir).
+- **Motor**: dipolo λ/2 de hilo fino con resonancia a ~0,47–0,48 λ y R ≈ 70–73 Ω; el mismo `.nec` en nec2c de escritorio
+  da la misma impedancia a ≤ 0,5 %.
+- **Medir pronto**: una J-pole y una CoCo construidas con el plano y medidas con el NanoVNA (la CoCo con el VF del cable
+  medido). Criterio: resonancia a ≤ 2 % de la simulada. Si no se cumple, se corrige el modelo antes de añadir tipos.
 - Cada tipo con un estado honesto en la interfaz: «Simulado», «Medido» o «Sin validar».
 
-## 6. Hitos
+## 6. Fases
 
-| Versión | Contenido | Hecho cuando |
+| Fase | Contenido | Hecho cuando |
 |---|---|---|
-| v0.1 | Motor (decisión nec2c-WASM o propio), ground plane y dipolo, plano SVG, ROE simulada, web publicada | Coincide con nec2c y la teoría; plano imprimible a escala |
-| v0.2 | J-pole y Yagi, PDF, lista de corte con sensibilidad, plantilla de taladrado, idiomas | Dos antenas construidas y medidas a ≤ 2 % |
-| v0.3 | Discone, montaje (mástil, altura), enlace con Chirptenna VNA | Discone medida en su banda |
+| 0 · Base | Estructura del repo, modelo de hilos, exportador `.nec`, PyNEC instalado y probado, CI con pytest | El dipolo exportado se abre en xnec2c/4nec2 y PyNEC da R ≈ 70–73 Ω |
+| 1 · Primeros tipos | Dipolo de alambre y J-pole; barrido de ROE; lista de corte con sensibilidad; plano SVG | J-pole construida y medida a ≤ 2 % |
+| 2 · Coaxial | Dipolo de coaxial y CoCo con `TL`, VF medido, cable de bajada y choke | CoCo construida y medida a ≤ 2 % |
+| 3 · Interfaz | Escritorio con NiceGUI, PDF, idiomas, logo e identidad | Un usuario hace una J-pole de principio a fin sin ayuda |
+| 4 · Más tipos | J-pole de Koch y discone | Cada una medida en su banda |
+| 5 · Web | nec2c en WebAssembly o web solo de planos | Publicada en GitHub Pages |
 
 ## 7. Riesgos
 
-- **Motor**: si no hay una compilación de nec2c a WASM mantenida, la v0.1 se alarga (hay que hacerla o escribir el motor).
-- **Discone**: la rejilla de varillas da bien la impedancia pero la frecuencia mínima depende del número de varillas; hay
-  que validar contra medida.
-- **J-pole**: la adaptación depende mucho del punto de toma, así que el plano debe dar margen y el método para buscarla
-  con el NanoVNA.
-- **Material**: diámetros reales distintos de los nominales; aluminio frente a cobre (pérdidas); tornillería.
-- **Mantenimiento**: sería el tercer proyecto. Arrancar pequeño y medir pronto.
+- **PyNEC en Windows**: si no hay paquete para el Python que se use, hay que compilar necpp o usar nec2c como ejecutable.
+- **CoCo**: muy sensible al VF y al modo común; los resultados dependen de modelar el cable de bajada.
+- **J-pole**: la adaptación depende del punto de toma; el plano da margen y el método para buscarla con el NanoVNA.
+- **Discone**: la frecuencia mínima depende del número de varillas; hay que validarla con medida.
+- **Material**: diámetros reales distintos de los nominales; VF de catálogo distinto del real.
+- **Mantenimiento**: es el tercer proyecto. Arrancar pequeño y medir pronto.
 
 ## 8. Decisiones del usuario
 
-1. **Motor**: nec2c en WebAssembly (recomendado si existe o se compila sin problemas) o motor propio.
-2. **Solo web**, o también un modo de escritorio (no hace falta: NEC2 es ligero).
-3. **Repositorio público desde el principio**, o privado hasta la v0.1.
-4. **Unidades**: mm por defecto con conmutador a pulgadas.
-5. **Primera antena que se construirá y medirá**: propuesta, una ground plane de 868 MHz (la más fácil de construir y
-   de medir con el NanoVNA).
+1. **Repositorio público** desde el principio o privado hasta la primera versión (hoy: privado).
+2. **Unidades**: mm por defecto con conmutador a pulgadas.
+3. **Primeras antenas que construir y medir**: J-pole de 70 cm o 2 m (fase 1) y CoCo de 868 MHz o 70 cm (fase 2).
+4. **Identidad**: elegir una de las propuestas del apartado 9.
+
+## 9. Identidad visual
+
+La familia ya tiene un lenguaje común: el **grillo verde visto desde arriba**, el nombre con «Chirp» en tinta oscura
+(`#1f2a24`) y «tenna» en el **cobre** de la PCB (`#c8892b`); Chirptenna VNA añade la palabra «VNA» en verde
+(`#2f6b3a`) y tiene una colección de ilustraciones del grillo (`img/variantes/` de su repositorio). En Chirptenna las
+antenas del grillo son **curvas de Koch** (generadas con la misma geometría que el programa) porque es una herramienta de
+antenas fractales en PCB.
+
+Para Wire se mantiene el grillo, el verde y la tipografía (que se reconozca como de la familia), y cambian dos cosas:
+
+- **Las antenas del grillo**: dejan de ser Koch. Propuestas:
+  - (a) **J-pole**: cada antena es una varilla recta con su brazo corto en «J» abajo, como la antena más popular del
+    proyecto;
+  - (b) **coaxial**: antenas rectas con el rayado de la malla y un tramo pelado en la punta, que habla de la CoCo y del
+    dipolo de coaxial;
+  - (c) **alambre doblado**: varilla con un doblez y una bolita en la punta, la más simple y la que mejor se ve en un
+    favicon.
+- **El color de la palabra «Wire»**: un tono distinto del cobre de la PCB y del verde de VNA. Candidatos: **acero o
+  aluminio** (gris azulado, `#5b6f80`) por las varillas, o el **negro de la cubierta de un coaxial con el cobre de la
+  malla** (palabra en gris oscuro con subrayado cobrizo). Hay que comprobar el contraste en claro y oscuro.
+
+**Entregables**: un generador del logo como en los otros dos repositorios (`img/generar_logo_wire.py` que parte del
+grillo de Chirptenna y cambia las antenas), el logo con texto en claro y oscuro, el icono para el favicon y una
+miniatura por tipo de antena para la galería (como `antenas/miniaturas/` en Chirptenna). Se hace en la fase 3, salvo un
+borrador del logo para el README al empezar.
