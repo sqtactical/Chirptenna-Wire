@@ -10,7 +10,7 @@ import math
 
 from .cables import Cable
 from .generadores import segmentos_para
-from .modelo import Carga, Hilo, Linea, Modelo, Puerto, Punto, longitud_onda_m
+from .modelo import Barrido, Carga, Hilo, Linea, Modelo, Puerto, Punto, longitud_onda_m
 
 
 def tramo_coaxial(p0: Punto, p1: Punto, cable: Cable, segmentos: int, indice_hilo: int,
@@ -70,6 +70,47 @@ def dipolo_con_bajada(f_MHz: float, cable: Cable, largo_mm: float | None = None,
     return Modelo(nombre, f_MHz, tuple(hilos), Puerto(2, 1), cargas=tuple(cargas),
                   comentarios=(f"{nombre} a {f_MHz:g} MHz, cable {cable.nombre}",
                                f"Dipolo {largo * 1000:.1f} mm, bajada {bajada * 1000:.0f} mm, choke {choke_ohm or 0:g} ohm"))
+
+
+RADIADOR_MANGA = 0.218  # largo del radiador (vivo) en λ para resonar a 145 MHz con la manga de λ/4 (segmentos λ/100)
+
+
+def dipolo_manga(f_MHz: float, cable: Cable, radiador_m: float | None = None, manga_m: float | None = None,
+                 resto_m: float | None = None, radio_manga_mm: float = 4.5, div: int = 50,
+                 barrido: Barrido | None = None) -> Modelo:
+    """Dipolo de manga (sleeve) de coaxial, eje z: radiador arriba, manga de λ/4 abajo y el cable colgando.
+
+    Modelo B (25-11-2026; el de la jaula de 4 hilos alrededor de la malla no converge, ver ROADMAP W2.4):
+    - radiador y manga son dos hilos del **mismo radio** (el de la malla del cable): con radios distintos NEC2 no
+      converge al subir los segmentos (la R sube de 89 a 120 Ω); la manga más gruesa que el vivo no está modelada;
+    - la manga abierta por abajo y unida a la malla por arriba forma con el cable una línea de aire en cortocircuito:
+      su impedancia vista desde abajo es j·Z0·tan(2π·manga/λ), con Z0 = 60·ln(R_manga/R_malla). Esa reactancia va como
+      una carga LD (inductiva o capacitiva, máx. 100 kΩ) en un hilo corto entre la manga y el cable. Solo vale cerca
+      de la frecuencia de diseño: es una aproximación de banda estrecha;
+    - la fuente va en un hilo de un segmento entre la manga y el radiador.
+    El radiador por defecto (0,218 λ) lo da el ajuste con el motor para λ/4 de manga (`ajuste.ajustar_manga`).
+    """
+    lam = longitud_onda_m(f_MHz)
+    delta = lam / div
+    radiador = RADIADOR_MANGA * lam if radiador_m is None else radiador_m
+    manga = lam / 4 if manga_m is None else manga_m
+    resto = lam / 2 if resto_m is None else resto_m
+    radio = cable.radio_malla_m
+    segs = lambda largo: max(2, round(largo / delta))  # noqa: E731
+    hilos = [Hilo((0, 0, -delta), (0, 0, 0), radio, 1),
+             Hilo((0, 0, 0), (0, 0, radiador), radio, segs(radiador)),
+             Hilo((0, 0, -delta), (0, 0, -manga), radio, segs(manga - delta))]
+    cargas = []
+    if resto > 0:
+        hilos += [Hilo((0, 0, -manga), (0, 0, -manga - delta), radio, 1),
+                  Hilo((0, 0, -manga - delta), (0, 0, -manga - delta - resto), radio, segs(resto))]
+        z0 = 60.0 * math.log(radio_manga_mm / 1000 / radio)
+        x = max(-1e5, min(1e5, z0 * math.tan(2 * math.pi * manga / lam)))
+        w = 2 * math.pi * f_MHz * 1e6
+        cargas.append(Carga(4, 1, 1, l=x / w) if x > 0 else Carga(4, 1, 1, c=1 / (w * -x)))
+    return Modelo("Dipolo de manga de coaxial", f_MHz, tuple(hilos), Puerto(1, 1), cargas=tuple(cargas), barrido=barrido,
+                  comentarios=(f"Dipolo de manga de coaxial a {f_MHz:g} MHz, cable {cable.nombre}",
+                               f"Radiador {radiador * 1000:.1f} mm, manga {manga * 1000:.1f} mm, cable {resto * 1000:.0f} mm"))
 
 
 def longitud_cuarto_de_onda_m(f_MHz: float, cable: Cable) -> float:
