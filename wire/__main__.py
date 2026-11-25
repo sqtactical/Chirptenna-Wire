@@ -56,8 +56,9 @@ def main(argv: list[str] | None = None) -> int:
                                 description="Chirptenna Wire: planos de antenas de alambre")
     _en_castellano(p)
     p.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
-    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec}")
-    for nombre, ayuda in (("plano", "plano en PDF o SVG"), ("nec", "modelo .nec para 4nec2, xnec2c o nec2c")):
+    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d}")
+    for nombre, ayuda in (("plano", "plano en PDF o SVG"), ("nec", "modelo .nec para 4nec2, xnec2c o nec2c"),
+                          ("plantilla3d", "plantilla de doblado para imprimir en 3D (zip con los STL)")):
         s = sub.add_parser(nombre, help=ayuda, description=ayuda, add_help=False, formatter_class=_Ayuda)
         _en_castellano(s)
         s.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
@@ -78,10 +79,24 @@ def main(argv: list[str] | None = None) -> int:
             s.add_argument("--idioma", choices=("es", "en", "fr", "de"), help="idioma del plano (es por defecto)")
         else:
             s.set_defaults(papel="A4", unidades="mm", idioma=None)
+        if nombre == "plantilla3d":
+            s.add_argument("--cama", type=float, default=200.0, help="lado de la cama de la impresora en mm, cuadrada (200)")
+            s.add_argument("--holgura", type=float, default=0.3, help="holgura de los encajes en mm (0,3)")
+            s.add_argument("--radio", type=float, help="radio de doblado al eje del alambre en mm (2 × el diámetro, mínimo 3)")
+            s.add_argument("--largo-guia", type=float, help="largo de los brazos de la J-pole recta que cubre la plantilla, en mm (250)")
     args = p.parse_args(argv)
     diseno = _diseno(args)
 
-    if args.orden == "nec":
+    if args.orden == "plantilla3d":
+        from . import impresion3d
+        resultado = impresion3d.generar(diseno, cama=(args.cama, args.cama), holgura=args.holgura, largo_guia_mm=args.largo_guia,
+                                         radio_mm=args.radio)
+        with open(args.salida, "wb") as f:
+            f.write(impresion3d.a_zip(resultado))
+        for aviso in resultado.avisos:
+            print("AVISO:", aviso)
+        print(f"{len(resultado.piezas)} STL ({resultado.columnas} × {resultado.filas} baldosas)")
+    elif args.orden == "nec":
         nec.guardar(diseno.modelo(), args.salida)
     else:
         from . import planos

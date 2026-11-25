@@ -37,7 +37,7 @@ onmessage = async (ev) => {
   try {
     await listo;
     const r = fn === 'catalogo' ? api.catalogo(arg) : api[fn](arg);
-    if (fn === 'plano_pdf') {
+    if (fn === 'plano_pdf' || fn === 'plantilla3d_zip') {
       const bytes = r.toJs();
       r.destroy();
       postMessage({ id, ok: true, resultado: bytes }, [bytes.buffer]);

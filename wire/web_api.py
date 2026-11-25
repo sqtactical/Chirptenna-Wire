@@ -12,6 +12,7 @@ from . import nec, planos
 from .i18n import IDIOMAS, tr, usar
 from .cables import CABLES
 from .diseno import BANDAS, CONECTORES, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
+from .impresion3d import TIPOS_3D
 from .miniaturas import MINIATURAS
 
 VERSION_API = 1
@@ -30,6 +31,7 @@ def _catalogo() -> str:
         "estados": list(ESTADOS),
         "bandas": [{"nombre": tr(n), "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},
+        "plantilla3d": list(TIPOS_3D),
         "conectores": list(CONECTORES), "coaxial": {"tipos": list(TIPOS_COAXIAL), "cables": [{"nombre": c.nombre, "vf": c.vf} for c in CABLES.values()]},
     }, ensure_ascii=False)
 
@@ -72,3 +74,15 @@ def plano_pdf(entrada: str) -> bytes:
 
 def nec_texto(entrada: str) -> str:
     return nec.exportar(_diseno(entrada).modelo())
+
+
+def plantilla3d_zip(entrada: str) -> bytes:
+    """Igual entrada, más `cama_mm` (lado de la cama cuadrada, 200) y `holgura_mm` (0,3) → zip con los STL, el mapa y el LÉEME."""
+    from . import impresion3d
+    datos = json.loads(entrada)
+    diseno = _diseno(entrada)
+    cama = float(datos.get("cama_mm") or 200.0)
+    with usar(diseno.plano.idioma):
+        p = impresion3d.generar(diseno, cama=(cama, cama), holgura=float(datos.get("holgura_mm") or 0.3),
+                                radio_mm=float(datos["radio_mm"]) if datos.get("radio_mm") else None)
+        return impresion3d.a_zip(p)

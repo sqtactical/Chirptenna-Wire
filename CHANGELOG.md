@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Plantilla de doblado para imprimir en 3D (STL en zip) de la J-pole y la J-pole de Koch, con radio de doblado y baldosas con encajes si pasa de la cama. Sin probar en una impresora.
 - VF medido con Chirptenna VNA: `--cable-medido archivo.json` en la CLI y «cargar el archivo» en la web rellenan el VF del diseño (formato `chirptenna-cable`, `wire.cables.leer_cable_medido`).
 - Tipos nuevos, sin medir: torniquete en X (dipolos cruzados con línea de 75 Ω, razón axial calculada con `motor.razon_axial_dB`) y batwing de alambre.
 - Tipos nuevos, sin medir: ground plane (SO-239 o N), dipolo en V invertida, Yagi de 3 elementos y bicónica.

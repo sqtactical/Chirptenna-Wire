@@ -9,6 +9,7 @@ let actual = null;       // {entrada, plano}
 let hojaActual = 0;
 let tiposCatalogo = [];
 let coaxial = { tipos: [], cables: [] };
+let plantilla3d = [];
 let TEXTOS = {};
 let IDIOMA = 'es';
 
@@ -93,6 +94,7 @@ async function iniciar() {
   $('tipo').innerHTML = c.tipos.map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
   $('banda').innerHTML = '<option value="" data-t>— otra —</option>' + c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
   coaxial = c.coaxial;
+  plantilla3d = c.plantilla3d || [];
   $('conector').innerHTML = c.conectores.map((k) => `<option>${k}</option>`).join('');
   $('cable').innerHTML = c.coaxial.cables.map((k) => `<option value="${k.nombre}">${k.nombre} (VF ${k.vf})</option>`).join('');
   $('papel').innerHTML = c.plano.papel.map((p) => `<option>${p}</option>`).join('');
@@ -111,6 +113,7 @@ function mostrar(plano) {
   $('hojas').classList.toggle('oculto', plano.hojas.length < 2);
   $('vista').innerHTML = plano.hojas[hojaActual];
   $('descargas').classList.remove('oculto');
+  $('d3d').classList.toggle('oculto', !plantilla3d.includes(plano.diseno.tipo));
 }
 
 async function generar(textoEntrada) {
@@ -177,6 +180,13 @@ $('archivo').onchange = async () => {
 };
 $('d-pdf').onclick = async () => guardar(actual.plano.nombre + '.pdf', await llamar('plano_pdf', actual.entrada), 'application/pdf');
 $('d-svg').onclick = () => guardar(`${actual.plano.nombre}_hoja${hojaActual + 1}.svg`, actual.plano.hojas[hojaActual], 'image/svg+xml');
+$('d-3d').onclick = async () => {
+  try {
+    const entrada = JSON.stringify({ ...JSON.parse(actual.entrada), cama_mm: parseFloat($('cama').value), holgura_mm: parseFloat($('holgura').value),
+      radio_mm: $('radio').value ? parseFloat($('radio').value) : null });
+    guardar(actual.plano.nombre + '_plantilla3d.zip', await llamar('plantilla3d_zip', entrada), 'application/zip');
+  } catch (err) { $('progreso').textContent = String(err.message || err); }
+};
 $('d-nec').onclick = async () => guardar(actual.plano.nombre + '.nec', await llamar('nec_texto', actual.entrada), 'text/plain');
 $('d-json').onclick = () => guardar(actual.plano.nombre + '.json', JSON.stringify(actual.plano.diseno, null, 2), 'application/json');
 
