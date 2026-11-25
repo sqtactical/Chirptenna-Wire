@@ -95,6 +95,7 @@ class Carga:
     r: float = 0.0
     l: float = 0.0
     c: float = 0.0
+    paralela: bool = False  # True: R, L y C en paralelo (LD tipo 1), como un choke resonante
 
 
 @dataclass(frozen=True)

@@ -66,7 +66,7 @@ def tarjetas(modelo: Modelo, diagrama: bool = True) -> list[Tarjeta]:
         t.append(Tarjeta("GN", (-1, 0, 0, 0), (0.0,) * 6))
     for carga in modelo.cargas:
         if isinstance(carga, Carga):
-            t.append(Tarjeta("LD", (0, carga.hilo, carga.segmento_inicial, carga.segmento_final),
+            t.append(Tarjeta("LD", (1 if carga.paralela else 0, carga.hilo, carga.segmento_inicial, carga.segmento_final),
                              (carga.r, carga.l, carga.c)))
         elif isinstance(carga, Conductividad):
             t.append(Tarjeta("LD", (5, 0, 0, 0), (carga.sigma, 0.0, 0.0)))
