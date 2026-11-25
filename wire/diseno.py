@@ -92,6 +92,13 @@ class Diseno:
     estado: str = "Sin validar"
     plano: ConfigPlano = field(default_factory=ConfigPlano)
     version: int = 1
+    # Antenas de coaxial: {"nombre", "z0", "vf", "vf_origen": "catálogo"|"medido"}; None en las de alambre.
+    cable: dict | None = None
+
+    def con_cable(self, c) -> "Diseno":
+        """Guarda el cable usado y de dónde sale su VF (`wire.cables.Cable`)."""
+        self.cable = {"nombre": c.nombre, "z0": c.z0, "vf": c.vf, "vf_origen": c.vf_origen}
+        return self
 
     def __post_init__(self) -> None:
         if self.tipo not in TIPOS:

@@ -24,15 +24,15 @@ El porqué de cada decisión está en [`docs/PROPUESTA.md`](docs/PROPUESTA.md) y
 - [x] W1.4 Hojas del dipolo y de la J-pole según las maquetas aprobadas (`docs/maquetas/`) — 25-11-2026
 - [x] W1.5 `diseno.json` con el bloque `plano` — 25-11-2026
 - [x] W1.6 Línea de comandos `python -m wire` — 25-11-2026 (`--help` en castellano)
-- [ ] W1.7 Pruebas de escala, solapes y equivalencia con/sin PyNEC — escritas y pasan en local (25-11-2026); falta verlas pasar en la CI (no se ha empujado)
+- [x] W1.7 Pruebas de escala, solapes y equivalencia con/sin PyNEC — 25-11-2026 (pasan en local y en la CI: Windows, Linux con nec2c y Pyodide)
 - [ ] W1.8 **Usuario delante**: construir y medir una J-pole con el plano (≤ 2 % en f)
 
 Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 
 ## Fase 2 · Coaxial
 
-- [ ] W2.1 Coaxial en el modelo: malla como hilo + interior como línea `TL` con VF
-- [ ] W2.2 Tabla de cables (RG-58, RG-174, RG-316, RG-213, LMR-400, Aircell 7…) y VF medido por el usuario
+- [x] W2.1 Coaxial en el modelo: malla como hilo + interior como línea `TL` con VF — 25-11-2026 (`wire/coaxial.py`; un stub abierto de λ/4·VF da |Z| < 5 Ω y a λ/8 la reactancia teórica, ±25 %)
+- [x] W2.2 Tabla de cables (RG-58, RG-174, RG-316, RG-213, LMR-400, Aircell 7…) y VF medido por el usuario — 25-11-2026 (`wire/cables.py`; **cifras típicas sin comprobar una a una contra la hoja de datos** (`verificado=False`); el VF medido sustituye al de catálogo y `Diseno.cable` guarda su origen)
 - [ ] W2.3 Cable de bajada y choke en el modelo
 - [ ] W2.4 Dipolo de manga de coaxial (sleeve)
 - [ ] W2.5 Colineal CoCo
