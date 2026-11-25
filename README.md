@@ -62,9 +62,9 @@ pasa también el `.nec` por nec2c en Linux (misma impedancia que PyNEC a ≤ 0,5
 
 **Imprime los planos al 100 % («tamaño real»)** y comprueba la regla de 80 mm antes de usar los detalles 1:1.
 
-## Web lite (en preparación)
+## Web lite
 
-`web/` es una versión que corre entera en el navegador (Pyodide, sin instalar nada): se elige el tipo y la frecuencia
+**https://sqtactical.github.io/Chirptenna-Wire/** · `web/` es una versión que corre entera en el navegador (Pyodide, sin instalar nada): se elige el tipo y la frecuencia
 y se descarga el PDF, el SVG, el `.nec` o el `diseno.json`. **No simula**: usa las cotas de partida («Sin validar»);
 un `diseno.json` ajustado en escritorio se abre y da el mismo plano. Para probarla en local:
 
@@ -73,7 +73,7 @@ python herramientas/construir_web.py
 python -m http.server 8096 --directory salidas/web --bind 127.0.0.1
 ```
 
-Todavía no está publicada (`.github/workflows/web.yml` la publica en GitHub Pages, solo a mano).
+Se publica a mano con `gh workflow run web.yml --ref main` (`.github/workflows/web.yml`, GitHub Pages).
 
 ## Licencia
 
