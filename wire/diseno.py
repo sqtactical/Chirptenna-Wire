@@ -22,7 +22,7 @@ TIPOS = {
     "discone": N_("Discone"),
     "gp": N_("Ground plane"),
     "vinv": N_("Dipolo en V invertida"),
-    "yagi": N_("Yagi de 3 elementos"),
+    "yagi": N_("Yagi de N elementos"),
     "biconica": N_("Bicónica"),
     "torniquete": N_("Torniquete en X (dipolos cruzados)"),
     "batwing": N_("Batwing (dipolo de alas)"),
@@ -42,7 +42,7 @@ RESUMEN = {
     "discone": N_("Disco y cono de varillas: banda muy ancha (más de 4:1) para escáner."),
     "gp": N_("Radiador de λ/4 y cuatro radiales a 45° sobre un conector SO-239 o N."),
     "vinv": N_("Dipolo con el vértice en un mástil y los brazos caídos: se tensa con cuerda."),
-    "yagi": N_("Reflector, dipolo plegado y director sobre un eje aislante: ganancia y dirección."),
+    "yagi": N_("Reflector, dipolo plegado y de 1 a 13 directores sobre un eje de plástico o metal: ganancia y dirección."),
     "biconica": N_("Dos conos de varillas vértice con vértice: banda ancha (más de 4:1)."),
     "torniquete": N_("Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz)."),
     "batwing": N_("Dipolo con dos alas de abanico: algo más de banda que el dipolo, sin panel ni reflector."),
@@ -189,8 +189,9 @@ class Diseno:
             return generadores.vinv(self.f_MHz, self.diametro_mm, brazo_mm=g["brazo_mm"], apertura=g["apertura"])
         if self.tipo == "yagi":
             return generadores.yagi(self.f_MHz, self.diametro_mm, reflector_mm=g["reflector_mm"], excitado_mm=g["excitado_mm"],
-                                    director_mm=g["director_mm"], sep_reflector_mm=g["sep_reflector_mm"],
-                                    sep_director_mm=g["sep_director_mm"], sep_plegado_mm=g["sep_plegado_mm"])
+                                    sep_reflector_mm=g["sep_reflector_mm"], sep_plegado_mm=g["sep_plegado_mm"],
+                                    directores_mm=g.get("directores_mm") or [g["director_mm"]],
+                                    seps_directores_mm=g.get("seps_directores_mm") or [g["sep_director_mm"]])
         if self.tipo == "biconica":
             return generadores.biconica(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], hueco_mm=g["hueco_mm"],
                                         semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
@@ -240,13 +241,22 @@ class Diseno:
 
 
 def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, cable: str | None = None,
-            vf_medido: float | None = None, conector: str | None = None, **plano) -> Diseno:
+            vf_medido: float | None = None, conector: str | None = None, elementos: int | None = None,
+            eje: str | None = None, eje_mm: float | None = None, **plano) -> Diseno:
     """Diseño con las cotas ajustadas por el motor si está (escritorio) o las de partida si no (estado «Sin validar»).
 
     En los tipos de coaxial (`manga`, `coco`) `cable` es el nombre de la tabla (por defecto RG-58) y `vf_medido`, si se
     da, sustituye al VF de catálogo; el diámetro del alambre no se usa (el hilo es la malla del cable).
     """
     config = ConfigPlano.desde_dict(plano)
+    if tipo == "yagi":
+        elementos = 3 if elementos is None else int(elementos)
+        if not 3 <= elementos <= 15:
+            raise ValueError("la Yagi lleva entre 3 y 15 elementos")
+        if eje is not None and eje not in generadores.BOOMS:
+            raise ValueError(f"eje desconocido: {eje} (hay: {', '.join(generadores.BOOMS)})")
+    elif elementos is not None or eje is not None or eje_mm is not None:
+        raise ValueError("el número de elementos y el eje solo valen para la Yagi")
     if tipo in TIPOS_COAXIAL:
         return _disenar_coaxial(tipo, f_MHz, ajustar, cable or CABLE_POR_DEFECTO, vf_medido, config)
     if ajustar:
@@ -256,7 +266,10 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
                        "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone, "gp": ajuste.ajustar_gp,
                        "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
                        "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing}[tipo]
-            r = funcion(f_MHz, diametro_mm)
+            if tipo == "yagi":
+                r = funcion(f_MHz, diametro_mm, n_elementos=elementos, boom=eje or "ninguno", boom_mm=eje_mm)
+            else:
+                r = funcion(f_MHz, diametro_mm)
             if tipo == "gp":
                 r["geometria"]["conector"] = _conector(conector)
             return Diseno(tipo, f_MHz, diametro_mm, r["geometria"], resultados=r["resultados"], estado="Simulado",
@@ -274,7 +287,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
     elif tipo == "vinv":
         geometria = generadores.vinv_por_defecto(f_MHz)
     elif tipo == "yagi":
-        geometria = generadores.yagi_por_defecto(f_MHz)
+        geometria = generadores.yagi_por_defecto(f_MHz, elementos, eje_mm)
+        geometria["boom"] = eje or "ninguno"
     elif tipo == "biconica":
         geometria = generadores.biconica_por_defecto(f_MHz)
     elif tipo == "torniquete":

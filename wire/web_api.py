@@ -46,7 +46,8 @@ def _diseno(entrada: str) -> Diseno:
         return diseno
     plano = {k: datos[k] for k in ("papel", "unidades", "idioma") if k in datos}
     return disenar(datos["tipo"], float(datos["f_MHz"]), float(datos.get("diametro_mm", 2.0)), ajustar=False,
-                   cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), conector=datos.get("conector"), **plano)
+                   cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), conector=datos.get("conector"),
+                   elementos=datos.get("elementos"), eje=datos.get("eje"), eje_mm=datos.get("eje_mm"), **plano)
 
 
 def disenar_json(entrada: str) -> str:

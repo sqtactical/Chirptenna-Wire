@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 
 from ..diseno import Diseno
+from ..generadores import correccion_eje_mm
 from ..i18n import N_, tr
 from .comun import fmt, frecuencia, grafica_roe, hoja_a4, longitud, regla, seccion, tabla, texto_banda, unidad
 from .hoja import BLANCO, COBRE, CUBIERTA, GRIS, PVC, TINTA, VERDE, Circulo, Cota, Hoja, Linea, Rect, Texto
@@ -163,34 +164,56 @@ def hojas_vinv(diseno: Diseno, fecha: str) -> list[Hoja]:
 
 def hojas_yagi(diseno: Diseno, fecha: str) -> list[Hoja]:
     g = diseno.geometria
-    refl, exc, dire = g["reflector_mm"], g["excitado_mm"], g["director_mm"]
-    s1, s2, sp = g["sep_reflector_mm"], g["sep_director_mm"], g["sep_plegado_mm"]
+    refl, exc = g["reflector_mm"], g["excitado_mm"]
+    dires = list(g.get("directores_mm") or [g["director_mm"]])
+    seps = list(g.get("seps_directores_mm") or [g["sep_director_mm"]])
+    s1, sp = g["sep_reflector_mm"], g["sep_plegado_mm"]
+    n = len(dires) + 2
+    boom, boom_mm = g.get("boom", "ninguno"), g.get("boom_mm", 0.0)
+    corr = correccion_eje_mm(diseno.f_MHz, boom, boom_mm)           # lo que se añade a cada elemento por el eje metálico
     d = diseno.diametro_mm
     u = unidad(diseno)
-    hoja = hoja_a4(diseno, _titulo(N_("Yagi de 3 elementos · {0} MHz ({1})"), diseno),
-                   tr("Reflector, dipolo plegado y director de alambre o varilla de Ø {0} mm sobre un eje aislante · coaxial de 50 Ω", fmt(d, 1)))
+    ys = [0.0, s1]
+    for s in seps:
+        ys.append(ys[-1] + s)
+    nombres = ["R", "P"] + [f"D{k}" for k in range(1, n - 1)]
+    largos = [refl, exc] + dires                                      # los del modelo
+    hoja = hoja_a4(diseno, tr("Yagi de {0} elementos · {1} MHz ({2})", n, frecuencia(diseno.f_MHz), texto_banda(diseno.f_MHz)),
+                   tr("Reflector, dipolo plegado y {0} directores de alambre o varilla de Ø {1} mm sobre un eje · coaxial de 50 Ω", n - 2, fmt(d, 1)))
     seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista desde arriba, sin escala · medidas en {0}", u))
     modelo, esc, P = _vista(hoja, diseno, lambda p: (p[1], p[0]), saltar=(3, 4, 5))
     yb = P((0, 0, 0))[1]
-    x0, x1, x2 = P((0, 0, 0))[0], P((0, s1 / 1000, 0))[0], P((0, (s1 + s2) / 1000, 0))[0]
-    hoja.anadir(Linea(x0 - 4, yb, x2 + 4, yb, GRIS, 0.5),
-                Texto(x0, yb - esc * refl / 2000 - 3, tr("reflector {0}", longitud(refl, diseno, 0)), 5.4, ancla="centro"),
-                Texto(x1, yb - esc * exc / 2000 - 3, tr("plegado {0}", longitud(exc, diseno, 0)), 5.4, ancla="centro"),
-                Texto(x2, yb - esc * dire / 2000 - 3, tr("director {0}", longitud(dire, diseno, 0)), 5.4, ancla="centro"),
-                Cota(x0, yb + esc * refl / 2000 + 6, x1, yb + esc * refl / 2000 + 6, longitud(s1, diseno, 0), tam=5.4),
-                Cota(x1, yb + esc * refl / 2000 + 6, x2, yb + esc * refl / 2000 + 6, longitud(s2, diseno, 0), tam=5.4))
+    xs = [P((0, y / 1000, 0))[0] for y in ys]
+    hoja.anadir(Linea(xs[0] - 4, yb, xs[-1] + 4, yb, GRIS, 0.5))
+    for k, (nom, lg, x) in enumerate(zip(nombres, largos, xs)):
+        arriba = yb - esc * lg / 2000 - 3 - (5.5 if k % 2 else 0.0)        # alternos, para que no se pisen
+        hoja.anadir(Texto(x, arriba, f"{nom} {longitud(lg + corr, diseno, 0)}", 5.4, ancla="centro"))
+    base = yb + esc * max(largos) / 2000 + 6
+    for k in range(len(xs) - 1):
+        hoja.anadir(Cota(xs[k], base, xs[k + 1], base, longitud(ys[k + 1] - ys[k], diseno, 0), tam=5.0))
     seccion(hoja, 14, 91, tr("LISTA DE CORTE"), tr("Corta con el sobrante y ajusta después"), VERDE)
     sob = diseno.sobrante_mm
     cierre = sp + d
     filas = [
-        [tr("Reflector, Ø {0} mm", fmt(d, 1)), "1", f"{longitud(refl, diseno)} {u}", f"{longitud(refl + sob, diseno, 0)} {u}"],
-        [tr("Dipolo plegado, Ø {0} mm", fmt(d, 1)), "2", f"{longitud(exc, diseno)} {u}", f"{longitud(exc + sob, diseno, 0)} {u}"],
+        [tr("Reflector, Ø {0} mm", fmt(d, 1)), "1", f"{longitud(refl + corr, diseno)} {u}", f"{longitud(refl + corr + sob, diseno, 0)} {u}"],
+        [tr("Dipolo plegado, Ø {0} mm", fmt(d, 1)), "2", f"{longitud(exc + corr, diseno)} {u}", f"{longitud(exc + corr + sob, diseno, 0)} {u}"],
         [tr("Cierres del plegado, Ø {0} mm", fmt(d, 1)), "2", f"{longitud(cierre, diseno)} {u}", f"{longitud(cierre + 6, diseno, 0)} {u}"],
-        [tr("Director, Ø {0} mm", fmt(d, 1)), "1", f"{longitud(dire, diseno)} {u}", f"{longitud(dire + sob, diseno, 0)} {u}"],
-        [tr("Eje aislante (PVC o madera barnizada)"), "1", f"{longitud(s1 + s2 + 120, diseno, 0)} {u}", "—"],
     ]
+    if n == 3:
+        filas.append([tr("Director, Ø {0} mm", fmt(d, 1)), "1", f"{longitud(dires[0] + corr, diseno)} {u}", f"{longitud(dires[0] + corr + sob, diseno, 0)} {u}"])
+    else:
+        filas.append([tr("Directores, Ø {0} mm", fmt(d, 1)), str(n - 2), tr("hoja 2"), tr("hoja 2")])
+    largo_eje = ys[-1] + 120
+    eje = {"ninguno": tr("Eje no metálico (PVC o madera barnizada)"), "aislado": tr("Eje metálico Ø {0} mm, elementos aislados", fmt(boom_mm, 0)),
+           "unido": tr("Eje metálico Ø {0} mm, elementos unidos", fmt(boom_mm, 0))}[boom]
+    filas.append([eje, "1", f"{longitud(largo_eje, diseno, 0)} {u}", "—"])
     tabla(hoja, 14, 103, [0, 52, 64, 84], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 104)
-    hoja.anadir(Texto(14, 138, tr("Ajuste: acorta los extremos de los tres elementos por igual; el director es el más\ncrítico para la ganancia."), 6.0, VERDE))
+    nota = tr("Ajuste: acorta los extremos de todos los elementos por igual; los directores son lo más\ncrítico para la ganancia.")
+    r = diseno.resultados
+    if r and "ganancia_frente_dBi" in r:
+        nota += "\n" + tr("Hacia delante {0} dBi, delante/detrás {1} dB (simulado, en espacio libre).", fmt(r["ganancia_frente_dBi"], 1),
+                          fmt(r["relacion_delante_detras_dB"], 0))
+    hoja.anadir(Texto(14, 138, nota, 6.0, VERDE))
     _simulacion_roe(hoja, diseno)
     hoja.anadir(Linea(10, 148, 200, 148, GRIS, 0.1))
     seccion(hoja, 14, 153, tr("CENTRO DEL DIPOLO PLEGADO"), tr("Escala 1:1 · el alambre de abajo se corta en el centro: aquí va el coaxial"), VERDE)
@@ -205,7 +228,39 @@ def hojas_yagi(diseno: Diseno, fecha: str) -> list[Hoja]:
                 Texto(cx - 88, cy - sp - d - 4, tr("alambre plegado (continuo)"), 5.6),
                 Texto(cx - 88, cy + d + 14, tr("alimentado: vivo a un lado, malla al otro"), 5.6))
     regla(hoja, 14, 244)
-    return [hoja]
+    if n == 3 and boom == "ninguno":
+        return [hoja]
+    return [hoja, _hoja_elementos_yagi(diseno, nombres, largos, ys, corr, boom, boom_mm, largo_eje)]
+
+
+def _hoja_elementos_yagi(diseno: Diseno, nombres: list[str], largos: list[float], ys: list[float], corr: float, boom: str,
+                         boom_mm: float, largo_eje: float) -> Hoja:
+    """Todos los elementos con su posición en el eje y su largo de corte, y lo que se sabe del eje."""
+    u = unidad(diseno)
+    d = diseno.diametro_mm
+    sob = diseno.sobrante_mm
+    hoja = hoja_a4(diseno, tr("Yagi · elementos y eje · {0} MHz", frecuencia(diseno.f_MHz)),
+                   tr("Posiciones medidas desde el reflector, al eje de cada elemento"))
+    seccion(hoja, 14, 33, tr("ELEMENTOS"), tr("Corta con el sobrante; el largo incluye la corrección del eje, si la hay"), VERDE)
+    nombre_largo = {"R": tr("Reflector"), "P": tr("Dipolo plegado")}
+    filas = []
+    for nom, lg, y in zip(nombres, largos, ys):
+        filas.append([nombre_largo.get(nom, tr("Director {0}", nom[1:])), f"{longitud(y, diseno, 0)} {u}", f"{longitud(lg + corr, diseno)} {u}",
+                      f"{longitud(lg + corr + sob, diseno, 0)} {u}"])
+    y_fin = tabla(hoja, 14, 46, [0, 62, 98, 134], [tr("Elemento"), tr("Posición"), tr("Largo final"), tr("Cortar a")], filas, 180)
+    y = y_fin + 8
+    hoja.anadir(Texto(14, y, tr("Eje de {0} de largo, con unos 60 mm de margen en cada extremo.", longitud(largo_eje, diseno, 0) + " " + u), 6.2))
+    y += 12
+    if boom == "ninguno":
+        texto = tr("Eje no metálico: no hay corrección. Con un eje metálico pasa a otro largo de corte.")
+    else:
+        texto = tr("Eje metálico de Ø {0} mm con los elementos {1}: cada elemento lleva {2} mm más que en el modelo (corrección de\n"
+                   "DL6WU, la mitad si pasan aislados). Es una regla de la bibliografía para ejes de hasta 0,055 λ, sin comprobar con\n"
+                   "medidas aquí; sube con la frecuencia. Si cambias el eje, vuelve a generar el plano.",
+                   fmt(boom_mm, 0), tr("aislados") if boom == "aislado" else tr("unidos"), fmt(corr, 1))
+    hoja.anadir(Texto(14, y, texto, 6.2, VERDE))
+    regla(hoja, 14, 244)
+    return hoja
 
 
 # ---------------------------------------------------------------- bicónica

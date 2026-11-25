@@ -25,7 +25,7 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Discone (8 o 16 varillas) | **Simulado** (sin medir ni validar frente a un caso publicado) | 1 hoja A4: cotas, lista de corte, ROE y plantilla 1:1 de la pieza central y del ángulo del cono |
 | Ground plane (radiador λ/4 y 4 radiales a 45°) | **Simulado** en espacio libre, sin medir | 1 hoja A4: cotas, lista de corte, ROE y plantilla 1:1 de la brida del conector (SO-239 o N, cotas orientativas) y del ángulo de los radiales |
 | Dipolo en V invertida | **Simulado** en espacio libre, sin medir | 1 hoja A4: cotas, lista de corte, ROE y vértice a 1:1 con el ángulo |
-| Yagi de 3 elementos (dipolo plegado) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: elementos y separaciones, lista de corte, ROE y el centro del plegado a 1:1 |
+| Yagi de 3 a 15 elementos (dipolo plegado, eje de plástico o metal) | **Simulado**, sin medir ni validar frente a un caso publicado; la corrección del eje metálico sale de la bibliografía, no del modelo | 1 hoja A4 (más una de elementos y eje si hay más de 3 o eje metálico): elementos y separaciones, lista de corte, ROE y el centro del plegado a 1:1 |
 | Bicónica | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: cotas, lista de corte, ROE y pieza central a 1:1 |
 | Torniquete en X (dipolos cruzados) | **Simulado** (razón axial 0 dB en el cénit, en espacio libre), sin medir | 1 hoja A4: vista, lista de corte (brazos y línea de 75 Ω), ROE y centro del cruce a 1:1 |
 | Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |

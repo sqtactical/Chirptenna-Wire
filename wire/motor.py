@@ -98,6 +98,17 @@ def razon_axial_dB(modelo: Modelo, f_MHz: float, theta_grados: float = 0.0) -> f
     return -20 * math.log10(min(r, 1.0))
 
 
+def ganancias_en(modelo: Modelo, f_MHz: float, direcciones: list[tuple[float, float]]) -> list[float]:
+    """Ganancia (dBi) del diagrama a `f_MHz` en cada dirección (θ, φ) en grados, a la rejilla más cercana de 5°."""
+    import numpy as np
+    texto = nec.exportar(replace(modelo, barrido=Barrido(f_MHz, f_MHz, 1)), diagrama=True)
+    contexto, _, _ = _contexto(nec.leer(texto))
+    patron = contexto.get_radiation_pattern(0)
+    g = np.array(patron.get_gain()).reshape(patron.get_ntheta(), patron.get_nphi())
+    th, ph = np.array(patron.get_theta_angles()), np.array(patron.get_phi_angles())
+    return [float(g[int(np.argmin(abs(th - t))), int(np.argmin(abs(ph - (p % 360.0))))]) for t, p in direcciones]
+
+
 def ejecutar_tarjetas(tarjetas: list[nec.Tarjeta], z0: float = Z0_POR_DEFECTO) -> Resultado:
     """Ejecuta en PyNEC una lista de tarjetas (las de `nec.leer`)."""
     contexto, frecuencias, con_diagrama = _contexto(tarjetas)

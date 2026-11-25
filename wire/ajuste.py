@@ -271,26 +271,39 @@ def ajustar_vinv(f_MHz: float, diametro_mm: float, apertura: float = 120.0) -> d
     return _con_resultados(construir(x), f_MHz, {"brazo_mm": x[0], "apertura": apertura}, sens)
 
 
-def ajustar_yagi(f_MHz: float, diametro_mm: float, ganancia_minima_dBi: float = 7.0) -> dict:
-    """Yagi de 3 elementos: ajusta el excitado, el reflector, el director y el plegado para |S11| mínimo a f sin bajar de la
-    ganancia mínima (las separaciones del eje quedan fijas)."""
-    p = yagi_por_defecto(f_MHz)
+def ajustar_yagi(f_MHz: float, diametro_mm: float, ganancia_minima_dBi: float | None = None, n_elementos: int = 3,
+                 boom: str = "ninguno", boom_mm: float | None = None) -> dict:
+    """Yagi de N elementos: ajusta el excitado, el reflector, los directores y el plegado para |S11| mínimo a f, sin bajar de
+    la ganancia mínima hacia delante (+y) ni de 12 dB de relación delante/detrás (las separaciones del eje quedan fijas).
+
+    El eje (`boom`, `boom_mm`) no entra en la simulación: se guarda con las cotas y los planos añaden su corrección de corte."""
+    p = yagi_por_defecto(f_MHz, n_elementos, boom_mm)
     lam = 299792.458 / f_MHz
+    objetivo = ganancia_minima_dBi if ganancia_minima_dBi is not None else 7.0 + 1.5 * (n_elementos - 3)
+    nd = n_elementos - 2
 
     def construir(x):
-        return yagi(f_MHz, diametro_mm, reflector_mm=x[1], excitado_mm=x[0], director_mm=x[2], sep_reflector_mm=p["sep_reflector_mm"],
-                    sep_director_mm=p["sep_director_mm"], sep_plegado_mm=x[3])
+        return yagi(f_MHz, diametro_mm, reflector_mm=x[1], excitado_mm=x[0], sep_reflector_mm=p["sep_reflector_mm"],
+                    sep_plegado_mm=x[2], directores_mm=list(x[3:]), seps_directores_mm=p["seps_directores_mm"])
 
     def penal(m):
-        g = motor.simular(m, Barrido(f_MHz, f_MHz, 1), diagrama=True).ganancia_max[0]
-        return 0.05 * max(0.0, ganancia_minima_dBi - g)
+        frente, atras = motor.ganancias_en(m, f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+        return 0.05 * max(0.0, objetivo - frente) + 0.01 * max(0.0, 12.0 - (frente - atras))
 
-    valido = lambda x: x[0] > 0 and x[1] > x[0] * 0.95 and 0.3 * lam < x[2] < x[0] * 1.02 and 2.5 * diametro_mm < x[3] < 0.06 * lam  # noqa: E731
-    x = _nm_gamma(f_MHz, construir, [p["excitado_mm"], p["reflector_mm"], p["director_mm"], p["sep_plegado_mm"]],
-                  [0.02 * lam, 0.02 * lam, 0.02 * lam, 0.004 * lam], valido=valido, penalizacion=penal)
-    geometria = {"reflector_mm": x[1], "excitado_mm": x[0], "director_mm": x[2], "sep_reflector_mm": p["sep_reflector_mm"],
-                 "sep_director_mm": p["sep_director_mm"], "sep_plegado_mm": x[3]}
-    return _con_resultados(construir(x), f_MHz, geometria)
+    def valido(x):
+        return (x[0] > 0 and x[1] > x[0] * 0.95 and 2.5 * diametro_mm < x[2] < 0.06 * lam
+                and all(0.3 * lam < d < x[0] * 1.02 for d in x[3:])
+                and all(b <= a + 1e-9 for a, b in zip(x[3:], x[4:])))        # los directores no crecen hacia delante
+
+    x = _nm_gamma(f_MHz, construir, [p["excitado_mm"], p["reflector_mm"], p["sep_plegado_mm"], *p["directores_mm"]],
+                  [0.02 * lam, 0.02 * lam, 0.004 * lam] + [0.02 * lam] * nd, valido=valido, penalizacion=penal)
+    geometria = {"reflector_mm": x[1], "excitado_mm": x[0], "director_mm": x[3], "sep_reflector_mm": p["sep_reflector_mm"],
+                 "sep_director_mm": p["seps_directores_mm"][0], "sep_plegado_mm": x[2], "n_elementos": float(n_elementos),
+                 "directores_mm": list(x[3:]), "seps_directores_mm": p["seps_directores_mm"], "boom": boom, "boom_mm": p["boom_mm"]}
+    r = _con_resultados(construir(x), f_MHz, geometria)
+    frente, atras = motor.ganancias_en(construir(x), f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+    r["resultados"].update({"ganancia_frente_dBi": frente, "relacion_delante_detras_dB": frente - atras})
+    return r
 
 
 def ajustar_biconica(f_min_MHz: float, diametro_mm: float, varillas: int = 8) -> dict:

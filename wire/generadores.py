@@ -356,50 +356,94 @@ def vinv(f_MHz: float, diametro_mm: float, brazo_mm: float | None = None, apertu
                                f"Brazos de {brazo * 1000:.1f} mm, apertura {apertura:g} grados"))
 
 
-def yagi_por_defecto(f_MHz: float) -> dict[str, float]:
+BOOMS = ("ninguno", "aislado", "unido")   # eje no metálico; metálico con los elementos pasando aislados; metálico con ellos unidos
+B_MAXIMO_EJE = 0.055                      # el diámetro del eje, en λ, hasta donde vale la fórmula de DL6WU
+
+
+def correccion_eje_mm(f_MHz: float, boom: str, boom_mm: float) -> float:
+    """Lo que hay que **añadir** (mm) al largo de cada elemento que atraviesa un eje metálico de `boom_mm` de diámetro.
+
+    Fórmula de DL6WU (G3SEK): por mitad de elemento, c = 12,5975·B − 114,5·B² veces el diámetro del eje, con B = diámetro / λ;
+    el elemento entero lleva el doble. Con los elementos pasando aislados del eje vale la mitad. Es una regla empírica de
+    la bibliografía para ejes de hasta 0,055 λ, **sin comprobar aquí con medidas**: la hay también con otros valores (25–45 %
+    del diámetro en elementos unidos según otros autores) y sube con la frecuencia. Un eje de plástico o madera no corrige."""
+    if boom not in BOOMS:
+        raise ValueError(f"eje desconocido: {boom} (hay: {', '.join(BOOMS)})")
+    if boom == "ninguno":
+        return 0.0
+    b = boom_mm / (longitud_onda_m(f_MHz) * 1000)
+    c = 12.5975 * b - 114.5 * b * b
+    return 2 * c * boom_mm * (0.5 if boom == "aislado" else 1.0)
+YAGI_SEP_DIRECTORES = (0.15, 0.22, 0.28)  # en λ: el primero cerca del excitado y el resto más abiertos (el último se repite)
+
+
+def yagi_por_defecto(f_MHz: float, n_elementos: int = 3, boom_mm: float | None = None) -> dict:
+    """Cotas de partida de una Yagi de `n_elementos` (reflector, dipolo plegado y n − 2 directores), en mm.
+
+    Los directores bajan 0,01 λ cada uno. Con 3 elementos salen las mismas cotas de siempre (`director_mm`,
+    `sep_director_mm` repiten el primer director para los diseños guardados)."""
+    if n_elementos < 3:
+        raise ValueError("una Yagi necesita al menos 3 elementos")
     lam = longitud_onda_m(f_MHz) * 1000
-    return {"reflector_mm": YAGI_REFLECTOR * lam, "excitado_mm": YAGI_EXCITADO * lam, "director_mm": YAGI_DIRECTOR * lam,
-            "sep_reflector_mm": YAGI_SEP_REFLECTOR * lam, "sep_director_mm": YAGI_SEP_DIRECTOR * lam,
-            "sep_plegado_mm": YAGI_SEP_PLEGADO * lam}
+    directores = [(YAGI_DIRECTOR - 0.01 * k) * lam for k in range(n_elementos - 2)]
+    seps = [YAGI_SEP_DIRECTORES[min(k, len(YAGI_SEP_DIRECTORES) - 1)] * lam for k in range(n_elementos - 2)]
+    return {"reflector_mm": YAGI_REFLECTOR * lam, "excitado_mm": YAGI_EXCITADO * lam, "director_mm": directores[0],
+            "sep_reflector_mm": YAGI_SEP_REFLECTOR * lam, "sep_director_mm": seps[0], "sep_plegado_mm": YAGI_SEP_PLEGADO * lam,
+            "n_elementos": float(n_elementos), "directores_mm": directores, "seps_directores_mm": seps,
+            "boom": "ninguno", "boom_mm": boom_mm if boom_mm is not None else max(8.0, round(0.01 * lam))}
 
 
 def yagi(f_MHz: float, diametro_mm: float, reflector_mm: float | None = None, excitado_mm: float | None = None,
          director_mm: float | None = None, sep_reflector_mm: float | None = None, sep_director_mm: float | None = None,
-         sep_plegado_mm: float | None = None, barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
-    """Yagi de 3 elementos con el excitado en dipolo plegado (dos alambres paralelos unidos en los extremos), en espacio libre.
+         sep_plegado_mm: float | None = None, barrido: Barrido | None = None, densidad: float = 1.0, *,
+         directores_mm: list[float] | None = None, seps_directores_mm: list[float] | None = None, n_elementos: int | None = None) -> Modelo:
+    """Yagi de N elementos con el excitado en dipolo plegado (dos alambres paralelos unidos en los extremos), en espacio libre.
 
-    Los elementos van a lo largo de x y el eje (boom, aislante) a lo largo de y: reflector en y = 0, excitado a
-    `sep_reflector_mm` y director a `sep_director_mm` más. El dipolo plegado tiene su alambre alimentado abajo y el otro a
+    Los elementos van a lo largo de x y el eje (boom) a lo largo de y: reflector en y = 0, el excitado a `sep_reflector_mm`
+    y cada director a su separación del anterior. El dipolo plegado tiene su alambre alimentado abajo y el otro a
     `sep_plegado_mm` por encima (eje z); la fuente va en el segmento central del alimentado.
+
+    **El eje no se modela**: un alambre paralelo a y y perpendicular a los elementos, centrado en ellos, no se acopla (con o
+    sin los elementos unidos a él la impedancia sale igual al ohmio). El efecto de un eje metálico se aplica aparte, como
+    corrección de longitud de corte (`correccion_eje_mm`), que es como se hace en la práctica (DL6WU / G3SEK).
     """
     if f_MHz <= 0 or diametro_mm <= 0:
         raise ValueError("la frecuencia y el diámetro deben ser positivos")
-    p = yagi_por_defecto(f_MHz)
+    if directores_mm is None and director_mm is not None:
+        directores_mm = [director_mm]
+    if n_elementos is None:
+        n_elementos = len(directores_mm) + 2 if directores_mm else 3
+    p = yagi_por_defecto(f_MHz, n_elementos)
+    dires = [d / 1000 for d in (directores_mm or p["directores_mm"])]
+    seps = [s / 1000 for s in (seps_directores_mm or ([sep_director_mm] + p["seps_directores_mm"][1:] if sep_director_mm else p["seps_directores_mm"]))]
+    if len(dires) != len(seps) or len(dires) < 1:
+        raise ValueError("hace falta un director por cada separación (y al menos uno)")
     refl = (reflector_mm or p["reflector_mm"]) / 1000
     exc = (excitado_mm or p["excitado_mm"]) / 1000
-    dire = (director_mm or p["director_mm"]) / 1000
     y1 = (sep_reflector_mm or p["sep_reflector_mm"]) / 1000
-    y2 = y1 + (sep_director_mm or p["sep_director_mm"]) / 1000
     sp = (sep_plegado_mm or p["sep_plegado_mm"]) / 1000
     if sp <= 2 * diametro_mm / 1000:
         raise ValueError("la separación del dipolo plegado es demasiado pequeña para ese diámetro")
     r = diametro_mm / 2000
     paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    ys = [0.0, y1]
+    for s in seps:
+        ys.append(ys[-1] + s)
     n = _segmentos(exc, paso)
     n += 1 - n % 2                                  # impar: la fuente va en el central
     n_v = max(1, round(sp / paso))
-    hilos = [
-        Hilo((-refl / 2, 0, 0), (refl / 2, 0, 0), r, _segmentos(refl, paso)),                 # 1 reflector
-        Hilo((-exc / 2, y1, 0), (exc / 2, y1, 0), r, n),                                         # 2 excitado (alimentado)
-        Hilo((-exc / 2, y1, sp), (exc / 2, y1, sp), r, n),                                       # 3 excitado (plegado)
-        Hilo((-exc / 2, y1, 0), (-exc / 2, y1, sp), r, n_v),                                     # 4 cierre izquierdo
-        Hilo((exc / 2, y1, 0), (exc / 2, y1, sp), r, n_v),                                       # 5 cierre derecho
-        Hilo((-dire / 2, y2, 0), (dire / 2, y2, 0), r, _segmentos(dire, paso)),                # 6 director
-    ]
-    return Modelo("Yagi de 3 elementos", f_MHz, tuple(hilos), Puerto(2, n // 2 + 1), barrido=barrido,
-                  comentarios=(f"Yagi de 3 elementos con dipolo plegado a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
-                               f"Reflector {refl * 1000:.1f}, excitado {exc * 1000:.1f}, director {dire * 1000:.1f} mm; "
-                               f"separaciones {y1 * 1000:.1f} y {(y2 - y1) * 1000:.1f} mm"))
+    hilos: list[Hilo] = [Hilo((-refl / 2, 0, 0), (refl / 2, 0, 0), r, _segmentos(refl, paso)),      # reflector
+                         Hilo((-exc / 2, y1, 0), (exc / 2, y1, 0), r, n),                           # excitado (alimentado)
+                         Hilo((-exc / 2, y1, sp), (exc / 2, y1, sp), r, n),                         # excitado (plegado)
+                         Hilo((-exc / 2, y1, 0), (-exc / 2, y1, sp), r, n_v),                       # cierre izquierdo
+                         Hilo((exc / 2, y1, 0), (exc / 2, y1, sp), r, n_v)]                         # cierre derecho
+    for d, y in zip(dires, ys[2:]):
+        hilos.append(Hilo((-d / 2, y, 0), (d / 2, y, 0), r, _segmentos(d, paso)))
+    return Modelo(f"Yagi de {len(dires) + 2} elementos", f_MHz, tuple(hilos), Puerto(2, n // 2 + 1), barrido=barrido,
+                  comentarios=(f"Yagi de {len(dires) + 2} elementos con dipolo plegado a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Reflector {refl * 1000:.1f}, excitado {exc * 1000:.1f}, directores "
+                               + ", ".join(f"{d * 1000:.1f}" for d in dires) + " mm; separaciones "
+                               + ", ".join(f"{(b - a) * 1000:.1f}" for a, b in zip(ys, ys[1:])) + " mm"))
 
 
 def biconica_por_defecto(f_min_MHz: float, k_cono: float = 1.0) -> dict[str, float]:

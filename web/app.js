@@ -78,7 +78,10 @@ function guardar(nombre, contenido, tipo) {
 function entrada() {
   return JSON.stringify({ tipo: $('tipo').value, f_MHz: parseFloat($('f').value), diametro_mm: parseFloat($('diametro').value),
                           papel: $('papel').value, unidades: $('unidades').value, idioma: IDIOMA,
-                          cable: $('cable').value || null, conector: $('tipo').value === 'gp' ? $('conector').value : null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null });
+                          cable: $('cable').value || null, conector: $('tipo').value === 'gp' ? $('conector').value : null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null,
+                          elementos: $('tipo').value === 'yagi' ? parseInt($('elementos').value, 10) : null,
+                          eje: $('tipo').value === 'yagi' ? $('eje').value : null,
+                          eje_mm: $('tipo').value === 'yagi' && $('eje').value !== 'ninguno' && $('eje-mm').value ? parseFloat($('eje-mm').value) : null });
 }
 
 function pintarGaleria() {
@@ -143,7 +146,7 @@ $('galeria').onclick = (ev) => {
   hojaActual = 0;
   generar();
 };
-$('tipo').onchange = () => { pintarGaleria(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
+$('tipo').onchange = () => { pintarGaleria(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('yagi').classList.toggle('oculto', $('tipo').value !== 'yagi'); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
 $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };
@@ -172,6 +175,7 @@ $('archivo').onchange = async () => {
     const d = actual.plano.diseno;
     $('tipo').value = d.tipo; $('tipo').onchange(); if (d.geometria && d.geometria.conector) $('conector').value = d.geometria.conector; if (d.cable) { $('cable').value = d.cable.nombre; $('vf').value = d.cable.vf_origen === 'medido' ? d.cable.vf : ''; }
     $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
+    if (d.tipo === 'yagi') { $('elementos').value = d.geometria.n_elementos || 3; $('eje').value = d.geometria.boom || 'ninguno'; $('eje-mm').value = d.geometria.boom && d.geometria.boom !== 'ninguno' ? d.geometria.boom_mm : ''; }
     $('papel').value = d.plano.papel; $('unidades').value = d.plano.unidades;
   } catch (err) {
     $('progreso').textContent = T('No se pudo abrir el diseño: {0}', err.message);

@@ -33,7 +33,7 @@ def _diseno(args) -> Diseno:
         vf = medido["vf"]
         cable = cable or medido.get("cable") or None      # el nombre del archivo es libre: solo vale si es uno de la tabla
     return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=cable,
-                   vf_medido=vf, conector=args.conector, **plano)
+                   vf_medido=vf, conector=args.conector, elementos=args.elementos, eje=args.eje, eje_mm=args.eje_mm, **plano)
 
 
 class _Ayuda(argparse.HelpFormatter):
@@ -69,6 +69,10 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--vf-medido", type=float, help="factor de velocidad medido del cable (sustituye al de catálogo)")
         s.add_argument("--cable-medido", help="JSON del VF medido con Chirptenna VNA (sustituye a --vf-medido)")
         s.add_argument("--conector", choices=("SO-239", "N"), help="conector del ground plane (SO-239 por defecto)")
+        s.add_argument("--elementos", type=int, help="número de elementos de la Yagi, de 3 a 15 (3)")
+        s.add_argument("--eje", choices=("ninguno", "aislado", "unido"),
+                       help="eje de la Yagi: no metálico (ninguno), metálico con los elementos aislados o con ellos unidos")
+        s.add_argument("--eje-mm", type=float, help="diámetro del eje metálico en mm (1 %% de λ)")
         s.add_argument("--desde", help="diseno.json guardado antes")
         s.add_argument("--sin-motor", action="store_true", help="cotas de partida, sin ajustar con PyNEC")
         s.add_argument("--salida", required=True, help="archivo de salida (.pdf o .svg; .nec)")
