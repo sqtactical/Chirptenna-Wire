@@ -9,7 +9,8 @@ from __future__ import annotations
 import json
 
 from . import nec, planos
-from .diseno import BANDAS, ESTADOS, TIPOS, ConfigPlano, Diseno, disenar
+from .cables import CABLES
+from .diseno import BANDAS, ESTADOS, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
 
 VERSION_API = 1
 
@@ -21,6 +22,7 @@ def catalogo() -> str:
         "estados": list(ESTADOS),
         "bandas": [{"nombre": n, "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},
+        "coaxial": {"tipos": list(TIPOS_COAXIAL), "cables": [{"nombre": c.nombre, "vf": c.vf} for c in CABLES.values()]},
     }, ensure_ascii=False)
 
 
@@ -29,7 +31,8 @@ def _diseno(entrada: str) -> Diseno:
     if "diseno" in datos:  # un diseno.json abierto desde el escritorio
         return Diseno.desde_dict(datos["diseno"])
     plano = {k: datos[k] for k in ("papel", "unidades") if k in datos}
-    return disenar(datos["tipo"], float(datos["f_MHz"]), float(datos.get("diametro_mm", 2.0)), ajustar=False, **plano)
+    return disenar(datos["tipo"], float(datos["f_MHz"]), float(datos.get("diametro_mm", 2.0)), ajustar=False,
+                   cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), **plano)
 
 
 def disenar_json(entrada: str) -> str:

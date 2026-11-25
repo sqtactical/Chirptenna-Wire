@@ -11,13 +11,13 @@ from dataclasses import asdict
 from datetime import date
 
 from ..diseno import Diseno
-from . import comun, dipolo, jpole
+from . import comun, coaxial, dipolo, jpole
 from .hoja import Hoja, Plano
 from .paginacion import decidir_papel
 from .pdf import a_pdf
 from .svg import a_svg
 
-GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas}
+GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.hojas_manga, "coco": coaxial.hojas_coco}
 
 
 def generar(diseno: Diseno, fecha: str | None = None) -> Plano:

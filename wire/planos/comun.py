@@ -84,6 +84,8 @@ def cajetin(hoja: Hoja, diseno: Diseno, escala: str, n: int, total: int, fecha: 
         ("Licencia", f"{LICENCIA} (diseños)"),
         ("Proyecto", URL),
     ]
+    if diseno.cable:
+        campos.insert(4, ("Cable", f"{diseno.cable['nombre']} · VF {fmt(diseno.cable['vf'], 2)} ({diseno.cable['vf_origen']})"))
     paso = (y1 - y0 - 2.5) / len(campos)
     for i, (clave, valor) in enumerate(campos):
         yy = y0 + 4.2 + i * paso

@@ -15,12 +15,17 @@ from .modelo import Modelo
 TIPOS = {
     "dipolo": "Dipolo de media onda",
     "jpole": "J-pole",
+    "manga": "Dipolo de manga de coaxial",
+    "coco": "Colineal CoCo de coaxial",
 }
+
+TIPOS_COAXIAL = ("manga", "coco")
+CABLE_POR_DEFECTO = "RG-58"
 
 ESTADOS = ("Simulado", "Medido", "Sin validar")
 
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
-SOBRANTE = {"dipolo": 15.0, "jpole": 20.0}
+SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
     ("banda aérea", 118.0, 137.0),
@@ -116,9 +121,26 @@ class Diseno:
     def sobrante_mm(self) -> float:
         return SOBRANTE[self.tipo] if self.plano.sobrante_mm is None else self.plano.sobrante_mm
 
+    def cable_obj(self):
+        """El `Cable` del diseño (con el VF guardado, de catálogo o medido); solo en los tipos de coaxial."""
+        from dataclasses import replace
+
+        from .cables import cable
+        if not self.cable:
+            raise ValueError(f"el tipo {self.tipo} necesita un cable")
+        return replace(cable(self.cable["nombre"]), vf=self.cable["vf"], vf_origen=self.cable["vf_origen"])
+
     def modelo(self) -> Modelo:
         """El modelo de hilos con estas cotas (sin motor)."""
         g = self.geometria
+        if self.tipo == "manga":
+            from . import coaxial
+            return coaxial.dipolo_manga(self.f_MHz, self.cable_obj(), radiador_m=g["radiador_mm"] / 1000,
+                                        manga_m=g["manga_mm"] / 1000, resto_m=g["bajada_mm"] / 1000)
+        if self.tipo == "coco":
+            from . import coaxial
+            return coaxial.colineal_coco(self.f_MHz, self.cable_obj(), tramos=int(g["tramos"]),
+                                         punta_lambda=g["punta_lambda"], factor_tramo=g["factor_tramo"])
         if self.tipo == "dipolo":
             return generadores.dipolo(self.f_MHz, self.diametro_mm / 2, longitud_mm=g["largo_total_mm"])
         return generadores.jpole(self.f_MHz, self.diametro_mm, largo_mm=g["largo_mm"], corto_mm=g["corto_mm"],
@@ -147,9 +169,16 @@ class Diseno:
         return cls.desde_dict(json.loads(texto))
 
 
-def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, **plano) -> Diseno:
-    """Diseño con las cotas ajustadas por el motor si está (escritorio) o las de partida si no (estado «Sin validar»)."""
+def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, cable: str | None = None,
+            vf_medido: float | None = None, **plano) -> Diseno:
+    """Diseño con las cotas ajustadas por el motor si está (escritorio) o las de partida si no (estado «Sin validar»).
+
+    En los tipos de coaxial (`manga`, `coco`) `cable` es el nombre de la tabla (por defecto RG-58) y `vf_medido`, si se
+    da, sustituye al VF de catálogo; el diámetro del alambre no se usa (el hilo es la malla del cable).
+    """
     config = ConfigPlano.desde_dict(plano)
+    if tipo in TIPOS_COAXIAL:
+        return _disenar_coaxial(tipo, f_MHz, ajustar, cable or CABLE_POR_DEFECTO, vf_medido, config)
     if ajustar:
         from . import ajuste, motor
         if motor.disponible():
@@ -164,3 +193,34 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, *
     else:
         raise ValueError(f"tipo desconocido: {tipo}")
     return Diseno(tipo, f_MHz, diametro_mm, geometria, plano=config)
+
+
+def _disenar_coaxial(tipo: str, f_MHz: float, ajustar: bool, nombre_cable: str, vf_medido: float | None,
+                     config: ConfigPlano) -> Diseno:
+    from .cables import cable as buscar
+    from .coaxial import RADIADOR_MANGA
+    c = buscar(nombre_cable)
+    if vf_medido is not None:
+        c = c.con_vf_medido(vf_medido)
+    lam_mm = 299792.458 / f_MHz
+    if tipo == "manga":
+        geometria = {"radiador_mm": RADIADOR_MANGA * lam_mm, "manga_mm": lam_mm / 4, "bajada_mm": lam_mm / 2}
+    else:
+        geometria = {"tramos": 4, "factor_tramo": 1.0, "punta_lambda": 0.25, "tramo_mm": lam_mm / 2 * c.vf,
+                     "punta_mm": lam_mm / 4}
+    diseno = Diseno(tipo, f_MHz, c.diametro_exterior_mm, geometria, material=f"coaxial {c.nombre}", plano=config)
+    diseno.con_cable(c)
+    if ajustar:
+        from . import ajuste, motor
+        if motor.disponible():
+            if tipo == "manga":
+                r = ajuste.ajustar_manga(f_MHz, c)
+            else:
+                r = ajuste.ajustar_coco(f_MHz, c, tramos=int(geometria["tramos"]))
+                r["geometria"].update(tramo_mm=lam_mm / 2 * c.vf * r["geometria"]["factor_tramo"],
+                                      punta_mm=r["geometria"]["punta_lambda"] * lam_mm)
+                r["resultados"]["red"] = r.pop("red")
+            diseno.geometria = {**geometria, **r["geometria"]}
+            diseno.resultados = r["resultados"]
+            diseno.estado = "Simulado"
+    return diseno

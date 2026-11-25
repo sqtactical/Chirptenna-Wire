@@ -1,0 +1,51 @@
+{
+  "tipo": "coco",
+  "f_MHz": 145.0,
+  "diametro_mm": 4.95,
+  "geometria": {
+    "tramos": 4,
+    "factor_tramo": 1.0,
+    "punta_lambda": 0.25,
+    "tramo_mm": 682.2862837241379,
+    "punta_mm": 516.883548275862
+  },
+  "nombre": "coco_145",
+  "material": "coaxial RG-58",
+  "resultados": {
+    "motor": "PyNEC",
+    "z0_ohm": 50.0,
+    "f_MHz": 145.0,
+    "r_ohm": 101.10715499812795,
+    "x_ohm": 133.34502693637862,
+    "roe_sin_red": 5.863355092475151,
+    "roe_con_red": 1.0000000001952274,
+    "ganancia_dBi": 6.233383091861327,
+    "ancho_roe2_MHz": 2.1750000000000114,
+    "roe_sin_ajustar": 5.863355092475151,
+    "ganancia_sin_ajustar_dBi": 6.233383091861327,
+    "red": {
+      "orden": "paralelo_luego_serie",
+      "x_serie_ohm": 106.52911651000485,
+      "b_paralelo_S": 0.012454210536292549,
+      "l_serie_nH": 116.9285205226187,
+      "c_paralelo_pF": 13.669994270056028
+    }
+  },
+  "estado": "Simulado",
+  "plano": {
+    "papel": "A4",
+    "grandes": "mosaico",
+    "orientacion": "auto",
+    "solape_mm": 10.0,
+    "unidades": "mm",
+    "idioma": "es",
+    "sobrante_mm": null
+  },
+  "version": 1,
+  "cable": {
+    "nombre": "RG-58",
+    "z0": 50.0,
+    "vf": 0.66,
+    "vf_origen": "catálogo"
+  }
+}

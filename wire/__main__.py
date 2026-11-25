@@ -22,7 +22,8 @@ def _diseno(args) -> Diseno:
     if not args.tipo or args.f_MHz is None:
         sys.exit("falta el tipo y la frecuencia (o --desde diseno.json)")
     plano = {"papel": args.papel, "unidades": args.unidades}
-    return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, **plano)
+    return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=args.cable,
+                   vf_medido=args.vf_medido, **plano)
 
 
 class _Ayuda(argparse.HelpFormatter):
@@ -53,6 +54,8 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("tipo", nargs="?", choices=sorted(TIPOS), help="tipo de antena: " + ", ".join(sorted(TIPOS)))
         s.add_argument("f_MHz", nargs="?", type=float, help="frecuencia en MHz")
         s.add_argument("--diametro", type=float, default=2.0, help="diámetro del alambre en mm (2)")
+        s.add_argument("--cable", help="cable coaxial de las antenas de coaxial (RG-58 por defecto)")
+        s.add_argument("--vf-medido", type=float, help="factor de velocidad medido del cable (sustituye al de catálogo)")
         s.add_argument("--desde", help="diseno.json guardado antes")
         s.add_argument("--sin-motor", action="store_true", help="cotas de partida, sin ajustar con PyNEC")
         s.add_argument("--salida", required=True, help="archivo de salida (.pdf o .svg; .nec)")

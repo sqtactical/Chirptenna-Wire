@@ -7,6 +7,7 @@ const pendientes = new Map();
 let siguiente = 1;
 let actual = null;       // {entrada, plano}
 let hojaActual = 0;
+let coaxial = { tipos: [], cables: [] };
 
 trabajador.onmessage = (ev) => {
   const m = ev.data;
@@ -36,13 +37,16 @@ function guardar(nombre, contenido, tipo) {
 
 function entrada() {
   return JSON.stringify({ tipo: $('tipo').value, f_MHz: parseFloat($('f').value), diametro_mm: parseFloat($('diametro').value),
-                          papel: $('papel').value, unidades: $('unidades').value });
+                          papel: $('papel').value, unidades: $('unidades').value,
+                          cable: $('cable').value || null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null });
 }
 
 async function iniciar() {
   const c = await llamar('catalogo');
   $('tipo').innerHTML = c.tipos.map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
   $('banda').innerHTML += c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
+  coaxial = c.coaxial;
+  $('cable').innerHTML = c.coaxial.cables.map((k) => `<option value="${k.nombre}">${k.nombre} (VF ${k.vf})</option>`).join('');
   $('papel').innerHTML = c.plano.papel.map((p) => `<option>${p}</option>`).join('');
   $('unidades').innerHTML = c.plano.unidades.map((p) => `<option>${p}</option>`).join('');
   generar();
@@ -73,6 +77,7 @@ async function generar(textoEntrada) {
   }
 }
 
+$('tipo').onchange = () => $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value));
 $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };
@@ -85,7 +90,8 @@ $('archivo').onchange = async () => {
     hojaActual = 0;
     await generar(JSON.stringify({ diseno: datos }));
     const d = actual.plano.diseno;
-    $('tipo').value = d.tipo; $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
+    $('tipo').value = d.tipo; $('tipo').onchange(); if (d.cable) { $('cable').value = d.cable.nombre; $('vf').value = d.cable.vf_origen === 'medido' ? d.cable.vf : ''; }
+    $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
     $('papel').value = d.plano.papel; $('unidades').value = d.plano.unidades;
   } catch (err) {
     $('progreso').textContent = 'No se pudo abrir el diseño: ' + err.message;

@@ -153,6 +153,25 @@ def ajustar_jpole(f_MHz: float, diametro_mm: float, separacion_mm: float | None 
     return {"geometria": geometria, "resultados": resultados}
 
 
+def ajustar_manga(f_MHz: float, cable) -> dict:
+    """Dipolo de manga resonante (X = 0) a f ajustando el largo del radiador; la manga queda en λ/4."""
+    from .coaxial import RADIADOR_MANGA, dipolo_manga
+
+    lam_m = 299.792458 / f_MHz
+    radiador = RADIADOR_MANGA * lam_m
+    for _ in range(5):
+        f, _ = motor.resonancia(dipolo_manga(f_MHz, cable, radiador_m=radiador), 0.8 * f_MHz, 1.2 * f_MHz)
+        radiador *= f / f_MHz
+    modelo = dipolo_manga(f_MHz, cable, radiador_m=radiador)
+    f_res, z = motor.resonancia(modelo, 0.8 * f_MHz, 1.2 * f_MHz)
+    f_corto, _ = motor.resonancia(dipolo_manga(f_MHz, cable, radiador_m=radiador - 0.01), 0.8 * f_MHz, 1.2 * f_MHz)
+    resultados = _resultados(modelo, f_MHz)
+    resultados.update({"f_resonancia_MHz": f_res, "r_resonancia_ohm": z.real,
+                       "sensibilidad_MHz_por_mm": (f_corto - f_res) / 10, "sensibilidad_pieza": "el radiador"})
+    return {"geometria": {"radiador_mm": radiador * 1000, "manga_mm": lam_m / 4 * 1000, "bajada_mm": lam_m / 2 * 1000},
+            "resultados": resultados}
+
+
 def red_adaptacion(z: complex, f_MHz: float, z0: float = Z0) -> dict:
     """Red en L sin pérdidas que lleva la impedancia `z` (vista en el punto de alimentación) a `z0`.
 

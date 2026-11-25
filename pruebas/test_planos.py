@@ -30,6 +30,9 @@ DISENOS = {
     "dipolo_145": lambda: _ejemplo("dipolo_145.json"),
     "jpole_145": lambda: _ejemplo("jpole_145.json"),
     "jpole_435": lambda: _ejemplo("jpole_435.json"),
+    "manga_145": lambda: _ejemplo("manga_145.json"),
+    "coco_145": lambda: _ejemplo("coco_145.json"),
+    "coco_sin_motor_vf_medido": lambda: disenar("coco", 433.0, 2.0, ajustar=False, cable="RG-316", vf_medido=0.7),
     "jpole_868_sin_motor": lambda: disenar("jpole", 868.0, 1.5, ajustar=False),
     "dipolo_pulgadas": lambda: disenar("dipolo", 433.0, 2.0, ajustar=False, unidades="pulgadas"),
 }
