@@ -1,6 +1,9 @@
 # Chirptenna Wire · notas para Claude
 
-Planos de antenas de alambre, varilla y coaxial con simulación NEC2. Alcance y fases: `docs/PROPUESTA.md`.
+Planos de antenas de alambre, varilla y coaxial con simulación NEC2. Alcance: `docs/PROPUESTA.md`.
+**Qué hacer y en qué orden: `ROADMAP.md`** (tareas W1.1…W5.4, cada una desarrollada en `docs/roadmap/`). Antes de
+cualquier tarea, leer `docs/roadmap/00_como_trabajar.md`, y para tocar el modelo, `docs/roadmap/nec2.md`. Si el usuario
+no pide otra cosa, lo siguiente es la primera tarea sin marcar de la primera fase sin cerrar.
 
 ## Entorno
 
