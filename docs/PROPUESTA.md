@@ -126,8 +126,7 @@ enlaces cruzados entre las tres herramientas.
 1. **Repositorio público** desde el principio o privado hasta la primera versión (hoy: privado).
 2. **Unidades**: mm por defecto con conmutador a pulgadas.
 3. **Primeras antenas que construir y medir**: J-pole de 70 cm o 2 m (fase 1) y CoCo de 868 MHz o 70 cm (fase 2).
-4. **Identidad**: antenas del grillo en coaxial o alambre doblado (decidido el 25-11); falta elegir entre las dos al
-   ver los borradores, y el color de «Wire».
+4. ~~**Identidad**~~: decidida el 25-11 (antenas de coaxial y «Wire» en aluminio; `img/`).
 
 ## 9. Identidad visual
 
@@ -139,16 +138,17 @@ antenas fractales en PCB.
 
 Para Wire se mantiene el grillo, el verde y la tipografía (que se reconozca como de la familia), y cambian dos cosas:
 
-- **Las antenas del grillo**: dejan de ser Koch. Decidido por el usuario (25-11): **coaxial o alambre doblado** (se
-  descarta la forma de J-pole). Se harán las dos para elegir viéndolas:
+- **Las antenas del grillo**: dejan de ser Koch. **Decidido por el usuario (25-11): coaxial** (opción b), tras ver los
+  dos borradores; hecho en `img/generar_logo_wire.py` (ver `img/LEEME.md`). Opciones que se consideraron:
   - (b) **coaxial**: antenas rectas con el rayado de la malla y un tramo pelado en la punta, que habla de la CoCo y del
     dipolo de coaxial;
   - (c) **alambre doblado**: varilla con un doblez y una bolita en la punta, la más simple y la que mejor se ve en un
     favicon.
-  Una posible mezcla: alambre doblado en el icono pequeño (favicon) y coaxial en el logo grande.
-- **El color de la palabra «Wire»**: un tono distinto del cobre de la PCB y del verde de VNA. Candidatos: **acero o
-  aluminio** (gris azulado, `#5b6f80`) por las varillas, o el **negro de la cubierta de un coaxial con el cobre de la
-  malla** (palabra en gris oscuro con subrayado cobrizo). Hay que comprobar el contraste en claro y oscuro.
+  En los favicons el coaxial va simplificado (cubierta, malla y vivo, sin trenzado) y con un borde gris en la cubierta
+  para que se vea sobre fondos oscuros.
+- **El color de la palabra «Wire»**: **aluminio** (decidido el 25-11), distinto del cobre de la PCB y del verde de VNA:
+  `#7f8c98` sobre claro (contraste 3,4:1, válido para letra grande en negrita) y `#b9c3cc` sobre oscuro (9,8:1). Un
+  aluminio más claro sobre blanco (`#c0c6cc`, 1,7:1) no se lee.
 
 **Entregables**: un generador del logo como en los otros dos repositorios (`img/generar_logo_wire.py` que parte del
 grillo de Chirptenna y cambia las antenas), el logo con texto en claro y oscuro, el icono para el favicon y una
