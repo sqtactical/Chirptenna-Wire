@@ -113,6 +113,53 @@ def dipolo_manga(f_MHz: float, cable: Cable, radiador_m: float | None = None, ma
                                f"Radiador {radiador * 1000:.1f} mm, manga {manga * 1000:.1f} mm, cable {resto * 1000:.0f} mm"))
 
 
+HUECO_COCO_M = 0.016  # largo del segmento de unión entre tramos (≥ 8 radios de la malla, nec2.md §1)
+
+
+def colineal_coco(f_MHz: float, cable: Cable, tramos: int = 4, punta_lambda: float = 0.25,
+                  bajada_m: float = 0.0, choke_ohm: float | None = None, div: int = 50,
+                  barrido: Barrido | None = None) -> Modelo:
+    """Colineal de coaxial (CoCo), eje z: `tramos` de cable de λ/2 eléctrico (λ/2·VF físico) con vivo y malla cruzados.
+
+    **Sin validar** (25-11-2026): modelo en bruto, ver ROADMAP W2.5. Esquema (docs/roadmap/nec2.md §6):
+    - la malla exterior de cada tramo es un hilo; entre un tramo y el siguiente va un hilo de un segmento (el hueco);
+    - el vivo de cada tramo es una `TL` entre el hueco de abajo y el de arriba, con `cruzada=True` en todas: el vivo
+      del tramo k acaba en la malla del k+1 y su malla en el vivo del k+1, es decir, en cada hueco las dos líneas que
+      llegan tienen la tensión con signo contrario;
+    - la fuente va en el hueco de abajo (el de la bajada) y la punta es un hilo de `punta_lambda`·λ encima del último hueco;
+    - `bajada_m` > 0 añade el cable de bajada colgando bajo la fuente (con `choke_ohm` en su primer segmento).
+    """
+    lam = longitud_onda_m(f_MHz)
+    delta = lam / div
+    radio = cable.radio_malla_m
+    largo = lam / 2 * cable.vf
+    segs = lambda x: max(5, round(x / delta))  # noqa: E731
+    hilos: list[Hilo] = []
+    z = 0.0
+
+    def hilo(a: float, b: float, n: int) -> int:
+        hilos.append(Hilo((0, 0, a), (0, 0, b), radio, n))
+        return len(hilos)
+
+    if bajada_m > 0:
+        hilo(-bajada_m, 0.0, segs(bajada_m))
+    huecos = [hilo(z, z + HUECO_COCO_M, 1)]
+    z += HUECO_COCO_M
+    for _ in range(tramos):
+        hilo(z, z + largo, segs(largo))
+        z += largo
+        huecos.append(hilo(z, z + HUECO_COCO_M, 1))
+        z += HUECO_COCO_M
+    if punta_lambda > 0:
+        hilo(z, z + punta_lambda * lam, segs(punta_lambda * lam))
+    lineas = tuple(Linea(huecos[k], 1, huecos[k + 1], 1, cable.z0, largo, cable.vf, cruzada=True) for k in range(tramos))
+    cargas = (Carga(1, segs(bajada_m), segs(bajada_m), r=float(choke_ohm)),) if bajada_m > 0 and choke_ohm else ()
+    return Modelo(f"CoCo de {tramos} tramos", f_MHz, tuple(hilos), Puerto(huecos[0], 1), lineas=lineas, cargas=cargas,
+                  barrido=barrido,
+                  comentarios=(f"CoCo de {tramos} tramos de {cable.nombre} (VF {cable.vf:g}) a {f_MHz:g} MHz, sin validar",
+                               f"Tramo {largo * 1000:.1f} mm, punta {punta_lambda * lam * 1000:.0f} mm"))
+
+
 def longitud_cuarto_de_onda_m(f_MHz: float, cable: Cable) -> float:
     """Longitud física de λ/4 dentro del cable: λ·VF/4."""
     return 299_792_458.0 / (f_MHz * 1e6) * cable.vf / 4.0
