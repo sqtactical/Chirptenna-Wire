@@ -30,9 +30,8 @@ Lista para cuando el usuario diga «publica». Nada de esto se hace antes.
 
 ## Cosas que no se pueden deshacer
 
-Revisado el 25-11 con `git log -p --no-textconv`: sin claves ni correos. **Queda el nombre de usuario de Windows
-(`C:\Users\pablo\…`) en commits antiguos de `docs/maquetas/*.py`**; es poco sensible, pero si importa hay que
-reescribir el historial (`git filter-repo`) antes de publicar, no después.
+Revisado el 25-11 con `git log -p --no-textconv`: sin claves ni correos. Las rutas del ordenador del autor que había
+en commits antiguos de las maquetas se quitaron reescribiendo el historial (`git filter-branch`) antes de publicar.
 
 Una vez público, el historial puede copiarse y quedar en cachés aunque se vuelva a poner en privado. Revisar el
 historial entero (`git log -p`) antes del paso 5, no solo el árbol actual.

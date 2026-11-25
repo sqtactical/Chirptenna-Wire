@@ -1,6 +1,6 @@
 [project]
 name = "chirptenna-wire"
-version = "0.1.0.dev0"
+version = "0.1.0a0"
 description = "Planos de antenas de alambre, varilla y coaxial con simulación NEC2"
 license = "AGPL-3.0-only"
 readme = "README.md"

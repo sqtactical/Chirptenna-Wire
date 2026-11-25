@@ -1,8 +1,8 @@
 # Cambios
 
-## Sin publicar
+## 0.1.0-alpha (25-11-2026)
 
-Primera versión pública prevista: **0.1.0-alpha** (cuando el usuario lo decida; ver `docs/PUBLICAR.md`).
+Primera versión pública.
 
 - Modelo de hilos y líneas de transmisión, exportación y lectura de `.nec`, motor PyNEC y ajuste.
 - Dipolo de media onda y J-pole de alambre (ajustada con el motor, segmentación convergida).
