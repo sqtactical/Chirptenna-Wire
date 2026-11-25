@@ -24,6 +24,8 @@ TIPOS = {
     "vinv": N_("Dipolo en V invertida"),
     "yagi": N_("Yagi de 3 elementos"),
     "biconica": N_("Bicónica"),
+    "torniquete": N_("Torniquete en X (dipolos cruzados)"),
+    "batwing": N_("Batwing (dipolo de alas)"),
 }
 
 CONECTORES = ("SO-239", "N")
@@ -42,6 +44,8 @@ RESUMEN = {
     "vinv": N_("Dipolo con el vértice en un mástil y los brazos caídos: se tensa con cuerda."),
     "yagi": N_("Reflector, dipolo plegado y director sobre un eje aislante: ganancia y dirección."),
     "biconica": N_("Dos conos de varillas vértice con vértice: banda ancha (más de 4:1)."),
+    "torniquete": N_("Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz)."),
+    "batwing": N_("Dipolo con dos alas de abanico: algo más de banda que el dipolo, sin panel ni reflector."),
 }
 ESTADO_TIPO = {
     "dipolo": N_("Simulado (validado contra la teoría), sin medir"),
@@ -54,6 +58,8 @@ ESTADO_TIPO = {
     "vinv": N_("Simulado (en espacio libre), sin medir"),
     "yagi": N_("Simulado, sin medir ni validar frente a un caso publicado"),
     "biconica": N_("Simulado, sin medir ni validar frente a un caso publicado"),
+    "torniquete": N_("Simulado (en espacio libre, con razón axial calculada), sin medir"),
+    "batwing": N_("Simulado, sin medir ni validar frente a un caso publicado"),
 }
 CABLE_POR_DEFECTO = "RG-58"
 
@@ -61,7 +67,8 @@ ESTADOS = ("Simulado", "Medido", "Sin validar")
 
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
 SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0,
-             "gp": 15.0, "vinv": 15.0, "yagi": 15.0, "biconica": 15.0}
+             "gp": 15.0, "vinv": 15.0, "yagi": 15.0, "biconica": 15.0,
+             "torniquete": 15.0, "batwing": 15.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
     (N_("banda aérea"), 118.0, 137.0),
@@ -187,6 +194,12 @@ class Diseno:
         if self.tipo == "biconica":
             return generadores.biconica(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], hueco_mm=g["hueco_mm"],
                                         semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
+        if self.tipo == "torniquete":
+            return generadores.torniquete(self.f_MHz, self.diametro_mm, brazo_mm=g["brazo_mm"], sep_mm=g["sep_mm"],
+                                          z0_linea=g["z0_linea"], vf_linea=g["vf_linea"], linea_mm=g["linea_mm"])
+        if self.tipo == "batwing":
+            return generadores.batwing(self.f_MHz, self.diametro_mm, ala_mm=g["ala_mm"], ancho_mm=g["ancho_mm"],
+                                       hueco_mm=g["hueco_mm"], radios=int(g["radios"]))
         if self.tipo == "discone":
             return generadores.discone(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], disco_mm=g["disco_mm"],
                                        hueco_mm=g["hueco_mm"], semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
@@ -241,7 +254,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         if motor.disponible():
             funcion = {"dipolo": ajuste.ajustar_dipolo, "jpole": ajuste.ajustar_jpole,
                        "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone, "gp": ajuste.ajustar_gp,
-                       "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica}[tipo]
+                       "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
+                       "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing}[tipo]
             r = funcion(f_MHz, diametro_mm)
             if tipo == "gp":
                 r["geometria"]["conector"] = _conector(conector)
@@ -263,6 +277,10 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = generadores.yagi_por_defecto(f_MHz)
     elif tipo == "biconica":
         geometria = generadores.biconica_por_defecto(f_MHz)
+    elif tipo == "torniquete":
+        geometria = generadores.torniquete_por_defecto(f_MHz)
+    elif tipo == "batwing":
+        geometria = {**generadores.batwing_por_defecto(f_MHz), "radios": float(generadores.BAT_RADIOS)}
     else:
         raise ValueError(f"tipo desconocido: {tipo}")
     return Diseno(tipo, f_MHz, diametro_mm, geometria, plano=config)

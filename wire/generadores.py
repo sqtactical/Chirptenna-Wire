@@ -8,7 +8,7 @@ from __future__ import annotations
 from . import geometria
 import math
 
-from .modelo import Barrido, Hilo, Modelo, Puerto, longitud_onda_m
+from .modelo import Barrido, Hilo, Linea, Modelo, Puerto, longitud_onda_m
 
 # Longitud total por defecto del dipolo, en fracciones de λ. Es un punto de partida, no el ajuste:
 # la resonancia real depende del radio y se busca con el motor (`ajuste.ajustar_dipolo`).
@@ -428,3 +428,79 @@ def biconica(f_min_MHz: float, diametro_mm: float, cono_mm: float | None = None,
     return Modelo("Bicónica", f_min_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido,
                   comentarios=(f"Biconica de {varillas} varillas, frecuencia minima {f_min_MHz:g} MHz",
                                f"Generatriz {cono * 1000:.1f} mm, hueco {g * 1000:.1f} mm, semiangulo {semiangulo:g} grados"))
+
+
+# ---------------------------------------------------------------- torniquete y batwing
+
+TORN_BRAZO, TORN_SEP, TORN_Z0, TORN_VF = 0.236, 0.02, 75.0, 0.66    # brazo en λ, separación entre los dos dipolos en λ, coaxial de 75 Ω
+BAT_ALA, BAT_ANCHO, BAT_HUECO, BAT_RADIOS = 0.173, 1.0, 0.004, 5                  # ala en λ, ancho de la punta respecto al largo del ala, hueco en λ
+
+
+def torniquete_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"brazo_mm": TORN_BRAZO * lam, "sep_mm": TORN_SEP * lam, "z0_linea": TORN_Z0, "vf_linea": TORN_VF,
+            "linea_mm": lam / 4 * TORN_VF}
+
+
+def torniquete(f_MHz: float, diametro_mm: float, brazo_mm: float | None = None, sep_mm: float | None = None,
+               z0_linea: float = TORN_Z0, vf_linea: float = TORN_VF, linea_mm: float | None = None,
+               barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Torniquete: dos dipolos de media onda cruzados en cruz (uno a lo largo de x y otro de y, el segundo `sep_mm` más alto).
+
+    El primero se alimenta directo y el segundo por una línea de λ/4 eléctricos (coaxial de `z0_linea` Ω y `vf_linea`):
+    esos 90° de fase dan polarización circular hacia arriba y hacia abajo. Espacio libre. NEC2 solo da la ganancia máxima:
+    la razón axial no se ha comprobado.
+    """
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = torniquete_por_defecto(f_MHz)
+    brazo = (brazo_mm or p["brazo_mm"]) / 1000
+    sep = (sep_mm or p["sep_mm"]) / 1000
+    linea = (linea_mm if linea_mm is not None else p["linea_mm"]) / 1000
+    if sep <= 2 * diametro_mm / 1000:
+        raise ValueError("la separación entre los dipolos es demasiado pequeña para ese diámetro")
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    n = _segmentos(2 * brazo, paso)
+    n += 1 - n % 2
+    hilos = (Hilo((-brazo, 0, 0), (brazo, 0, 0), r, n), Hilo((0, -brazo, sep), (0, brazo, sep), r, n))
+    return Modelo("Torniquete", f_MHz, hilos, Puerto(1, n // 2 + 1),
+                  lineas=(Linea(1, n // 2 + 1, 2, n // 2 + 1, z0_linea, linea, vf_linea),), barrido=barrido,
+                  comentarios=(f"Torniquete de dos dipolos cruzados a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Brazos de {brazo * 1000:.1f} mm, separacion {sep * 1000:.1f} mm, linea de {linea * 1000:.1f} mm "
+                               f"({z0_linea:g} ohm, VF {vf_linea:g})"))
+
+
+def batwing_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"ala_mm": BAT_ALA * lam, "ancho_mm": BAT_ALA * lam * BAT_ANCHO, "hueco_mm": max(4.0, round(BAT_HUECO * lam))}
+
+
+def batwing(f_MHz: float, diametro_mm: float, ala_mm: float | None = None, ancho_mm: float | None = None,
+            hueco_mm: float | None = None, radios: int = BAT_RADIOS, barrido: Barrido | None = None,
+            densidad: float = 1.0) -> Modelo:
+    """Batwing de alambre: dipolo con dos alas triangulares, en el plano x–z, hechas de `radios` alambres que salen del
+    vértice y un borde de alambre en la punta (como un abanico).
+
+    La fuente va en el hueco entre los dos vértices. Banda más ancha que un dipolo de varilla. Espacio libre.
+    """
+    if f_MHz <= 0 or diametro_mm <= 0 or radios < 3:
+        raise ValueError("frecuencia y diámetro positivos y al menos 3 radios por ala")
+    p = batwing_por_defecto(f_MHz)
+    ala = (ala_mm or p["ala_mm"]) / 1000
+    w = (ancho_mm or p["ancho_mm"]) / 1000
+    g = (hueco_mm or p["hueco_mm"]) / 1000
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    hilos = [Hilo((-g / 2, 0, 0), (g / 2, 0, 0), r, 1)]
+    zs = [w / 2 - w * i / (radios - 1) for i in range(radios)]          # los puntos del borde de la punta, de arriba abajo
+    for s in (1, -1):
+        v, punta = (s * g / 2, 0, 0), s * (g / 2 + ala)
+        puntos = [(punta, 0, z) for z in zs]
+        for p in puntos:                                                  # radios desde el vértice
+            hilos.append(Hilo(v, p, r, _segmentos(math.dist(v, p), paso)))
+        for a, b in zip(puntos, puntos[1:]):                              # borde de la punta
+            hilos.append(Hilo(a, b, r, _segmentos(math.dist(a, b), paso)))
+    return Modelo("Batwing", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Batwing de alambre a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm, {radios} radios por ala",
+                               f"Alas de {ala * 1000:.1f} mm de largo y {w * 1000:.1f} mm de ancho, hueco {g * 1000:.1f} mm"))

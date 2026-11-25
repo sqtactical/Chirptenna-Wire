@@ -1,0 +1,14 @@
+CM Torniquete
+CM Torniquete de dos dipolos cruzados a 137.5 MHz, alambre de 3 mm
+CM Brazos de 507.6 mm, separacion 43.6 mm, linea de 313.7 mm (75 ohm, VF 0.66)
+CM Generado por Chirptenna Wire
+CE
+GW 1 23 -0.507607583 0 0 0.507607583 0 0 0.0015
+GW 2 23 0 -0.507607583 0.0436061757 0 0.507607583 0.0436061757 0.0015
+GE 0
+GN -1 0 0 0 0 0 0 0 0 0
+EX 0 1 12 0 1 0 0 0 0 0
+TL 1 12 2 12 75 0.475285795 0 0 0 0
+FR 0 1 0 0 137.5 0
+RP 0 37 72 1000 0 0 5 5 0 0
+EN

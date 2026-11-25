@@ -20,7 +20,8 @@ from .svg import a_svg
 
 GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.hojas_manga, "coco": coaxial.hojas_coco,
                "jpole_koch": koch.hojas, "discone": discone.hojas, "gp": hilos.hojas_gp,
-               "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "biconica": hilos.hojas_biconica}
+               "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "biconica": hilos.hojas_biconica,
+               "torniquete": hilos.hojas_torniquete, "batwing": hilos.hojas_batwing}
 
 
 def generar(diseno: Diseno, fecha: str | None = None) -> Plano:

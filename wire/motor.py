@@ -50,8 +50,8 @@ def disponible() -> bool:
     return True
 
 
-def ejecutar_tarjetas(tarjetas: list[nec.Tarjeta], z0: float = Z0_POR_DEFECTO) -> Resultado:
-    """Ejecuta en PyNEC una lista de tarjetas (las de `nec.leer`)."""
+def _contexto(tarjetas: list[nec.Tarjeta]):
+    """Carga las tarjetas en un contexto de PyNEC y lo ejecuta: (contexto, frecuencias, hay_diagrama)."""
     from PyNEC import nec_context
 
     contexto = nec_context()
@@ -84,6 +84,23 @@ def ejecutar_tarjetas(tarjetas: list[nec.Tarjeta], z0: float = Z0_POR_DEFECTO) -
         elif t.nombre == "EN":
             if not con_diagrama:
                 contexto.xq_card(0)
+    return contexto, frecuencias, con_diagrama
+
+
+def razon_axial_dB(modelo: Modelo, f_MHz: float, theta_grados: float = 0.0) -> float:
+    """Razón axial (dB, 0 = circular perfecta) del campo en la dirección θ (0° = +z) a `f_MHz`; el primer φ del diagrama."""
+    import math
+    texto = nec.exportar(replace(modelo, barrido=Barrido(f_MHz, f_MHz, 1)), diagrama=True)
+    contexto, _, _ = _contexto(nec.leer(texto))
+    patron = contexto.get_radiation_pattern(0)
+    k = min(range(patron.get_ntheta()), key=lambda i: abs(patron.get_theta_angles()[i] - theta_grados))
+    r = max(float(patron.get_pol_axial_ratio()[k * patron.get_nphi()]), 1e-9)   # NEC: menor/mayor (de 0 a 1); matriz θ × φ en fila
+    return -20 * math.log10(min(r, 1.0))
+
+
+def ejecutar_tarjetas(tarjetas: list[nec.Tarjeta], z0: float = Z0_POR_DEFECTO) -> Resultado:
+    """Ejecuta en PyNEC una lista de tarjetas (las de `nec.leer`)."""
+    contexto, frecuencias, con_diagrama = _contexto(tarjetas)
     impedancias = []
     ganancias = [] if con_diagrama else None
     for k in range(len(frecuencias)):

@@ -51,6 +51,8 @@ DISENOS = {
     "vinv": lambda i: disenar("vinv", 145.0, 3.0, ajustar=False, idioma=i),
     "yagi": lambda i: disenar("yagi", 145.0, 3.0, ajustar=False, idioma=i),
     "biconica": lambda i: disenar("biconica", 145.0, 3.0, ajustar=False, idioma=i),
+    "torniquete": lambda i: disenar("torniquete", 137.5, 3.0, ajustar=False, idioma=i),
+    "batwing": lambda i: disenar("batwing", 145.0, 3.0, ajustar=False, idioma=i),
 }
 
 

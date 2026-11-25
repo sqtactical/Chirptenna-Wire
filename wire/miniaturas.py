@@ -48,6 +48,15 @@ MINIATURAS = {
 <line x1="26" y1="8" x2="26" y2="52" stroke="{COBRE}" stroke-width="3"/>
 <line x1="58" y1="14" x2="58" y2="46" stroke="{COBRE}" stroke-width="3"/><line x1="64" y1="14" x2="64" y2="46" stroke="{COBRE}" stroke-width="3"/>
 <line x1="94" y1="18" x2="94" y2="42" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "torniquete": f'''<svg {_CAB}>
+<line x1="14" y1="30" x2="106" y2="30" stroke="{COBRE}" stroke-width="3"/>
+<line x1="60" y1="6" x2="60" y2="54" stroke="{COBRE}" stroke-width="3" opacity=".6"/>
+<circle cx="60" cy="30" r="5" stroke="currentColor" stroke-width="1.3" fill="none"/>
+<path d="M65 30 Q80 14 90 14" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3"/></svg>''',
+    "batwing": f'''<svg {_CAB}>
+<path d="M54 30 L14 12 M54 30 L14 30 M54 30 L14 48 M14 12 V48" stroke="{COBRE}" stroke-width="2.6"/>
+<path d="M66 30 L106 12 M66 30 L106 30 M66 30 L106 48 M106 12 V48" stroke="{COBRE}" stroke-width="2.6"/>
+<rect x="54" y="26" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>''',
     "biconica": f'''<svg {_CAB}>
 <path d="M60 30 L36 6 M60 30 L84 6 M60 30 L48 6 M60 30 L72 6" stroke="{COBRE}" stroke-width="2.4"/>
 <path d="M60 30 L36 54 M60 30 L84 54 M60 30 L48 54 M60 30 L72 54" stroke="{COBRE}" stroke-width="2.4"/>

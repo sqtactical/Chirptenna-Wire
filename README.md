@@ -27,6 +27,8 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Dipolo en V invertida | **Simulado** en espacio libre, sin medir | 1 hoja A4: cotas, lista de corte, ROE y vértice a 1:1 con el ángulo |
 | Yagi de 3 elementos (dipolo plegado) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: elementos y separaciones, lista de corte, ROE y el centro del plegado a 1:1 |
 | Bicónica | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: cotas, lista de corte, ROE y pieza central a 1:1 |
+| Torniquete en X (dipolos cruzados) | **Simulado** (razón axial 0 dB en el cénit, en espacio libre), sin medir | 1 hoja A4: vista, lista de corte (brazos y línea de 75 Ω), ROE y centro del cruce a 1:1 |
+| Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |
 
 Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
 

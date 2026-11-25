@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Tipos nuevos, sin medir: torniquete en X (dipolos cruzados con línea de 75 Ω, razón axial calculada con `motor.razon_axial_dB`) y batwing de alambre.
 - Tipos nuevos, sin medir: ground plane (SO-239 o N), dipolo en V invertida, Yagi de 3 elementos y bicónica.
 - Patrón del coaxial a 1:1 (tramo, punta y extremo de la manga) en los planos de la CoCo y las antenas de coaxial.
 - El mosaico de A4 elige la orientación (vertical o apaisada) que da menos hojas.

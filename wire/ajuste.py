@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 
 from . import motor
+from .generadores import (BAT_ANCHO, BAT_RADIOS, batwing, batwing_por_defecto, torniquete, torniquete_por_defecto)
 from .generadores import biconica, biconica_por_defecto, gp, gp_por_defecto, vinv, vinv_por_defecto, yagi, yagi_por_defecto, discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
 from .modelo import Barrido, Modelo
 
@@ -322,6 +323,51 @@ def ajustar_biconica(f_min_MHz: float, diametro_mm: float, varillas: int = 8) ->
                   "f_ganancia_MHz": 1.5 * f_min_MHz, "barrido": {"f_MHz": list(r.frecuencias), "roe": list(r.roe)}}
     return {"geometria": {"cono_mm": p["cono_mm"], "hueco_mm": p["hueco_mm"], "semiangulo": p["semiangulo"], "varillas": float(varillas)},
             "resultados": resultados}
+
+
+def ajustar_torniquete(f_MHz: float, diametro_mm: float) -> dict:
+    """Torniquete con |S11| mínimo a f y razón axial baja hacia el cénit: ajusta el largo de los brazos y el de la línea
+    (75 Ω). Si solo se mirase |S11| los brazos se alargarían y se perdería la cuadratura (la razón axial pasó de 0,5 a 5,5 dB)."""
+    p = torniquete_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    construir = lambda x: torniquete(f_MHz, diametro_mm, brazo_mm=x[0], sep_mm=p["sep_mm"], linea_mm=x[1])  # noqa: E731
+    penal = lambda m: 0.04 * motor.razon_axial_dB(m, f_MHz)  # noqa: E731
+    valido = lambda x: x[0] > 0 and 0.5 * p["linea_mm"] < x[1] < 1.6 * p["linea_mm"]  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["brazo_mm"], p["linea_mm"]], [0.01 * lam, 0.01 * lam], valido=valido, penalizacion=penal)
+
+    def sens(m, f0):
+        corto = torniquete(f_MHz, diametro_mm, brazo_mm=x[0] - 5, sep_mm=p["sep_mm"], linea_mm=x[1])
+        return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz) - f0) / 5, "sensibilidad_pieza": "cada brazo"}
+
+    modelo = construir(x)
+    r = _con_resultados(modelo, f_MHz, {"brazo_mm": x[0], "sep_mm": p["sep_mm"], "z0_linea": p["z0_linea"],
+                                        "vf_linea": p["vf_linea"], "linea_mm": x[1]}, sens)
+    r["resultados"]["razon_axial_cenit_dB"] = motor.razon_axial_dB(modelo, f_MHz)
+    return r
+
+
+def ajustar_batwing(f_MHz: float, diametro_mm: float, radios: int = BAT_RADIOS) -> dict:
+    """Batwing con |S11| mínimo a f: ajusta el largo de las alas (el ancho de la punta es proporcional) y mide la banda de ROE < 2."""
+    p = batwing_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    construir = lambda x: batwing(f_MHz, diametro_mm, ala_mm=x[0], ancho_mm=x[0] * BAT_ANCHO, hueco_mm=p["hueco_mm"],  # noqa: E731
+                                  radios=radios)
+    x = _nm_gamma(f_MHz, construir, [p["ala_mm"]], [0.01 * lam], valido=lambda x: x[0] > 0)
+    modelo = construir(x)
+    r = _con_resultados(modelo, f_MHz, {"ala_mm": x[0], "ancho_mm": x[0] * BAT_ANCHO, "hueco_mm": p["hueco_mm"], "radios": float(radios)})
+    barrido = motor.simular(modelo, Barrido(0.7 * f_MHz, 1.4 * f_MHz, 71), diagrama=False)
+    k = min(range(len(barrido.roe)), key=lambda i: abs(barrido.frecuencias[i] - r["resultados"]["f_minimo_roe_MHz"]))
+    i0 = i1 = k
+    while i0 > 0 and barrido.roe[i0 - 1] < 2.0:
+        i0 -= 1
+    while i1 < len(barrido.roe) - 1 and barrido.roe[i1 + 1] < 2.0:
+        i1 += 1
+    if barrido.roe[k] < 2.0:
+        r["resultados"].update({"f_inferior_roe2_MHz": barrido.frecuencias[i0], "f_superior_roe2_MHz": barrido.frecuencias[i1],
+                                "ancho_roe2_pct": 100 * (barrido.frecuencias[i1] - barrido.frecuencias[i0]) / f_MHz})
+    else:
+        r["resultados"].update({"f_inferior_roe2_MHz": 0.0, "f_superior_roe2_MHz": 0.0, "ancho_roe2_pct": 0.0})
+    return r
 
 
 def ajustar_manga(f_MHz: float, cable) -> dict:

@@ -257,3 +257,103 @@ def hojas_biconica(diseno: Diseno, fecha: str) -> list[Hoja]:
                 Texto(vx + 5.5, vy - 33, fmt(alfa, 0) + "°", 7), Texto(vx - 3, vy - L - 2, tr("eje del cono"), 5.6, ancla="centro"))
     regla(hoja, 14, 244)
     return [hoja]
+
+
+# ---------------------------------------------------------------- torniquete
+
+
+def hojas_torniquete(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    brazo, sep, z0l, vf, linea = g["brazo_mm"], g["sep_mm"], g["z0_linea"], g["vf_linea"], g["linea_mm"]
+    d = diseno.diametro_mm
+    u = unidad(diseno)
+    r = diseno.resultados
+    hoja = hoja_a4(diseno, _titulo(N_("Torniquete en X · {0} MHz ({1})"), diseno),
+                   tr("Dos dipolos cruzados a 90° y una línea de λ/4 entre sus centros: polarización circular · coaxial de 50 Ω"))
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista desde arriba, sin escala · medidas en {0} al eje del alambre", u))
+    modelo, esc, P = _vista(hoja, diseno, lambda p: (p[0], p[1]))
+    c = P((0, 0, 0))
+    hoja.anadir(Texto(c[0] + esc * brazo / 1000 + 3, c[1] + 1.5, tr("brazo {0}", longitud(brazo, diseno, 0)), 5.4),
+                Texto(c[0] + 3, c[1] - esc * brazo / 1000 - 1, tr("dipolo 2, {0} más alto", longitud(sep, diseno, 0)), 5.4),
+                Texto(c[0] - esc * brazo / 1000, c[1] + 4, tr("dipolo 1, alimentado directo"), 5.4))
+    seccion(hoja, 14, 91, tr("LISTA DE CORTE"), tr("Corta con el sobrante y ajusta después"), VERDE)
+    sob = diseno.sobrante_mm
+    filas = [
+        [tr("Brazo, alambre Ø {0} mm", fmt(d, 1)), "4", f"{longitud(brazo, diseno)} {u}", f"{longitud(brazo + sob, diseno, 0)} {u}"],
+        [tr("Línea de coaxial de {0} Ω, VF {1}", fmt(z0l, 0), fmt(vf, 2)), "1", f"{longitud(linea, diseno)} {u}",
+         f"{longitud(linea + sob, diseno, 0)} {u}"],
+        [tr("Cruceta aislante de PVC o plástico, 2 piezas"), "1", tr("a medida"), "—"],
+        [tr("Mástil no metálico, soporte del cruce"), "1", tr("a medida"), "—"],
+        [tr("Coaxial RG-58 de 50 Ω, bajada + choke"), "1", tr("a medida"), "—"],
+    ]
+    tabla(hoja, 14, 103, [0, 52, 64, 84], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 104)
+    nota = tr("Ajuste: recorta los cuatro brazos por igual. La línea ya sale ajustada por simulación para dar 90° de fase;\n"
+              "con otro coaxial recalcúlala (λ/4 × VF).")
+    if r and "razon_axial_cenit_dB" in r:
+        nota += "\n" + tr("Razón axial hacia el cénit: {0} dB (simulada; 0 dB es circular perfecta).", fmt(r["razon_axial_cenit_dB"], 1))
+    hoja.anadir(Texto(14, 138, nota, 6.0, VERDE))
+    _simulacion_roe(hoja, diseno)
+    hoja.anadir(Linea(10, 148, 200, 148, GRIS, 0.1))
+    seccion(hoja, 14, 153, tr("CENTRO DEL CRUCE"), tr("Escala 1:1 · los dos huecos de alimentación y la línea que los une"), VERDE)
+    cx, cy, L, h = 150.0, 186.0, 26.0, 10.0
+    hoja.anadir(Rect(cx - L, cy - d / 2, L - h / 2, d, None, relleno=COBRE, etiqueta="plantilla:brazo_1a"),
+                Rect(cx + h / 2, cy - d / 2, L - h / 2, d, None, relleno=COBRE, etiqueta="plantilla:brazo_1b"),
+                Rect(cx - d / 2, cy - L, d, L - h / 2, None, relleno=CUBIERTA, etiqueta="plantilla:brazo_2a"),
+                Rect(cx - d / 2, cy + h / 2, d, L - h / 2, None, relleno=CUBIERTA, etiqueta="plantilla:brazo_2b"),
+                Linea(cx + h / 2 + 4, cy - 2, cx + h / 2 + 4, cy - 2 - 22, GRIS, 0.2, (1.4, 0.8)),
+                Texto(cx + h / 2 + 8, cy - 12, tr("línea λ/4"), 5.6),
+                Cota(cx - h / 2, cy + 9, cx + h / 2, cy + 9, longitud(h, diseno, 0), tam=5.6),
+                Texto(14, 168, tr("Dipolo 1 (cobre): el coaxial de bajada se suelda en su hueco,\nvivo a un brazo y malla al otro."), 5.8),
+                Texto(14, 182, tr("Dipolo 2 (gris): a {0} por encima, girado 90°, con la línea de λ/4\nsoldada a los dos lados de su hueco.",
+                                  longitud(sep, diseno, 0)), 5.8),
+                Texto(14, 196, tr("Se dibuja solo el centro: cada brazo mide {0}.", longitud(brazo, diseno, 0)), 5.8, GRIS))
+    regla(hoja, 14, 244)
+    return [hoja]
+
+
+# ---------------------------------------------------------------- batwing
+
+
+def hojas_batwing(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    ala, w, hueco, n = g["ala_mm"], g["ancho_mm"], g["hueco_mm"], int(g["radios"])
+    d = diseno.diametro_mm
+    u = unidad(diseno)
+    r = diseno.resultados
+    hoja = hoja_a4(diseno, _titulo(N_("Batwing · {0} MHz ({1})"), diseno),
+                   tr("Dipolo con dos alas de abanico de {0} radios de alambre Ø {1} mm · alimentado con coaxial de 50 Ω", n, fmt(d, 1)))
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Sin escala · medidas en {0} al eje del alambre", u))
+    _vista(hoja, diseno, lambda p: (p[0], p[2]), margen_x=46)
+    hoja.anadir(Texto(14, 56, tr("ala {0}", longitud(ala, diseno)), 5.6), Texto(14, 62, tr("ancho de punta {0}", longitud(w, diseno)), 5.6),
+                Texto(14, 68, tr("hueco {0}", longitud(hueco, diseno, 0)), 5.6, GRIS))
+    seccion(hoja, 14, 91, tr("LISTA DE CORTE"), tr("Medidas desde el vértice; corta con el sobrante"), VERDE)
+    sob = diseno.sobrante_mm
+    largos: dict[float, int] = {}
+    for i in range(n):
+        z = abs(w / 2 - w * i / (n - 1))
+        largos[round(math.hypot(ala, z), 1)] = largos.get(round(math.hypot(ala, z), 1), 0) + 2
+    filas = [[tr("Radio, alambre Ø {0} mm", fmt(d, 1)), str(c), f"{longitud(lg, diseno)} {u}", f"{longitud(lg + sob, diseno, 0)} {u}"]
+             for lg, c in sorted(largos.items())]
+    filas.append([tr("Borde de la punta, Ø {0} mm", fmt(d, 1)), "2", f"{longitud(w, diseno)} {u}", f"{longitud(w + sob, diseno, 0)} {u}"])
+    filas.append([tr("Aislador central de PVC y coaxial de 50 Ω"), "1", "—", "—"])
+    tabla(hoja, 14, 103, [0, 52, 64, 84], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 104)
+    nota = tr("Ajuste: alarga o acorta las alas por igual; los radios se sueldan al borde de la punta.")
+    if r and r.get("f_inferior_roe2_MHz"):
+        nota += "\n" + tr("ROE < 2 de {0} a {1} MHz ({2} % de ancho de banda, simulado).",
+                          fmt(r["f_inferior_roe2_MHz"], 0), fmt(r["f_superior_roe2_MHz"], 0), fmt(r["ancho_roe2_pct"], 0))
+    hoja.anadir(Texto(14, 140, nota, 6.0, VERDE))
+    _simulacion_roe(hoja, diseno)
+    hoja.anadir(Linea(10, 148, 200, 148, GRIS, 0.1))
+    seccion(hoja, 14, 153, tr("VÉRTICE Y ABANICO"), tr("Escala 1:1 · los radios salen del hueco central"), VERDE)
+    vx, vy, L = 105.0, 200.0, 60.0
+    for s in (1, -1):
+        for i in range(n):
+            z = (w / 2 - w * i / (n - 1))
+            norma = math.hypot(ala, z)
+            hoja.anadir(Linea(vx + s * hueco / 2, vy, vx + s * (hueco / 2 + L * ala / norma), vy - L * z / norma, COBRE, max(d, 0.6), None,
+                              "plantilla:radio"))
+    hoja.anadir(Rect(vx - hueco / 2 - 2, vy - 4, hueco + 4, 8, TINTA, 0.18, PVC, etiqueta="plantilla:aislador"),
+                Cota(vx - hueco / 2, vy + 12, vx + hueco / 2, vy + 12, longitud(hueco, diseno, 0), tam=5.6),
+                Texto(vx, vy + 22, tr("coaxial: vivo a un lado, malla al otro"), 5.6, ancla="centro"))
+    regla(hoja, 14, 244)
+    return [hoja]
