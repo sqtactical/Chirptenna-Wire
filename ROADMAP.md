@@ -34,7 +34,7 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 - [x] W2.1 Coaxial en el modelo: malla como hilo + interior como línea `TL` con VF — 25-11-2026 (`wire/coaxial.py`; un stub abierto de λ/4·VF da |Z| < 5 Ω y a λ/8 la reactancia teórica, ±25 %)
 - [x] W2.2 Tabla de cables (RG-58, RG-174, RG-316, RG-213, LMR-400, Aircell 7…) y VF medido por el usuario — 25-11-2026 (`wire/cables.py`; **cifras típicas sin comprobar una a una contra la hoja de datos** (`verificado=False`); el VF medido sustituye al de catálogo y `Diseno.cable` guarda su origen)
 - [x] W2.3 Cable de bajada y choke en el modelo — 25-11-2026 (`coaxial.dipolo_con_bajada`, `axial` o perpendicular; el choke es una carga de 2–10 kΩ: con ella la impedancia deja de depender del largo del cable, 1216 → 25–53 Ω en axial y 22 → 0,6 Ω en perpendicular; **una resistencia no devuelve la Z del dipolo aislado**, el cable extiende el brazo; `Carga.paralela` añade LD tipo 1)
-- [ ] W2.4 Dipolo de manga de coaxial (sleeve)
+- [ ] W2.4 Dipolo de manga de coaxial (sleeve) — **parada el 25-11-2026 a la espera de decisión**: la manga modelada como jaula de 4 hilos alrededor de la malla (unida a ella arriba, abierta abajo) **no converge** al duplicar los segmentos (145 MHz: 30 − j29 Ω con λ/50 y 11 − j196 Ω con λ/100) y no aísla del cable (Z cambia 39–64 Ω al variar el largo del cable de 0,3 a 1,2 m con la manga de 0,22–0,28 λ). No se ha guardado código
 - [ ] W2.5 Colineal CoCo
 - [ ] W2.6 Hojas de planos: pelado y cruces a 1:1, tramos sin escala
 - [ ] W2.7 **Usuario delante**: medir el VF de su cable y una CoCo construida con el plano
