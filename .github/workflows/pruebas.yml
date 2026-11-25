@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      - run: python -m pip install PyNEC numpy fpdf2 pytest
+      - run: python -m pip install PyNEC numpy fpdf2 pytest nicegui
       - run: python -m pytest -v -rs
 
   linux-nec2c:
@@ -44,3 +44,15 @@ jobs:
       - run: python -m pytest -v -rs pruebas/test_pyodide.py
         env:
           CHIRPTENNA_PYODIDE: ${{ runner.temp }}/pyodide
+
+  web-navegador:
+    # La web lite en un navegador real: cada tipo en es y en da el mismo plano que el escritorio (pruebas/test_web_navegador.py).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install fpdf2 pytest playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m pytest -v -rs pruebas/test_web_navegador.py

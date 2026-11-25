@@ -24,6 +24,20 @@ no pide otra cosa, lo siguiente es la primera tarea sin marcar de la primera fas
 - Los ejemplos de `docs/ejemplos/` se regeneran con `python -m wire plano ... --guardar`; las pruebas de planos los leen.
 - En PowerShell 5.1 no pasar código con comillas a `python -c`: se pierden. Usar un script en un archivo.
 
+## Interfaz, idiomas y medidas
+
+- Escritorio: `python gui/app.py --puerto 8090` (NiceGUI instalado en el venv: `pip install nicegui`). Solo 127.0.0.1. El ajuste con PyNEC
+  va en `run.cpu_bound(wire.escritorio.calcular, …)`: la función tiene que estar en un módulo, no en `gui/app.py`. Si se lanza desde un
+  test, quitar del entorno las variables `PYTEST*` y `NICEGUI*` o NiceGUI entra en «modo de pruebas de pantalla».
+- Idiomas: el castellano es el texto fuente y la clave. Todo texto nuevo con `tr("texto {0}", x)` (también en `gui/`); marcas con
+  `N_()` si se traducen al mostrarlas. Nada de `tr` a nivel de módulo. Luego `python herramientas/i18n.py actualizar` y traducir los
+  vacíos de `wire/idiomas/*.json`; `pruebas/test_idiomas.py` falla si falta alguno o si las marcas `{n}` o los saltos no coinciden.
+  En la web, `T('texto')` y `data-t` (`web/app.js`, `web/index.html`). Las tablas reducen la letra si un texto no cabe.
+- Medidas: `wire/medidas.py`; el estado «Medido» solo con una medida guardada a ≤ 2 % de la simulada.
+- Web en un navegador real: `pruebas/test_web_navegador.py` (Playwright; en local `PRUEBA_WEB_CANAL=msedge`).
+- Los archivos escritos con `Set-Content -Encoding utf8` de PowerShell 5.1 llevan BOM y rompen `ast.parse`: escribir con Python o la
+  herramienta de edición.
+
 ## Reglas
 
 - Todo en español: nombres, comentarios, mensajes, claves de JSON. El `.nec` va en ASCII (comentarios sin tildes).

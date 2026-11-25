@@ -11,7 +11,8 @@ import json
 from . import nec, planos
 from .i18n import IDIOMAS, tr, usar
 from .cables import CABLES
-from .diseno import BANDAS, ESTADOS, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
+from .diseno import BANDAS, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
+from .miniaturas import MINIATURAS
 
 VERSION_API = 1
 
@@ -24,7 +25,8 @@ def catalogo(idioma: str = "es") -> str:
 def _catalogo() -> str:
     return json.dumps({
         "version_api": VERSION_API,
-        "tipos": [{"clave": c, "nombre": tr(n)} for c, n in TIPOS.items()],
+        "tipos": [{"clave": c, "nombre": tr(n), "resumen": tr(RESUMEN[c]), "estado": tr(ESTADO_TIPO[c]), "miniatura": MINIATURAS[c]}
+                  for c, n in TIPOS.items()],
         "estados": list(ESTADOS),
         "bandas": [{"nombre": tr(n), "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},

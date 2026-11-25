@@ -16,13 +16,17 @@ Familia = "https://github.com/sqtactical/chirptenna"
 
 [project.optional-dependencies]
 motor = ["PyNEC>=2.4", "numpy"]
+escritorio = ["nicegui"]
+web = ["playwright"]
 pruebas = ["pytest"]
 
 [tool.setuptools]
 packages = ["wire", "wire.planos"]
+# `gui/` (interfaz de escritorio) se ejecuta desde el repositorio: python gui/app.py
 
 [tool.setuptools.package-data]
 "wire.planos" = ["recursos/*"]
+"wire" = ["idiomas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["pruebas"]

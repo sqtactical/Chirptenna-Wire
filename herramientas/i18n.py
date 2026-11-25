@@ -23,17 +23,18 @@ CARPETA = os.path.join(RAIZ, "wire", "idiomas")
 
 def _claves_python() -> set[str]:
     claves: set[str] = set()
-    for carpeta, subcarpetas, archivos in os.walk(os.path.join(RAIZ, "wire")):
-        subcarpetas[:] = [d for d in subcarpetas if d != "__pycache__"]
-        for a in archivos:
-            if not a.endswith(".py"):
-                continue
-            with open(os.path.join(carpeta, a), encoding="utf-8") as f:
-                arbol = ast.parse(f.read())
-            for n in ast.walk(arbol):
-                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in ("tr", "N_") and n.args \
-                        and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str):
-                    claves.add(n.args[0].value)
+    for raiz in ("wire", "gui"):
+        for carpeta, subcarpetas, archivos in os.walk(os.path.join(RAIZ, raiz)):
+            subcarpetas[:] = [d for d in subcarpetas if d != "__pycache__"]
+            for a in archivos:
+                if not a.endswith(".py"):
+                    continue
+                with open(os.path.join(carpeta, a), encoding="utf-8") as f:
+                    arbol = ast.parse(f.read())
+                for n in ast.walk(arbol):
+                    if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in ("tr", "N_") and n.args \
+                            and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str):
+                        claves.add(n.args[0].value)
     return claves
 
 

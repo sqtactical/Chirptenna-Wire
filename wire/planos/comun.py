@@ -7,10 +7,11 @@ from dataclasses import replace
 
 from .. import __version__
 from ..diseno import Diseno, banda_de
-from ..i18n import separador_decimal, tr
+from ..i18n import N_, separador_decimal, tr
 from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PT, ROJO, TINTA, VERDE, Hoja, Imagen, Linea, Polilinea, Rect,
                    Texto, ancho_texto)
 
+REFERENCIAS_MEDIDA = (N_("resonancia"), N_("mínimo de ROE"))  # para el extractor de idiomas
 URL = "github.com/sqtactical/Chirptenna-Wire"
 LICENCIA = "CC BY-NC 4.0"
 REGLA_MM = 80.0  # cabe junto al cajetín en A4 vertical
@@ -74,6 +75,10 @@ def cajetin(hoja: Hoja, diseno: Diseno, escala: str, n: int, total: int, fecha: 
     else:
         material = tr("Ø {0} mm · {1}", fmt(diseno.diametro_mm, 1), tr(diseno.material))
     estado = {"Simulado": tr("Simulado, sin medir"), "Medido": tr("Medido"), "Sin validar": tr("Sin validar")}[diseno.estado]
+    if diseno.medida:
+        m = diseno.medida
+        estado = (tr("Medido: {0} {1} % frente a la simulación", tr(m["referencia"]), fmt(m["error_pct"], 1)) if diseno.estado == "Medido"
+                  else tr("Medida a {0} % de la simulada ({1}): sin validar", fmt(m["error_pct"], 1), tr(m["referencia"])))
     campos = [
         (tr("Diseño"), diseno.nombre),
         (tr("Tipo"), diseno.nombre_tipo),
@@ -158,7 +163,7 @@ def grafica_roe(hoja: Hoja, x: float, y: float, ancho: float, alto: float, f: li
         hoja.anadir(Polilinea(tuple(tramo), VERDE, 0.35))
     hoja.anadir(Rect(x, y, ancho, alto, TINTA, 0.2),
                 Texto(x + ancho / 2, y + alto + 6.5, "MHz", 5, ancla="centro"),
-                Texto(x - 7, y + alto / 2, "ROE", 5, ancla="centro", rotacion=90))
+                Texto(x - 7, y + alto / 2, tr("ROE"), 5, ancla="centro", rotacion=90))
 
 
 def tabla(hoja: Hoja, x: float, y: float, columnas: list[float], cabecera: list[str], filas: list[list[str]],

@@ -7,6 +7,7 @@ const pendientes = new Map();
 let siguiente = 1;
 let actual = null;       // {entrada, plano}
 let hojaActual = 0;
+let tiposCatalogo = [];
 let coaxial = { tipos: [], cables: [] };
 let TEXTOS = {};
 let IDIOMA = 'es';
@@ -79,9 +80,16 @@ function entrada() {
                           cable: $('cable').value || null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null });
 }
 
+function pintarGaleria() {
+  $('galeria').innerHTML = tiposCatalogo.map((k) =>
+    `<button type="button" class="carta" data-tipo="${k.clave}" title="${k.resumen}" aria-pressed="${k.clave === $('tipo').value}">` +
+    `${k.miniatura}<b>${k.nombre}</b><small>${k.estado}</small></button>`).join('');
+}
+
 async function iniciar() {
   const c = await llamar('catalogo', IDIOMA);
   const tipoActual = $('tipo').value;
+  tiposCatalogo = c.tipos;
   $('tipo').innerHTML = c.tipos.map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
   $('banda').innerHTML = '<option value="" data-t>— otra —</option>' + c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
   coaxial = c.coaxial;
@@ -89,6 +97,7 @@ async function iniciar() {
   $('papel').innerHTML = c.plano.papel.map((p) => `<option>${p}</option>`).join('');
   $('unidades').innerHTML = c.plano.unidades.map((p) => `<option>${p}</option>`).join('');
   if (tipoActual) $('tipo').value = tipoActual;
+  pintarGaleria();
   aplicarIdioma();
 }
 
@@ -122,7 +131,15 @@ $('idioma').onchange = async () => {
   $('progreso').textContent = T('Listo.');
   if (actual) { await iniciar(); await generar(JSON.stringify({ diseno: actual.plano.diseno })); }
 };
-$('tipo').onchange = () => $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value));
+$('galeria').onclick = (ev) => {
+  const carta = ev.target.closest('.carta');
+  if (!carta) return;
+  $('tipo').value = carta.dataset.tipo;
+  $('tipo').onchange();
+  hojaActual = 0;
+  generar();
+};
+$('tipo').onchange = () => { pintarGaleria(); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
 $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };

@@ -64,6 +64,19 @@ pasa también el `.nec` por nec2c en Linux (misma impedancia que PyNEC a ≤ 0,5
 
 **Imprime los planos al 100 % («tamaño real»)** y comprueba la regla de 80 mm antes de usar los detalles 1:1.
 
+## Interfaz de escritorio
+
+```powershell
+python -m pip install nicegui PyNEC numpy fpdf2
+python gui/app.py            # http://127.0.0.1:8090 (solo en este ordenador)
+```
+
+Pestañas **Elegir** (galería de tipos con su estado), **Diseño** (frecuencia o banda, cable y VF medido, papel, unidades; *Simular y
+ajustar* usa PyNEC en un proceso aparte), **Simulación** (Z, ROE, ganancia y curva), **Plano** (vista de cada hoja y descargas de
+PDF, SVG, `.nec` y `diseno.json`) y **Medir** (enlace a Chirptenna VNA, importar un `.s1p` y compararlo con la simulación). Un diseño
+solo pasa a **«Medido»** si la resonancia o el mínimo de ROE medidos caen a ≤ 2 % de los simulados. `CHIRPTENNA_VNA_URL` cambia la
+dirección de Chirptenna VNA (por defecto `http://localhost:8765/`).
+
 ## Idiomas
 
 Los planos y la web salen en castellano, inglés, francés y alemán (`--idioma es|en|fr|de` en la línea de comandos; selector en la web). El castellano es el texto fuente; los catálogos están en `wire/idiomas/` y `python herramientas/i18n.py faltan` comprueba que no falte ninguna traducción (lo pasa la CI). **Las traducciones las hizo Claude y conviene que las revise un hablante nativo.**

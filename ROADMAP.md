@@ -41,11 +41,11 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 
 ## Fase 3 · Interfaz de escritorio
 
-- [ ] W3.1 Esqueleto NiceGUI con pestañas Elegir, Diseño, Simulación, Plano, Medir
-- [ ] W3.2 Vista previa del plano en SVG y descargas (PDF, SVG, `.nec`, `diseno.json`)
+- [x] W3.1 Esqueleto NiceGUI con pestañas Elegir, Diseño, Simulación, Plano, Medir — 25-11-2026 (`gui/app.py`, `python gui/app.py`; el ajuste va en un proceso aparte con `wire/escritorio.py`; solo escucha en 127.0.0.1; probado con una J-pole ajustada con PyNEC y arranque en los 4 idiomas en `pruebas/test_gui.py`)
+- [x] W3.2 Vista previa del plano en SVG y descargas (PDF, SVG, `.nec`, `diseno.json`) — 25-11-2026 (la vista es el mismo `Plano` que se descarga; abrir y guardar `diseno.json`; la configuración del plano —papel, unidades, idioma— se guarda en el diseño)
 - [x] W3.3 Idiomas (es, en, fr, de) con el esquema de Chirptenna — 25-11-2026 (`wire/i18n.py` con `tr()`, catálogos `wire/idiomas/*.json`, extractor `herramientas/i18n.py faltan` que pasa `pruebas/test_idiomas.py` en la CI; planos, CLI `--idioma` y web; traducciones hechas por Claude, **a revisar por hablantes nativos**; falta la interfaz de escritorio, que aún no existe (W3.1))
-- [ ] W3.4 Enlace con Chirptenna VNA (`?f=&banda=&nombre=`) y estado «Medido»
-- [ ] W3.5 Instalación para usuarios (script o instrucciones) y README con capturas
+- [x] W3.4 Enlace con Chirptenna VNA (`?f=&banda=&nombre=`) y estado «Medido» — 25-11-2026 (`wire/medidas.py`: lee `.s1p` (RI, MA, DB; Hz–GHz), compara resonancia o mínimo de ROE con la simulada y solo pasa a «Medido» con ≤ 2 %; la medida se guarda en `diseno.json` y sale en el cajetín; dirección de Chirptenna VNA en `CHIRPTENNA_VNA_URL`, por defecto `http://localhost:8765/`; **la importación del .s1p en la interfaz no se ha probado con un archivo real del NanoVNA**, solo con los sintéticos de `pruebas/test_medidas.py`)
+- [ ] W3.5 Instalación para usuarios (script o instrucciones) y README con capturas — instrucciones en el README; falta decidir si hay `instalar.bat` y hacer capturas
 
 ## Fase 4 · Más tipos y papel grande
 
@@ -58,9 +58,9 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 ## Fase 5 · Web lite
 
 - [x] W5.1 Empaquetar el núcleo para Pyodide (sin PyNEC) y comprobar que genera los planos (`wire/web_api.py`, `herramientas/construir_web.py`, `pruebas/test_web.py`; 25-11-2026)
-- [ ] W5.2 Interfaz web (galería, parámetros, vista SVG, descargas): primera versión hecha en `web/` (tipo, banda, parámetros, hojas SVG, PDF, SVG, `.nec`, `diseno.json`, abrir un `diseno.json` de escritorio, tema claro/oscuro; verificada en el navegador el 25-11-2026). Faltan idiomas, miniaturas en la galería y probar en móvil real
+- [x] W5.2 Interfaz web (galería, parámetros, vista SVG, descargas) — 25-11-2026 (galería con miniaturas y estado por tipo, cable y VF medido, idiomas, tema claro/oscuro; abrir un `diseno.json` de escritorio da el mismo plano; **sin probar en un móvil real**, solo el diseño adaptable en el navegador)
 - [ ] W5.3 Simulación en el navegador: investigar nec2c en WebAssembly (decisión del usuario)
-- [ ] W5.4 Publicación en GitHub Pages y prueba en navegador en la CI
+- [x] W5.4 Publicación en GitHub Pages y prueba en navegador en la CI — 25-11-2026 (`web.yml` a mano; `pruebas/test_web_navegador.py` con Playwright: cada tipo en es y en da en el navegador el mismo SVG que el escritorio; job `web-navegador` en la CI, pendiente de verla pasar)
 
 ## Siempre
 

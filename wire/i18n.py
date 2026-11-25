@@ -57,5 +57,13 @@ def N_(texto: str) -> str:
     return texto
 
 
+def fijar(codigo: str) -> None:
+    """Fija el idioma de todo el proceso (interfaz de un solo usuario); para planos usa `usar`."""
+    global _actual
+    if codigo not in IDIOMAS:
+        raise ValueError(f"idioma desconocido: {codigo}")
+    _actual = codigo
+
+
 def separador_decimal() -> str:
     return "." if _actual == "en" else ","

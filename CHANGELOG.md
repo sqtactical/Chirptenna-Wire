@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- Interfaz de escritorio (NiceGUI): `python gui/app.py` con Elegir, Diseño, Simulación, Plano y Medir.
+- Medidas: `wire/medidas.py` lee `.s1p`, compara con la simulación y da el estado «Medido» con ≤ 2 %.
+- Idiomas es/en/fr/de en planos, CLI, web y escritorio (`wire/i18n.py`, `herramientas/i18n.py`).
+- Dipolo de manga y colineal CoCo de coaxial (sin medir; la CoCo, sin validar frente a un caso publicado).
+- Web: galería con miniaturas, cable y VF medido, selector de idioma; prueba en un navegador real en la CI.
+
 ## 0.1.0-alpha (25-11-2026)
 
 Primera versión pública.

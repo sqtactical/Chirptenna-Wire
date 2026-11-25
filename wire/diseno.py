@@ -21,6 +21,20 @@ TIPOS = {
 }
 
 TIPOS_COAXIAL = ("manga", "coco")
+
+# Lo que se dice de cada tipo en la galería: resumen y estado honesto (para el tipo, no para un diseño concreto).
+RESUMEN = {
+    "dipolo": N_("Dos brazos y coaxial: el más simple y la referencia para medir."),
+    "jpole": N_("Una sola pieza de alambre doblada en U, alimentada con coaxial."),
+    "manga": N_("Coaxial con la malla doblada hacia atrás como manga; sin soldar hilos."),
+    "coco": N_("Varios tramos de coaxial con vivo y malla cruzados; más ganancia."),
+}
+ESTADO_TIPO = {
+    "dipolo": N_("Simulado (validado contra la teoría), sin medir"),
+    "jpole": N_("Simulado, sin medir"),
+    "manga": N_("Simulado (modelo de banda estrecha), sin medir"),
+    "coco": N_("Simulado, sin validar frente a un caso publicado ni medido"),
+}
 CABLE_POR_DEFECTO = "RG-58"
 
 ESTADOS = ("Simulado", "Medido", "Sin validar")
@@ -100,6 +114,8 @@ class Diseno:
     version: int = 1
     # Antenas de coaxial: {"nombre", "z0", "vf", "vf_origen": "catálogo"|"medido"}; None en las de alambre.
     cable: dict | None = None
+    # Medida del NanoVNA guardada con el diseño (`wire.medidas.guardar_medida`); None si no hay.
+    medida: dict | None = None
 
     def con_cable(self, c) -> "Diseno":
         """Guarda el cable usado y de dónde sale su VF (`wire.cables.Cable`)."""
