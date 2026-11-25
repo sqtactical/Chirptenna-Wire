@@ -1,0 +1,29 @@
+name: pruebas
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows:
+    # El entorno de referencia: escritorio con PyNEC.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install PyNEC numpy pytest
+      - run: python -m pytest -v -rs
+
+  linux-nec2c:
+    # Contraste: el mismo .nec por nec2c tiene que dar la misma impedancia que PyNEC (≤ 0,5 %).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y nec2c
+      - run: python -m pip install PyNEC numpy pytest
+      - run: python -m pytest -v -rs
