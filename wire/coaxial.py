@@ -118,7 +118,7 @@ HUECO_COCO_M = 0.016  # largo del segmento de unión entre tramos (≥ 8 radios 
 
 def colineal_coco(f_MHz: float, cable: Cable, tramos: int = 4, punta_lambda: float = 0.25,
                   bajada_m: float = 0.0, choke_ohm: float | None = None, div: int = 50,
-                  barrido: Barrido | None = None) -> Modelo:
+                  barrido: Barrido | None = None, factor_tramo: float = 1.0) -> Modelo:
     """Colineal de coaxial (CoCo), eje z: `tramos` de cable de λ/2 eléctrico (λ/2·VF físico) con vivo y malla cruzados.
 
     **Sin validar** (25-11-2026): modelo en bruto, ver ROADMAP W2.5. Esquema (docs/roadmap/nec2.md §6):
@@ -132,7 +132,7 @@ def colineal_coco(f_MHz: float, cable: Cable, tramos: int = 4, punta_lambda: flo
     lam = longitud_onda_m(f_MHz)
     delta = lam / div
     radio = cable.radio_malla_m
-    largo = lam / 2 * cable.vf
+    largo = lam / 2 * cable.vf * factor_tramo  # `factor_tramo` != 1 acorta o alarga cada tramo de cable
     segs = lambda x: max(5, round(x / delta))  # noqa: E731
     hilos: list[Hilo] = []
     z = 0.0
