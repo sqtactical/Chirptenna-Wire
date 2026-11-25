@@ -10,7 +10,7 @@ import matplotlib.image as mpimg
 from matplotlib.patches import Rectangle, FancyArrowPatch, Circle
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-IMG = r'RUTA\img'
+IMG = os.path.join(AQUI, '..', '..', 'img')
 D = json.load(open(os.path.join(AQUI, 'datos_dipolo.json'), encoding='utf-8'))
 
 TINTA, GRIS, COBRE, VERDE = '#1f2a24', '#6d7680', '#c8892b', '#2f6b3a'

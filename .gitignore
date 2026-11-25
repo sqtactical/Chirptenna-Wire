@@ -3,3 +3,10 @@ __pycache__/
 .pytest_cache/
 *.out
 /salida/
+
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+build/

@@ -64,7 +64,7 @@ pasa también el `.nec` por nec2c en Linux (misma impedancia que PyNEC a ≤ 0,5
 
 ## Licencia
 
-Código bajo [AGPL-3.0](LICENSE). Los diseños que se publiquen, bajo CC BY-NC 4.0.
+Código bajo [AGPL-3.0](LICENSE). Los diseños y planos que publica el autor, bajo CC BY-NC 4.0 ([LICENSE-DISENOS.md](LICENSE-DISENOS.md)). English: [README.en.md](README.en.md).
 
 Forma parte de la familia [Chirptenna](https://github.com/sqtactical/chirptenna) (antenas impresas en PCB) y
 Chirptenna VNA (asistente de medida con el NanoVNA).

@@ -12,11 +12,12 @@ import matplotlib.image as mpimg
 from matplotlib.patches import Rectangle, FancyArrowPatch, Circle, Arc
 from matplotlib.backends.backend_pdf import PdfPages
 
-sys.path.insert(0, r'RUTA')
+# Hace falta una copia de Chirptenna (antenas/geometria.py): CHIRPTENNA = ruta de su carpeta.
+sys.path.insert(0, os.environ.get('CHIRPTENNA', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'proyecto_generador_antenas')))
 from antenas import geometria as g   # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-IMG = r'RUTA\img'
+IMG = os.path.join(AQUI, '..', '..', 'img')
 TINTA, GRIS, COBRE, VERDE, ROJO = '#1f2a24', '#6d7680', '#c8892b', '#2f6b3a', '#b04a3a'
 
 # ---- Geometría (mm), cotas orientativas: J-pole de 433 MHz con el radiador λ/2 hecho curva de Koch de iteración 2

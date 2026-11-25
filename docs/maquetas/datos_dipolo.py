@@ -1,8 +1,9 @@
 """Datos reales del dipolo de 145 MHz (varilla de 2 mm) con el motor de la fase 0, para la maqueta del plano."""
 import json
+import os
 import sys
 
-sys.path.insert(0, r'RUTA')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 from wire import dipolo, motor          # noqa: E402
 from wire.modelo import Barrido         # noqa: E402
 
