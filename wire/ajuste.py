@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 
 from . import motor
-from .generadores import dipolo, jpole, jpole_por_defecto
+from .generadores import discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
 from .modelo import Barrido, Modelo
 
 Z0 = 50.0
@@ -150,6 +150,74 @@ def ajustar_jpole(f_MHz: float, diametro_mm: float, separacion_mm: float | None 
         "sensibilidad_corto_MHz_por_mm": (f_corto - f_min) / 10,
     })
     geometria = {"largo_mm": x[0], "corto_mm": x[1], "toma_mm": x[2], "separacion_mm": s}
+    return {"geometria": geometria, "resultados": resultados}
+
+
+def ajustar_jpole_koch(f_MHz: float, diametro_mm: float, iteracion: int = 2, separacion_mm: float | None = None) -> dict:
+    """J-pole de Koch con |S11| mínimo a f a 50 Ω: ajusta la altura de la curva, el brazo corto y la toma (Nelder–Mead)."""
+    partida = jpole_koch_por_defecto(f_MHz, diametro_mm, iteracion)
+    s = separacion_mm or partida["separacion_mm"]
+
+    def construir(x):
+        return jpole_koch(f_MHz, diametro_mm, altura_koch_mm=x[0], corto_mm=x[1], toma_mm=x[2], separacion_mm=s,
+                          iteracion=iteracion)
+
+    def coste(x):
+        if not 0 < x[2] < x[1] or x[0] <= 0:
+            return 10.0
+        return _gamma(construir(x), f_MHz)
+
+    lam = 299792.458 / f_MHz
+    x0 = [partida["altura_koch_mm"], partida["corto_mm"], partida["toma_mm"]]
+    x, _ = nelder_mead(coste, x0, [0.02 * lam, 0.01 * lam, 0.01 * lam], tolerancia=1e-6)
+    x, _ = nelder_mead(coste, x, [0.002 * lam, 0.002 * lam, 0.002 * lam], tolerancia=1e-8)
+    modelo = construir(x)
+    resultados = _resultados(modelo, f_MHz)
+    f_min = minimo_roe(modelo, 0.95 * f_MHz, 1.05 * f_MHz)
+    recortado = jpole_koch(f_MHz, diametro_mm, altura_koch_mm=x[0] - 3, corto_mm=x[1], toma_mm=x[2], separacion_mm=s,
+                           iteracion=iteracion)
+    f_rec = minimo_roe(recortado, 0.95 * f_MHz, 1.08 * f_MHz)
+    resultados.update({"f_minimo_roe_MHz": f_min, "sensibilidad_MHz_por_mm": (f_rec - f_min) / 3,
+                       "sensibilidad_pieza": "la altura de la curva"})
+    geometria = {"altura_koch_mm": x[0], "corto_mm": x[1], "toma_mm": x[2], "separacion_mm": s, "iteracion": float(iteracion)}
+    return {"geometria": geometria, "resultados": resultados}
+
+
+def ajustar_discone(f_min_MHz: float, diametro_mm: float, varillas: int = 8) -> dict:
+    """Discone con el límite inferior de ROE < 2 en `f_min_MHz`: escala el cono y el disco (la banda sube y baja con su tamaño)."""
+    partida = discone_por_defecto(f_min_MHz)
+    k = 1.0
+    f_inf = f_sup = f_min_MHz
+
+    def construir(k_):
+        p = discone_por_defecto(f_min_MHz, k_)
+        return discone(f_min_MHz, diametro_mm, cono_mm=p["cono_mm"], disco_mm=p["disco_mm"], hueco_mm=p["hueco_mm"],
+                       varillas=varillas, barrido=Barrido(0.8 * f_min_MHz, 5.0 * f_min_MHz, 81))
+
+    mejor = (float("inf"), 1.0)
+    for _ in range(6):
+        r = motor.simular(construir(k), diagrama=False)
+        buenas = [f for f, ro in zip(r.frecuencias, r.roe) if ro < 2.0]
+        if not buenas:
+            break
+        f_inf, f_sup = buenas[0], buenas[-1]
+        mejor = min(mejor, (abs(math.log(f_inf / f_min_MHz)), k))
+        if mejor[0] < 0.01:
+            break
+        k = min(1.6, max(0.6, k * (f_inf / f_min_MHz) ** 0.7))      # amortiguado: el disco y el hueco también cuentan
+    k = mejor[1]
+    p = discone_por_defecto(f_min_MHz, k)
+    modelo = construir(k)
+    r = motor.simular(modelo, diagrama=False)
+    buenas = [f for f, ro in zip(r.frecuencias, r.roe) if ro < 2.0]
+    f_inf, f_sup = (buenas[0], buenas[-1]) if buenas else (0.0, 0.0)
+    centro = motor.simular(discone(f_min_MHz, diametro_mm, cono_mm=p["cono_mm"], disco_mm=p["disco_mm"],
+                                   hueco_mm=p["hueco_mm"], varillas=varillas, barrido=Barrido(2 * f_min_MHz, 2 * f_min_MHz, 1)))
+    resultados = {"motor": "PyNEC", "z0_ohm": Z0, "f_MHz": f_min_MHz, "f_inferior_roe2_MHz": f_inf, "f_superior_roe2_MHz": f_sup,
+                  "relacion_banda": (f_sup / f_inf) if f_inf else 0.0, "ganancia_dBi": centro.ganancia_max[0],
+                  "f_ganancia_MHz": 2 * f_min_MHz, "barrido": {"f_MHz": list(r.frecuencias), "roe": list(r.roe)}}
+    geometria = {"cono_mm": p["cono_mm"], "disco_mm": p["disco_mm"], "hueco_mm": p["hueco_mm"],
+                 "semiangulo": p["semiangulo"], "varillas": float(varillas)}
     return {"geometria": geometria, "resultados": resultados}
 
 

@@ -8,7 +8,7 @@ from dataclasses import replace
 from .. import __version__
 from ..diseno import Diseno, banda_de
 from ..i18n import N_, separador_decimal, tr
-from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PT, ROJO, TINTA, VERDE, Hoja, Imagen, Linea, Polilinea, Rect,
+from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PAPELES, PT, ROJO, TINTA, VERDE, Hoja, Imagen, Linea, Polilinea, Rect,
                    Texto, ancho_texto)
 
 REFERENCIAS_MEDIDA = (N_("resonancia"), N_("mínimo de ROE"))  # para el extractor de idiomas
@@ -42,10 +42,11 @@ def texto_banda(f_MHz: float) -> str:
     return tr("banda {0}", tr(b[0])) if b else tr("fuera de las bandas iniciales")
 
 
-def hoja_a4(diseno: Diseno, titulo: str, subtitulo: str, apaisada: bool = False) -> Hoja:
-    """Hoja A4 con marco, cabecera y el hueco del cajetín abajo a la derecha (96 × 44 mm)."""
-    ancho, alto = (297.0, 210.0) if apaisada else (210.0, 297.0)
-    hoja = Hoja("A4", apaisada=apaisada, titulo=titulo, marco=(10.0, 10.0, ancho - 10, alto - 10),
+def hoja_papel(diseno: Diseno, titulo: str, subtitulo: str, papel: str = "A4", apaisada: bool = False) -> Hoja:
+    """Hoja con marco, cabecera y el hueco del cajetín abajo a la derecha (96 × 44 mm)."""
+    a, b = PAPELES[papel]
+    ancho, alto = (b, a) if apaisada else (a, b)
+    hoja = Hoja(papel, apaisada=apaisada, titulo=titulo, marco=(10.0, 10.0, ancho - 10, alto - 10),
                 cajetin=(ancho - 106, alto - 54, ancho - 10, alto - 10))
     hoja.anadir(
         Rect(10, 10, ancho - 20, alto - 20, TINTA, 0.28),
@@ -56,6 +57,10 @@ def hoja_a4(diseno: Diseno, titulo: str, subtitulo: str, apaisada: bool = False)
     if diseno.estado != "Medido":
         hoja.anadir(Texto(ancho - 14, 18, tr(diseno.estado).upper(), 6, ROJO, "negrita", "derecha"))
     return hoja
+
+
+def hoja_a4(diseno: Diseno, titulo: str, subtitulo: str, apaisada: bool = False) -> Hoja:
+    return hoja_papel(diseno, titulo, subtitulo, "A4", apaisada)
 
 
 def seccion(hoja: Hoja, x: float, y: float, titulo: str, subtitulo: str, color: str = GRIS) -> None:
@@ -188,6 +193,22 @@ def tabla(hoja: Hoja, x: float, y: float, columnas: list[float], cabecera: list[
     return yy
 
 
+def envolver(texto: str, ancho_mm: float, tam_pt: float, sangria: str = "   ") -> str:
+    """Parte `texto` en líneas de como mucho `ancho_mm` (en DejaVu Sans); las siguientes llevan `sangria`."""
+    lineas: list[str] = []
+    for parrafo in texto.split("\n"):
+        actual = ""
+        for palabra in parrafo.split(" "):
+            prueba = palabra if not actual else actual + " " + palabra
+            if actual and ancho_texto(prueba, tam_pt) > ancho_mm:
+                lineas.append(actual)
+                actual = sangria + palabra
+            else:
+                actual = prueba
+        lineas.append(actual)
+    return "\n".join(lineas)
+
+
 def alambre(hoja: Hoja, x1: float, y1: float, x2: float, y2: float, diametro: float, etiqueta: str = "") -> None:
     """Alambre a escala 1:1: banda de cobre del diámetro real y su eje (el que se acota)."""
     if y1 == y2:
@@ -198,4 +219,4 @@ def alambre(hoja: Hoja, x1: float, y1: float, x2: float, y2: float, diametro: fl
 
 
 __all__ = ["BLANCO", "COBRE", "GRIS", "PT", "TINTA", "VERDE", "alambre", "cajetin", "fmt", "grafica_roe", "hoja_a4",
-           "longitud", "regla", "seccion", "tabla", "texto_banda", "unidad"]
+           "longitud", "regla", "seccion", "envolver", "tabla", "texto_banda", "unidad"]

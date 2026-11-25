@@ -21,6 +21,8 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | J-pole de alambre | **Simulado** (sin medir) | 2 hojas A4: resumen y detalle 1:1 del fondo de la U, el adaptador y la toma |
 | Dipolo de manga de coaxial | **Simulado** (modelo de banda estrecha, sin medir) | 1 hoja A4: tramos, lista de corte, ROE simulada y pelado 1:1; cable y VF en el cajetín |
 | Colineal CoCo (2–8 tramos de coaxial) | **Simulado, sin validar frente a un caso publicado** ni medido | 2 hojas A4: tramos sin escala con su longitud física y eléctrica, red en L, y detalle 1:1 de la unión cruzada |
+| J-pole de Koch | **Simulado** (sin medir; la J-pole recta tampoco) | Resumen y plantilla del alambre a 1:1: una hoja, **A3** o **mosaico de A4** con solape, marcas de registro y mapa de montaje |
+| Discone (8 o 16 varillas) | **Simulado** (sin medir ni validar frente a un caso publicado) | 1 hoja A4: cotas, lista de corte, ROE y plantilla 1:1 de la pieza central y del ángulo del cono |
 
 Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
 
@@ -66,6 +68,11 @@ pasa también el `.nec` por nec2c en Linux (misma impedancia que PyNEC a ≤ 0,5
 
 ## Interfaz de escritorio
 
+![Elegir antena](docs/capturas/escritorio_elegir.png)
+![Plano de la J-pole de Koch](docs/capturas/escritorio_plano.png)
+
+En Windows, `instalar.bat` crea el entorno fuera de OneDrive, instala los paquetes y deja un `iniciar.bat`. A mano:
+
 ```powershell
 python -m pip install nicegui PyNEC numpy fpdf2
 python gui/app.py            # http://127.0.0.1:8090 (solo en este ordenador)
@@ -82,6 +89,8 @@ dirección de Chirptenna VNA (por defecto `http://localhost:8765/`).
 Los planos y la web salen en castellano, inglés, francés y alemán (`--idioma es|en|fr|de` en la línea de comandos; selector en la web). El castellano es el texto fuente; los catálogos están en `wire/idiomas/` y `python herramientas/i18n.py faltan` comprueba que no falte ninguna traducción (lo pasa la CI). **Las traducciones las hizo Claude y conviene que las revise un hablante nativo.**
 
 ## Web lite
+
+![Web lite](docs/capturas/web.png)
 
 **https://sqtactical.github.io/Chirptenna-Wire/** · `web/` es una versión que corre entera en el navegador (Pyodide, sin instalar nada): se elige el tipo y la frecuencia
 y se descarga el PDF, el SVG, el `.nec` o el `diseno.json`. **No simula**: usa las cotas de partida («Sin validar»);

@@ -45,6 +45,8 @@ DISENOS = {
     "jpole": lambda i: disenar("jpole", 435.0, 2.0, ajustar=False, idioma=i),
     "manga": lambda i: disenar("manga", 145.0, 2.0, ajustar=False, idioma=i),
     "coco": lambda i: disenar("coco", 145.0, 2.0, ajustar=False, idioma=i),
+    "jpole_koch": lambda i: disenar("jpole_koch", 433.92, 2.0, ajustar=False, idioma=i),
+    "discone": lambda i: disenar("discone", 145.0, 2.0, ajustar=False, idioma=i),
 }
 
 

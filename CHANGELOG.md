@@ -2,6 +2,9 @@
 
 ## Sin publicar
 
+- Tipos nuevos, **sin medir**: J-pole de Koch (plantilla 1:1 en A3 o mosaico de A4) y discone de varillas.
+- Papel grande: A3 y mosaico de A4 con solape, marcas de registro, mapa de montaje y regla en cada hoja.
+- `instalar.bat` para Windows y capturas en el README.
 - Interfaz de escritorio (NiceGUI): `python gui/app.py` con Elegir, Diseño, Simulación, Plano y Medir.
 - Medidas: `wire/medidas.py` lee `.s1p`, compara con la simulación y da el estado «Medido» con ≤ 2 %.
 - Idiomas es/en/fr/de en planos, CLI, web y escritorio (`wire/i18n.py`, `herramientas/i18n.py`).

@@ -18,6 +18,8 @@ TIPOS = {
     "jpole": N_("J-pole"),
     "manga": N_("Dipolo de manga de coaxial"),
     "coco": N_("Colineal CoCo de coaxial"),
+    "jpole_koch": N_("J-pole de Koch"),
+    "discone": N_("Discone"),
 }
 
 TIPOS_COAXIAL = ("manga", "coco")
@@ -28,19 +30,23 @@ RESUMEN = {
     "jpole": N_("Una sola pieza de alambre doblada en U, alimentada con coaxial."),
     "manga": N_("Coaxial con la malla doblada hacia atrás como manga; sin soldar hilos."),
     "coco": N_("Varios tramos de coaxial con vivo y malla cruzados; más ganancia."),
+    "jpole_koch": N_("La J-pole con el radiador en curva de Koch: más baja, con plantilla 1:1 en mosaico."),
+    "discone": N_("Disco y cono de varillas: banda muy ancha (más de 4:1) para escáner."),
 }
 ESTADO_TIPO = {
     "dipolo": N_("Simulado (validado contra la teoría), sin medir"),
     "jpole": N_("Simulado, sin medir"),
     "manga": N_("Simulado (modelo de banda estrecha), sin medir"),
     "coco": N_("Simulado, sin validar frente a un caso publicado ni medido"),
+    "jpole_koch": N_("Simulado, sin medir (la J-pole recta tampoco está medida)"),
+    "discone": N_("Simulado, sin medir ni validar frente a un caso publicado"),
 }
 CABLE_POR_DEFECTO = "RG-58"
 
 ESTADOS = ("Simulado", "Medido", "Sin validar")
 
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
-SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0}
+SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
     (N_("banda aérea"), 118.0, 137.0),
@@ -150,6 +156,13 @@ class Diseno:
     def modelo(self) -> Modelo:
         """El modelo de hilos con estas cotas (sin motor)."""
         g = self.geometria
+        if self.tipo == "jpole_koch":
+            return generadores.jpole_koch(self.f_MHz, self.diametro_mm, altura_koch_mm=g["altura_koch_mm"],
+                                          corto_mm=g["corto_mm"], toma_mm=g["toma_mm"], separacion_mm=g["separacion_mm"],
+                                          iteracion=int(g["iteracion"]))
+        if self.tipo == "discone":
+            return generadores.discone(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], disco_mm=g["disco_mm"],
+                                       hueco_mm=g["hueco_mm"], semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
         if self.tipo == "manga":
             from . import coaxial
             return coaxial.dipolo_manga(self.f_MHz, self.cable_obj(), radiador_m=g["radiador_mm"] / 1000,
@@ -199,7 +212,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
     if ajustar:
         from . import ajuste, motor
         if motor.disponible():
-            funcion = ajuste.ajustar_dipolo if tipo == "dipolo" else ajuste.ajustar_jpole
+            funcion = {"dipolo": ajuste.ajustar_dipolo, "jpole": ajuste.ajustar_jpole,
+                       "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone}[tipo]
             r = funcion(f_MHz, diametro_mm)
             return Diseno(tipo, f_MHz, diametro_mm, r["geometria"], resultados=r["resultados"], estado="Simulado",
                           plano=config)
@@ -207,6 +221,10 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = {"largo_total_mm": generadores.FACTOR_DIPOLO * 299792.458 / f_MHz}
     elif tipo == "jpole":
         geometria = generadores.jpole_por_defecto(f_MHz, diametro_mm)
+    elif tipo == "jpole_koch":
+        geometria = generadores.jpole_koch_por_defecto(f_MHz, diametro_mm)
+    elif tipo == "discone":
+        geometria = generadores.discone_por_defecto(f_MHz)
     else:
         raise ValueError(f"tipo desconocido: {tipo}")
     return Diseno(tipo, f_MHz, diametro_mm, geometria, plano=config)

@@ -45,14 +45,14 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 - [x] W3.2 Vista previa del plano en SVG y descargas (PDF, SVG, `.nec`, `diseno.json`) — 25-11-2026 (la vista es el mismo `Plano` que se descarga; abrir y guardar `diseno.json`; la configuración del plano —papel, unidades, idioma— se guarda en el diseño)
 - [x] W3.3 Idiomas (es, en, fr, de) con el esquema de Chirptenna — 25-11-2026 (`wire/i18n.py` con `tr()`, catálogos `wire/idiomas/*.json`, extractor `herramientas/i18n.py faltan` que pasa `pruebas/test_idiomas.py` en la CI; planos, CLI `--idioma` y web; traducciones hechas por Claude, **a revisar por hablantes nativos**; falta la interfaz de escritorio, que aún no existe (W3.1))
 - [x] W3.4 Enlace con Chirptenna VNA (`?f=&banda=&nombre=`) y estado «Medido» — 25-11-2026 (`wire/medidas.py`: lee `.s1p` (RI, MA, DB; Hz–GHz), compara resonancia o mínimo de ROE con la simulada y solo pasa a «Medido» con ≤ 2 %; la medida se guarda en `diseno.json` y sale en el cajetín; dirección de Chirptenna VNA en `CHIRPTENNA_VNA_URL`, por defecto `http://localhost:8765/`; **la importación del .s1p en la interfaz no se ha probado con un archivo real del NanoVNA**, solo con los sintéticos de `pruebas/test_medidas.py`)
-- [ ] W3.5 Instalación para usuarios (script o instrucciones) y README con capturas — instrucciones en el README; falta decidir si hay `instalar.bat` y hacer capturas
+- [x] W3.5 Instalación para usuarios (script o instrucciones) y README con capturas — 25-11-2026 (`instalar.bat` → `instalar/instalar.ps1`, idempotente, `-Comprobar` solo informa; `iniciar.bat` generado; capturas con `herramientas/capturas.py`; **el instalador no se ha probado desde cero en un ordenador limpio**)
 
 ## Fase 4 · Más tipos y papel grande
 
-- [ ] W4.1 Geometría de Koch propia (copiada de Chirptenna, sin depender de él)
-- [ ] W4.2 J-pole de Koch (radiador de Koch, ajuste, reglas de segmentación)
-- [ ] W4.3 Paginación: A3 y mosaico de A4 con solape, registro y mapa
-- [ ] W4.4 Discone (rejilla de varillas)
+- [x] W4.1 Geometría de Koch propia (copiada de Chirptenna, sin depender de él) — 25-11-2026 (`wire/geometria.py`, Python puro; 1, 4, 16 y 64 tramos con (4/3)^n de largo, `pruebas/test_geometria.py`)
+- [x] W4.2 J-pole de Koch (radiador de Koch, ajuste, reglas de segmentación) — 25-11-2026, **antes de medir la J-pole recta** (decisión del usuario; el tipo sale «Simulado, sin medir»). `generadores.jpole_koch` (un hilo por tramo de la curva) y `ajuste.ajustar_jpole_koch`: ROE 1,00 a 145 y 433,92 MHz con iteración 1 y 2, la misma frecuencia con el doble de segmentos (±0,1 %). **La curva de Koch no acorta el hilo**: su largo sale un 99–107 % del radiador recto; lo que se gana es altura (a 433,92 MHz con iteración 2, 387 mm frente a 505 mm de la recta, −23 %)
+- [x] W4.3 Paginación: A3 y mosaico de A4 con solape, registro y mapa — 25-11-2026 (`paginacion.hojas_plantilla`, `mapa_montaje`, `marcas_registro`: hojas A1, A2…, solape de 10 mm, cruces de registro que no pisan el alambre y coinciden en las hojas vecinas, regla de 80 mm en cada hoja; hasta 12 hojas, más allá «sin escala»; `pruebas/test_mosaico.py`)
+- [x] W4.4 Discone (rejilla de varillas) — 25-11-2026, **sin medir ni validar frente a un caso publicado**. `generadores.discone` y `ajuste.ajustar_discone`: con 8 varillas ROE < 2 de 146 a 725 MHz (4,95:1) para 145 MHz mínimo y de 438 a 2170 MHz para 433,92 MHz; con 16 varillas la sintonía del límite inferior no converge bien a 145 MHz (207–588 MHz). El disco de radio 0,5 × la generatriz da la banda más ancha de lo probado (0,3–0,5). La pieza central de la hoja (placas de aluminio con taladros) es un diseño orientativo
 - [ ] W4.5 **Usuario delante**: medir la J-pole de Koch y la discone
 
 ## Fase 5 · Web lite

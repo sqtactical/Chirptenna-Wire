@@ -74,5 +74,6 @@ def test_el_selector_de_idioma_traduce_la_interfaz(web, pagina_nueva):
     pagina.wait_for_function("document.querySelectorAll('#vista svg').length > 0", timeout=120_000)
     pagina.select_option("#idioma", "de")
     pagina.wait_for_function("document.querySelector('h2').textContent === 'Entwurf'", timeout=30_000)
+    pagina.wait_for_function("document.getElementById('vista').innerText.includes('ZUSCHNITTLISTE')", timeout=30_000)
     assert "ZUSCHNITTLISTE" in pagina.inner_text("#vista")
     pagina.close()
