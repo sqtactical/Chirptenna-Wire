@@ -29,7 +29,7 @@ def test_el_zip_lleva_el_nucleo_sin_el_motor(tmp_path):
 
 def test_catalogo_y_plano():
     c = json.loads(web_api.catalogo())
-    assert {t["clave"] for t in c["tipos"]} == {"dipolo", "jpole", "manga", "coco", "jpole_koch", "discone"}
+    assert {t["clave"] for t in c["tipos"]} == {"dipolo", "jpole", "manga", "coco", "jpole_koch", "discone", "gp", "vinv", "yagi", "biconica"}
     assert c["coaxial"]["tipos"] == ["manga", "coco"] and any(k["nombre"] == "RG-58" for k in c["coaxial"]["cables"])
     r = json.loads(web_api.plano_svg(json.dumps({"tipo": "jpole", "f_MHz": 435, "diametro_mm": 2})))
     assert r["estado"] == "Sin validar" and len(r["hojas"]) == 2 and r["hojas"][0].startswith("<svg")
@@ -45,5 +45,5 @@ def test_un_diseno_de_escritorio_da_el_mismo_plano_en_la_api():
 
 def test_la_api_genera_el_plano_de_una_coco_con_vf_medido():
     r = json.loads(web_api.plano_svg(json.dumps({"tipo": "coco", "f_MHz": 433, "cable": "RG-316", "vf_medido": 0.7})))
-    assert len(r["hojas"]) == 2 and r["diseno"]["cable"] == {"nombre": "RG-316", "z0": 50.0, "vf": 0.7, "vf_origen": "medido"}
+    assert len(r["hojas"]) >= 3 and r["diseno"]["cable"] == {"nombre": "RG-316", "z0": 50.0, "vf": 0.7, "vf_origen": "medido"}
     assert web_api.nec_texto(json.dumps({"diseno": r["diseno"]})).startswith("CM")

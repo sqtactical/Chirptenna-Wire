@@ -12,14 +12,15 @@ from datetime import date
 
 from ..diseno import Diseno
 from ..i18n import tr, usar
-from . import coaxial, comun, discone, dipolo, jpole, koch
+from . import coaxial, comun, discone, dipolo, hilos, jpole, koch
 from .hoja import Hoja, Plano
 from .paginacion import decidir_papel
 from .pdf import a_pdf
 from .svg import a_svg
 
 GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.hojas_manga, "coco": coaxial.hojas_coco,
-               "jpole_koch": koch.hojas, "discone": discone.hojas}
+               "jpole_koch": koch.hojas, "discone": discone.hojas, "gp": hilos.hojas_gp,
+               "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "biconica": hilos.hojas_biconica}
 
 
 def generar(diseno: Diseno, fecha: str | None = None) -> Plano:

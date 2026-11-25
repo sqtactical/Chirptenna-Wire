@@ -20,7 +20,13 @@ TIPOS = {
     "coco": N_("Colineal CoCo de coaxial"),
     "jpole_koch": N_("J-pole de Koch"),
     "discone": N_("Discone"),
+    "gp": N_("Ground plane"),
+    "vinv": N_("Dipolo en V invertida"),
+    "yagi": N_("Yagi de 3 elementos"),
+    "biconica": N_("Bicónica"),
 }
+
+CONECTORES = ("SO-239", "N")
 
 TIPOS_COAXIAL = ("manga", "coco")
 
@@ -32,6 +38,10 @@ RESUMEN = {
     "coco": N_("Varios tramos de coaxial con vivo y malla cruzados; más ganancia."),
     "jpole_koch": N_("La J-pole con el radiador en curva de Koch: más baja, con plantilla 1:1 en mosaico."),
     "discone": N_("Disco y cono de varillas: banda muy ancha (más de 4:1) para escáner."),
+    "gp": N_("Radiador de λ/4 y cuatro radiales a 45° sobre un conector SO-239 o N."),
+    "vinv": N_("Dipolo con el vértice en un mástil y los brazos caídos: se tensa con cuerda."),
+    "yagi": N_("Reflector, dipolo plegado y director sobre un eje aislante: ganancia y dirección."),
+    "biconica": N_("Dos conos de varillas vértice con vértice: banda ancha (más de 4:1)."),
 }
 ESTADO_TIPO = {
     "dipolo": N_("Simulado (validado contra la teoría), sin medir"),
@@ -40,13 +50,18 @@ ESTADO_TIPO = {
     "coco": N_("Simulado, sin validar frente a un caso publicado ni medido"),
     "jpole_koch": N_("Simulado, sin medir (la J-pole recta tampoco está medida)"),
     "discone": N_("Simulado, sin medir ni validar frente a un caso publicado"),
+    "gp": N_("Simulado (en espacio libre), sin medir"),
+    "vinv": N_("Simulado (en espacio libre), sin medir"),
+    "yagi": N_("Simulado, sin medir ni validar frente a un caso publicado"),
+    "biconica": N_("Simulado, sin medir ni validar frente a un caso publicado"),
 }
 CABLE_POR_DEFECTO = "RG-58"
 
 ESTADOS = ("Simulado", "Medido", "Sin validar")
 
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
-SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0}
+SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0,
+             "gp": 15.0, "vinv": 15.0, "yagi": 15.0, "biconica": 15.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
     (N_("banda aérea"), 118.0, 137.0),
@@ -160,6 +175,18 @@ class Diseno:
             return generadores.jpole_koch(self.f_MHz, self.diametro_mm, altura_koch_mm=g["altura_koch_mm"],
                                           corto_mm=g["corto_mm"], toma_mm=g["toma_mm"], separacion_mm=g["separacion_mm"],
                                           iteracion=int(g["iteracion"]))
+        if self.tipo == "gp":
+            return generadores.gp(self.f_MHz, self.diametro_mm, radiador_mm=g["radiador_mm"], radial_mm=g["radial_mm"],
+                                  angulo=g["angulo"], radiales=int(g["radiales"]))
+        if self.tipo == "vinv":
+            return generadores.vinv(self.f_MHz, self.diametro_mm, brazo_mm=g["brazo_mm"], apertura=g["apertura"])
+        if self.tipo == "yagi":
+            return generadores.yagi(self.f_MHz, self.diametro_mm, reflector_mm=g["reflector_mm"], excitado_mm=g["excitado_mm"],
+                                    director_mm=g["director_mm"], sep_reflector_mm=g["sep_reflector_mm"],
+                                    sep_director_mm=g["sep_director_mm"], sep_plegado_mm=g["sep_plegado_mm"])
+        if self.tipo == "biconica":
+            return generadores.biconica(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], hueco_mm=g["hueco_mm"],
+                                        semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
         if self.tipo == "discone":
             return generadores.discone(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], disco_mm=g["disco_mm"],
                                        hueco_mm=g["hueco_mm"], semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
@@ -200,7 +227,7 @@ class Diseno:
 
 
 def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, cable: str | None = None,
-            vf_medido: float | None = None, **plano) -> Diseno:
+            vf_medido: float | None = None, conector: str | None = None, **plano) -> Diseno:
     """Diseño con las cotas ajustadas por el motor si está (escritorio) o las de partida si no (estado «Sin validar»).
 
     En los tipos de coaxial (`manga`, `coco`) `cable` es el nombre de la tabla (por defecto RG-58) y `vf_medido`, si se
@@ -213,8 +240,11 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         from . import ajuste, motor
         if motor.disponible():
             funcion = {"dipolo": ajuste.ajustar_dipolo, "jpole": ajuste.ajustar_jpole,
-                       "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone}[tipo]
+                       "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone, "gp": ajuste.ajustar_gp,
+                       "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica}[tipo]
             r = funcion(f_MHz, diametro_mm)
+            if tipo == "gp":
+                r["geometria"]["conector"] = _conector(conector)
             return Diseno(tipo, f_MHz, diametro_mm, r["geometria"], resultados=r["resultados"], estado="Simulado",
                           plano=config)
     if tipo == "dipolo":
@@ -225,9 +255,23 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = generadores.jpole_koch_por_defecto(f_MHz, diametro_mm)
     elif tipo == "discone":
         geometria = generadores.discone_por_defecto(f_MHz)
+    elif tipo == "gp":
+        geometria = {**generadores.gp_por_defecto(f_MHz), "conector": _conector(conector)}
+    elif tipo == "vinv":
+        geometria = generadores.vinv_por_defecto(f_MHz)
+    elif tipo == "yagi":
+        geometria = generadores.yagi_por_defecto(f_MHz)
+    elif tipo == "biconica":
+        geometria = generadores.biconica_por_defecto(f_MHz)
     else:
         raise ValueError(f"tipo desconocido: {tipo}")
     return Diseno(tipo, f_MHz, diametro_mm, geometria, plano=config)
+
+
+def _conector(nombre: str | None) -> str:
+    if nombre is not None and nombre not in CONECTORES:
+        raise ValueError(f"conector desconocido: {nombre} (hay: {', '.join(CONECTORES)})")
+    return nombre or CONECTORES[0]
 
 
 def _disenar_coaxial(tipo: str, f_MHz: float, ajustar: bool, nombre_cable: str, vf_medido: float | None,

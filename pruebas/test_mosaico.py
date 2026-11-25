@@ -32,7 +32,7 @@ def test_el_mosaico_cubre_la_plantilla_sin_huecos_ni_hojas_de_mas():
     prims, ancho, alto = koch.plantilla(d)
     dec = pg.decidir_papel(ancho, alto, d.plano)
     columnas, filas = dec["hojas"]
-    w, h = pg.area_util("A4", False)
+    w, h = pg.area_util("A4", dec["apaisada"])
     paso_x, paso_y = w - d.plano.solape_mm, h - d.plano.solape_mm
     assert (columnas - 1) * paso_x + w >= ancho and (filas - 1) * paso_y + h >= alto
     assert (columnas - 2) * paso_x + w < ancho or columnas == 1
@@ -45,8 +45,9 @@ def test_todo_el_alambre_sale_en_alguna_hoja_a_1_a_1():
     from wire.planos import koch
     prims, ancho, alto = koch.plantilla(d)
     plano = planos.generar(d, fecha="x")
-    w, h = pg.area_util("A4", False)
-    columnas, filas = pg.decidir_papel(ancho, alto, d.plano)["hojas"]
+    dec = pg.decidir_papel(ancho, alto, d.plano)
+    w, h = pg.area_util("A4", dec["apaisada"])
+    columnas, filas = dec["hojas"]
     solape = d.plano.solape_mm
     faltan = 0
     for p in prims:
@@ -84,11 +85,12 @@ def test_las_marcas_de_registro_no_pisan_el_alambre(f):
 def test_las_marcas_coinciden_en_hojas_vecinas():
     """Cada marca de una franja de solape aparece, en la misma posición de la plantilla, en las dos hojas que la comparten."""
     p = _plano(145.0)
-    w, h = pg.area_util("A4", False)
     d = disenar("jpole_koch", 145.0, 2.0, ajustar=False)
     from wire.planos import koch
     prims, ancho, alto = koch.plantilla(d)
-    columnas, filas = pg.decidir_papel(ancho, alto, d.plano)["hojas"]
+    dec = pg.decidir_papel(ancho, alto, d.plano)
+    w, h = pg.area_util("A4", dec["apaisada"])
+    columnas, filas = dec["hojas"]
     marcas = pg.marcas_registro(ancho, alto, columnas, filas, w - 10, h - 10, 10, prims, 2.0)
     for x, y in marcas:
         en = 0
@@ -115,10 +117,10 @@ def test_a3_cuando_no_cabe_en_a4_pero_si_en_a3():
 
 
 def test_sin_escala_cuando_son_demasiadas_hojas():
-    dec = pg.decidir_papel(3000.0, 60.0, ConfigPlano())
+    dec = pg.decidir_papel(4000.0, 60.0, ConfigPlano())
     assert dec["modo"] == "sin_escala"
     d = disenar("jpole", 145.0, 2.0, ajustar=False)
-    assert pg.hojas_plantilla(d, "t", "s", [], 3000.0, 60.0, dec)[0] == []
+    assert pg.hojas_plantilla(d, "t", "s", [], 4000.0, 60.0, dec)[0] == []
 
 
 def test_jpole_koch_con_papel_a3():

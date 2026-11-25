@@ -55,6 +55,14 @@ Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.
 - [x] W4.4 Discone (rejilla de varillas) — 25-11-2026, **sin medir ni validar frente a un caso publicado**. `generadores.discone` y `ajuste.ajustar_discone`: con 8 varillas ROE < 2 de 146 a 725 MHz (4,95:1) para 145 MHz mínimo y de 438 a 2170 MHz para 433,92 MHz; con 16 varillas la sintonía del límite inferior no converge bien a 145 MHz (207–588 MHz). El disco de radio 0,5 × la generatriz da la banda más ancha de lo probado (0,3–0,5). La pieza central de la hoja (placas de aluminio con taladros) es un diseño orientativo
 - [ ] W4.5 **Usuario delante**: medir la J-pole de Koch y la discone
 
+## Añadidos fuera de plan (25-11-2026, a petición del usuario; todos «Simulado, sin medir»)
+
+- [x] Ground plane (`generadores.gp`, `ajustar_gp`): radiador 0,232 λ y radiales de 0,246 λ a 45°: ROE 1,00 y Z = 50 Ω a 145 MHz con alambre de 3 mm; conector SO-239 o N (**cotas de la brida orientativas**, hay que comprobarlas con el conector).
+- [x] Dipolo en V invertida (`vinv`): con 120° entre brazos la ROE mínima es 1,18 (Z ≈ 59 Ω); la apertura se queda fija.
+- [x] Yagi de 3 elementos con dipolo plegado (`yagi`): ROE 1,00 y 8,7 dBi en el modelo; el director sale casi tan largo como el excitado (el plegado es «más corto» eléctricamente). Separaciones fijas de 0,20 λ y 0,15 λ; **sin validar frente a un caso publicado**.
+- [x] Bicónica (`biconica`): ROE < 2 de 142 a 580 MHz (4,07:1) con 8 varillas por cono; sin validar.
+- [x] **Patrón del coaxial a 1:1** en la CoCo y la manga (`planos/patron.py`): el tramo con los dos pelados (14 + 6 + 12 mm), la punta y el extremo de la manga; en mosaico de A4 apaisadas (el mosaico elige la orientación que da menos hojas). **El largo de «cortar a» es el de la lista de corte (tramo + sobrante), con los pelados dentro**: está sin comprobar si el VF se mide de extremo a extremo o entre soldaduras; mídelo en una CoCo real antes de fiarte.
+
 ## Fase 5 · Web lite
 
 - [x] W5.1 Empaquetar el núcleo para Pyodide (sin PyNEC) y comprobar que genera los planos (`wire/web_api.py`, `herramientas/construir_web.py`, `pruebas/test_web.py`; 25-11-2026)

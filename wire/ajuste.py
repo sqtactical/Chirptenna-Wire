@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 
 from . import motor
-from .generadores import discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
+from .generadores import biconica, biconica_por_defecto, gp, gp_por_defecto, vinv, vinv_por_defecto, yagi, yagi_por_defecto, discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
 from .modelo import Barrido, Modelo
 
 Z0 = 50.0
@@ -219,6 +219,109 @@ def ajustar_discone(f_min_MHz: float, diametro_mm: float, varillas: int = 8) -> 
     geometria = {"cono_mm": p["cono_mm"], "disco_mm": p["disco_mm"], "hueco_mm": p["hueco_mm"],
                  "semiangulo": p["semiangulo"], "varillas": float(varillas)}
     return {"geometria": geometria, "resultados": resultados}
+
+
+def _nm_gamma(f_MHz: float, construir, x0: list[float], escalas: list[float], valido=None, penalizacion=None):
+    """Nelder–Mead de |S11| a f (dos pasadas: gruesa y fina). `penalizacion(modelo)` suma al coste (p. ej. una ganancia mínima)."""
+    def coste(x):
+        if valido is not None and not valido(x):
+            return 10.0
+        m = construir(x)
+        return _gamma(m, f_MHz) + (penalizacion(m) if penalizacion else 0.0)
+
+    x, _ = nelder_mead(coste, x0, escalas, tolerancia=1e-6)
+    x, _ = nelder_mead(coste, x, [e / 10 for e in escalas], tolerancia=1e-8)
+    return x
+
+
+def _con_resultados(modelo: Modelo, f_MHz: float, geometria: dict, sensibilidad_param=None) -> dict:
+    resultados = _resultados(modelo, f_MHz)
+    resultados["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.9 * f_MHz, 1.1 * f_MHz)
+    if sensibilidad_param:
+        resultados.update(sensibilidad_param(modelo, resultados["f_minimo_roe_MHz"]))
+    return {"geometria": geometria, "resultados": resultados}
+
+
+def ajustar_gp(f_MHz: float, diametro_mm: float, angulo: float = 45.0, radiales: int = 4) -> dict:
+    """Ground plane con |S11| mínimo a f a 50 Ω: ajusta el radiador y los radiales."""
+    p = gp_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    construir = lambda x: gp(f_MHz, diametro_mm, radiador_mm=x[0], radial_mm=x[1], angulo=angulo, radiales=radiales)  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["radiador_mm"], p["radial_mm"]], [0.01 * lam, 0.01 * lam])
+
+    def sens(m, f0):
+        corto = gp(f_MHz, diametro_mm, radiador_mm=x[0] - 5, radial_mm=x[1], angulo=angulo, radiales=radiales)
+        return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz) - f0) / 5, "sensibilidad_pieza": "el radiador"}
+
+    return _con_resultados(construir(x), f_MHz, {"radiador_mm": x[0], "radial_mm": x[1], "angulo": angulo, "radiales": float(radiales)}, sens)
+
+
+def ajustar_vinv(f_MHz: float, diametro_mm: float, apertura: float = 120.0) -> dict:
+    """Dipolo en V invertida con |S11| mínimo a f: ajusta el largo de los brazos (la apertura queda fija)."""
+    p = vinv_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    construir = lambda x: vinv(f_MHz, diametro_mm, brazo_mm=x[0], apertura=apertura)  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["brazo_mm"]], [0.01 * lam], valido=lambda x: x[0] > 0)
+
+    def sens(m, f0):
+        corto = vinv(f_MHz, diametro_mm, brazo_mm=x[0] - 5, apertura=apertura)
+        return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz) - f0) / 5, "sensibilidad_pieza": "cada brazo"}
+
+    return _con_resultados(construir(x), f_MHz, {"brazo_mm": x[0], "apertura": apertura}, sens)
+
+
+def ajustar_yagi(f_MHz: float, diametro_mm: float, ganancia_minima_dBi: float = 7.0) -> dict:
+    """Yagi de 3 elementos: ajusta el excitado, el reflector, el director y el plegado para |S11| mínimo a f sin bajar de la
+    ganancia mínima (las separaciones del eje quedan fijas)."""
+    p = yagi_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+
+    def construir(x):
+        return yagi(f_MHz, diametro_mm, reflector_mm=x[1], excitado_mm=x[0], director_mm=x[2], sep_reflector_mm=p["sep_reflector_mm"],
+                    sep_director_mm=p["sep_director_mm"], sep_plegado_mm=x[3])
+
+    def penal(m):
+        g = motor.simular(m, Barrido(f_MHz, f_MHz, 1), diagrama=True).ganancia_max[0]
+        return 0.05 * max(0.0, ganancia_minima_dBi - g)
+
+    valido = lambda x: x[0] > 0 and x[1] > x[0] * 0.95 and 0.3 * lam < x[2] < x[0] * 1.02 and 2.5 * diametro_mm < x[3] < 0.06 * lam  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["excitado_mm"], p["reflector_mm"], p["director_mm"], p["sep_plegado_mm"]],
+                  [0.02 * lam, 0.02 * lam, 0.02 * lam, 0.004 * lam], valido=valido, penalizacion=penal)
+    geometria = {"reflector_mm": x[1], "excitado_mm": x[0], "director_mm": x[2], "sep_reflector_mm": p["sep_reflector_mm"],
+                 "sep_director_mm": p["sep_director_mm"], "sep_plegado_mm": x[3]}
+    return _con_resultados(construir(x), f_MHz, geometria)
+
+
+def ajustar_biconica(f_min_MHz: float, diametro_mm: float, varillas: int = 8) -> dict:
+    """Bicónica con el límite inferior de ROE < 2 en `f_min_MHz`: escala los conos (como `ajustar_discone`)."""
+    def construir(k):
+        p = biconica_por_defecto(f_min_MHz, k)
+        return biconica(f_min_MHz, diametro_mm, cono_mm=p["cono_mm"], hueco_mm=p["hueco_mm"], semiangulo=p["semiangulo"],
+                        varillas=varillas, barrido=Barrido(0.6 * f_min_MHz, 4.0 * f_min_MHz, 81))
+
+    k, mejor = 1.0, (float("inf"), 1.0)
+    for _ in range(6):
+        r = motor.simular(construir(k), diagrama=False)
+        buenas = [f for f, ro in zip(r.frecuencias, r.roe) if ro < 2.0]
+        if not buenas:
+            k = min(1.8, k * 1.2)
+            continue
+        mejor = min(mejor, (abs(math.log(buenas[0] / f_min_MHz)), k))
+        if mejor[0] < 0.01:
+            break
+        k = min(1.8, max(0.5, k * (buenas[0] / f_min_MHz) ** 0.7))
+    k = mejor[1]
+    p = biconica_por_defecto(f_min_MHz, k)
+    r = motor.simular(construir(k), diagrama=False)
+    buenas = [f for f, ro in zip(r.frecuencias, r.roe) if ro < 2.0]
+    f_inf, f_sup = (buenas[0], buenas[-1]) if buenas else (0.0, 0.0)
+    centro = motor.simular(biconica(f_min_MHz, diametro_mm, cono_mm=p["cono_mm"], hueco_mm=p["hueco_mm"], semiangulo=p["semiangulo"],
+                                    varillas=varillas, barrido=Barrido(1.5 * f_min_MHz, 1.5 * f_min_MHz, 1)))
+    resultados = {"motor": "PyNEC", "z0_ohm": Z0, "f_MHz": f_min_MHz, "f_inferior_roe2_MHz": f_inf, "f_superior_roe2_MHz": f_sup,
+                  "relacion_banda": (f_sup / f_inf) if f_inf else 0.0, "ganancia_dBi": centro.ganancia_max[0],
+                  "f_ganancia_MHz": 1.5 * f_min_MHz, "barrido": {"f_MHz": list(r.frecuencias), "roe": list(r.roe)}}
+    return {"geometria": {"cono_mm": p["cono_mm"], "hueco_mm": p["hueco_mm"], "semiangulo": p["semiangulo"], "varillas": float(varillas)},
+            "resultados": resultados}
 
 
 def ajustar_manga(f_MHz: float, cable) -> dict:

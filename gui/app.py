@@ -21,7 +21,7 @@ from nicegui import app, run, ui  # noqa: E402
 
 from wire import escritorio, i18n, medidas, motor, nec, planos  # noqa: E402
 from wire.cables import CABLES  # noqa: E402
-from wire.diseno import BANDAS, ESTADO_TIPO, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, banda_de  # noqa: E402
+from wire.diseno import BANDAS, CONECTORES, ESTADO_TIPO, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, banda_de  # noqa: E402
 from wire.graficas import svg_roe  # noqa: E402
 from wire.i18n import tr  # noqa: E402
 from wire.miniaturas import MINIATURAS  # noqa: E402
@@ -57,7 +57,7 @@ def pagina(idioma: str | None = None) -> None:
     ui.add_css(CSS)
     ui.colors(primary="#c8892b")
     oscuro = ui.dark_mode()
-    s = {"tipo": "dipolo", "f": 145.0, "diametro": 2.0, "cable": "RG-58", "vf": None, "papel": "A4", "unidades": "mm",
+    s = {"tipo": "dipolo", "f": 145.0, "diametro": 2.0, "cable": "RG-58", "vf": None, "conector": "SO-239", "papel": "A4", "unidades": "mm",
          "diseno": None, "plano": None, "hoja": 0, "medida": None}
 
     # ------------------------------------------------------------------ cabecera
@@ -96,6 +96,7 @@ def pagina(idioma: str | None = None) -> None:
                 for k, c in cartas.items():
                     c.classes(add="activa" if k == clave else "", remove="" if k == clave else "activa")
                 campos_coaxial.set_visibility(clave in TIPOS_COAXIAL)
+                campos_gp.set_visibility(clave == "gp")
                 refrescar()
                 pestanas.set_value(t_diseno)
 
@@ -132,6 +133,9 @@ def pagina(idioma: str | None = None) -> None:
                         ui.number(tr("VF medido (opcional)"), min=0.5, max=1, step=0.01, placeholder=tr("el de catálogo")) \
                             .classes("w-full").bind_value(s, "vf")
                     campos_coaxial.set_visibility(s["tipo"] in TIPOS_COAXIAL)
+                    with ui.column().classes("w-full") as campos_gp:
+                        ui.select(list(CONECTORES), value=s["conector"], label=tr("Conector")).classes("w-full").bind_value(s, "conector")
+                    campos_gp.set_visibility(s["tipo"] == "gp")
                     ui.select(list(ConfigPlano.VALORES["papel"]), value=s["papel"], label=tr("Papel")).classes("w-full") \
                         .bind_value(s, "papel")
                     ui.select({"mm": "mm", "pulgadas": tr("pulgadas")}, value=s["unidades"], label=tr("Unidades")) \
@@ -152,7 +156,7 @@ def pagina(idioma: str | None = None) -> None:
                             texto = await run.cpu_bound(
                                 escritorio.calcular, s["tipo"], float(s["f"]), float(s["diametro"]), ajustar,
                                 s["cable"] if es_coax else None, s["vf"] if es_coax and s["vf"] else None, s["papel"],
-                                s["unidades"], i18n.idioma())
+                                s["unidades"], i18n.idioma(), s["conector"] if s["tipo"] == "gp" else None)
                             s["diseno"] = Diseno.desde_json(texto)
                             nuevo_plano()
                             estado_calculo.set_text("")

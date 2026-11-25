@@ -9,6 +9,7 @@ from __future__ import annotations
 from ..diseno import Diseno, banda_de
 from ..i18n import N_, tr
 from .comun import fmt, frecuencia, grafica_roe, hoja_a4, longitud, regla, seccion, tabla, texto_banda, unidad
+from .patron import patron_manga, patrones_coco
 from .hoja import (BLANCO, COBRE, CUBIERTA, DIELECTRICO, GRIS, PVC, TINTA, VERDE, Circulo, Cota, Hoja, Linea,
                    Polilinea, Rect, Texto, rayado)
 
@@ -93,8 +94,11 @@ def hojas_manga(diseno: Diseno, fecha: str) -> list[Hoja]:
     )
     hoja.anadir(Texto(14, 216, tr("Pelado orientativo: quita la cubierta en la longitud de la manga, desenreda la malla, dóblala sobre la\ncubierta y suéldala al cable donde empieza el dieléctrico. Cubre todo con termorretráctil."), 5.8))
     _aviso_vf(hoja, diseno, 14, 226)
+    patron = patron_manga(diseno)
+    hoja.anadir(Texto(14, 235, tr("Patrón del coaxial a 1:1 desde la hoja {0}: pon el cable encima para marcar.", 2) if patron
+                      else tr("El patrón del coaxial no cabe a escala: usa las cotas."), 6.0, VERDE))
     regla(hoja, 14, 244)
-    return [hoja]
+    return [hoja] + patron
 
 
 def _diam(c: dict, clave: str, defecto: float) -> float:
@@ -109,7 +113,11 @@ def _diam(c: dict, clave: str, defecto: float) -> float:
 
 
 def hojas_coco(diseno: Diseno, fecha: str) -> list[Hoja]:
-    return [_coco_resumen(diseno), _coco_detalle(diseno)]
+    patrones = patrones_coco(diseno)
+    resumen = _coco_resumen(diseno)
+    resumen.anadir(Texto(14, 214, tr("Patrón del coaxial a 1:1 (tramo y punta) desde la hoja {0}: pon el cable encima para marcar.", 3)
+                         if patrones else tr("El patrón del coaxial no cabe a escala: usa las cotas."), 6.0, VERDE))
+    return [resumen, _coco_detalle(diseno)] + patrones
 
 
 def _titulo_coco(diseno: Diseno) -> str:

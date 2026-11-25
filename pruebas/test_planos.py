@@ -35,6 +35,10 @@ DISENOS = {
     "jpole_koch_434": lambda: _ejemplo("jpole_koch_434.json"),
     "discone_145": lambda: _ejemplo("discone_145.json"),
     "jpole_koch_868_sin_motor": lambda: disenar("jpole_koch", 868.0, 1.5, ajustar=False),
+    "gp_145_N": lambda: disenar("gp", 145.0, 3.0, ajustar=False, conector="N"),
+    "vinv_145": lambda: disenar("vinv", 145.0, 3.0, ajustar=False),
+    "yagi_145": lambda: disenar("yagi", 145.0, 3.0, ajustar=False),
+    "biconica_145": lambda: disenar("biconica", 145.0, 3.0, ajustar=False),
     "coco_sin_motor_vf_medido": lambda: disenar("coco", 433.0, 2.0, ajustar=False, cable="RG-316", vf_medido=0.7),
     "jpole_868_sin_motor": lambda: disenar("jpole", 868.0, 1.5, ajustar=False),
     "dipolo_pulgadas": lambda: disenar("dipolo", 433.0, 2.0, ajustar=False, unidades="pulgadas"),
@@ -227,7 +231,7 @@ def test_decidir_papel():
     assert planos.decidir_papel(350, 150, ConfigPlano(grandes="A3"))["modo"] == "A3"
     mosaico = planos.decidir_papel(400, 300, c)
     assert mosaico["modo"] == "mosaico" and mosaico["hojas"] == (3, 2)
-    assert planos.decidir_papel(3000, 60, c)["modo"] == "sin_escala"  # más de 12 hojas: mejor sin escala
+    assert planos.decidir_papel(4000, 60, c)["modo"] == "sin_escala"  # más de 12 hojas: mejor sin escala
 
 
 # ---------------------------------------------------------------- línea de comandos

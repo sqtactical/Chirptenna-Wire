@@ -18,8 +18,9 @@ def _textos(plano, etiqueta=None):
 
 
 def test_hojas_por_tipo():
-    assert len(planos.generar(disenar("manga", 145.0, 2.0, ajustar=False)).hojas) == 1
-    assert len(planos.generar(disenar("coco", 145.0, 2.0, ajustar=False)).hojas) == 2
+    # La hoja resumen (y el detalle de la CoCo) más los patrones del coaxial a 1:1.
+    assert len(planos.generar(disenar("manga", 145.0, 2.0, ajustar=False)).hojas) >= 2
+    assert len(planos.generar(disenar("coco", 145.0, 2.0, ajustar=False)).hojas) >= 4
 
 
 @pytest.mark.parametrize("tipo", ["manga", "coco"])

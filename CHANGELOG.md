@@ -2,6 +2,9 @@
 
 ## Sin publicar
 
+- Tipos nuevos, sin medir: ground plane (SO-239 o N), dipolo en V invertida, Yagi de 3 elementos y bicónica.
+- Patrón del coaxial a 1:1 (tramo, punta y extremo de la manga) en los planos de la CoCo y las antenas de coaxial.
+- El mosaico de A4 elige la orientación (vertical o apaisada) que da menos hojas.
 - Tipos nuevos, **sin medir**: J-pole de Koch (plantilla 1:1 en A3 o mosaico de A4) y discone de varillas.
 - Papel grande: A3 y mosaico de A4 con solape, marcas de registro, mapa de montaje y regla en cada hoja.
 - `instalar.bat` para Windows y capturas en el README.

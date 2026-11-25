@@ -1,0 +1,13 @@
+CM Dipolo en V invertida
+CM Dipolo en V invertida a 145 MHz, alambre de 3 mm
+CM Brazos de 498.0 mm, apertura 120 grados
+CM Generado por Chirptenna Wire
+CE
+GW 1 12 0 0 0 0.431302627 0 -0.249012688 0.0015
+GW 2 12 0 0 0 -0.431302627 0 -0.249012688 0.0015
+GE 0
+GN -1 0 0 0 0 0 0 0 0 0
+EX 0 1 1 0 1 0 0 0 0 0
+FR 0 1 0 0 145 0
+RP 0 37 72 1000 0 0 5 5 0 0
+EN

@@ -77,7 +77,7 @@ function guardar(nombre, contenido, tipo) {
 function entrada() {
   return JSON.stringify({ tipo: $('tipo').value, f_MHz: parseFloat($('f').value), diametro_mm: parseFloat($('diametro').value),
                           papel: $('papel').value, unidades: $('unidades').value, idioma: IDIOMA,
-                          cable: $('cable').value || null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null });
+                          cable: $('cable').value || null, conector: $('tipo').value === 'gp' ? $('conector').value : null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null });
 }
 
 function pintarGaleria() {
@@ -93,6 +93,7 @@ async function iniciar() {
   $('tipo').innerHTML = c.tipos.map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
   $('banda').innerHTML = '<option value="" data-t>— otra —</option>' + c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
   coaxial = c.coaxial;
+  $('conector').innerHTML = c.conectores.map((k) => `<option>${k}</option>`).join('');
   $('cable').innerHTML = c.coaxial.cables.map((k) => `<option value="${k.nombre}">${k.nombre} (VF ${k.vf})</option>`).join('');
   $('papel').innerHTML = c.plano.papel.map((p) => `<option>${p}</option>`).join('');
   $('unidades').innerHTML = c.plano.unidades.map((p) => `<option>${p}</option>`).join('');
@@ -139,7 +140,7 @@ $('galeria').onclick = (ev) => {
   hojaActual = 0;
   generar();
 };
-$('tipo').onchange = () => { pintarGaleria(); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
+$('tipo').onchange = () => { pintarGaleria(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
 $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };
@@ -152,7 +153,7 @@ $('archivo').onchange = async () => {
     hojaActual = 0;
     await generar(JSON.stringify({ diseno: datos }));
     const d = actual.plano.diseno;
-    $('tipo').value = d.tipo; $('tipo').onchange(); if (d.cable) { $('cable').value = d.cable.nombre; $('vf').value = d.cable.vf_origen === 'medido' ? d.cable.vf : ''; }
+    $('tipo').value = d.tipo; $('tipo').onchange(); if (d.geometria && d.geometria.conector) $('conector').value = d.geometria.conector; if (d.cable) { $('cable').value = d.cable.nombre; $('vf').value = d.cable.vf_origen === 'medido' ? d.cable.vf : ''; }
     $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
     $('papel').value = d.plano.papel; $('unidades').value = d.plano.unidades;
   } catch (err) {

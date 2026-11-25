@@ -294,3 +294,137 @@ def discone(
             f"semiangulo {semiangulo:g} grados",
         ),
     )
+
+
+# ---------------------------------------------------------------- ground plane, V invertida, Yagi y bicónica
+
+GP_RADIADOR, GP_RADIAL = 0.232, 0.246     # en λ: el radiador algo corto y los radiales algo largos (45° da ~50 Ω)
+GP_ANGULO, GP_RADIALES = 45.0, 4
+VINV_BRAZO, VINV_APERTURA = 0.238, 120.0  # en λ, y grados de apertura total entre los brazos
+YAGI_REFLECTOR, YAGI_EXCITADO, YAGI_DIRECTOR = 0.495, 0.470, 0.440
+YAGI_SEP_REFLECTOR, YAGI_SEP_DIRECTOR, YAGI_SEP_PLEGADO = 0.20, 0.15, 0.012    # en λ
+
+
+def _segmentos(largo: float, paso: float) -> int:
+    return max(1, round(largo / paso))
+
+
+def gp_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"radiador_mm": GP_RADIADOR * lam, "radial_mm": GP_RADIAL * lam, "angulo": GP_ANGULO, "radiales": float(GP_RADIALES)}
+
+
+def gp(f_MHz: float, diametro_mm: float, radiador_mm: float | None = None, radial_mm: float | None = None,
+       angulo: float = GP_ANGULO, radiales: int = GP_RADIALES, barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Ground plane: radiador vertical de λ/4 y `radiales` radiales inclinados `angulo` grados bajo la horizontal, todo unido
+    en el origen (el conector); la fuente en el primer segmento del radiador. Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0 or radiales < 2:
+        raise ValueError("frecuencia y diámetro positivos y al menos 2 radiales")
+    p = gp_por_defecto(f_MHz)
+    rad = (radiador_mm or p["radiador_mm"]) / 1000
+    rl = (radial_mm or p["radial_mm"]) / 1000
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    hilos = [Hilo((0, 0, 0), (0, 0, rad), r, _segmentos(rad, paso))]
+    c, s = math.cos(math.radians(angulo)), math.sin(math.radians(angulo))
+    for i in range(radiales):
+        a = 2 * math.pi * i / radiales
+        hilos.append(Hilo((0, 0, 0), (rl * c * math.cos(a), rl * c * math.sin(a), -rl * s), r, _segmentos(rl, paso)))
+    return Modelo("Ground plane", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Ground plane a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Radiador {rad * 1000:.1f} mm, {radiales} radiales de {rl * 1000:.1f} mm a {angulo:g} grados"))
+
+
+def vinv_por_defecto(f_MHz: float) -> dict[str, float]:
+    return {"brazo_mm": VINV_BRAZO * longitud_onda_m(f_MHz) * 1000, "apertura": VINV_APERTURA}
+
+
+def vinv(f_MHz: float, diametro_mm: float, brazo_mm: float | None = None, apertura: float = VINV_APERTURA,
+         barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Dipolo en V invertida: dos brazos iguales que bajan desde el vértice (arriba) con `apertura` grados entre sí;
+    la fuente en el primer segmento de un brazo, junto al vértice. Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0 or not 30 <= apertura <= 180:
+        raise ValueError("frecuencia y diámetro positivos y apertura entre 30° y 180°")
+    brazo = (brazo_mm or vinv_por_defecto(f_MHz)["brazo_mm"]) / 1000
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    m = math.radians(apertura / 2)
+    hilos = (Hilo((0, 0, 0), (brazo * math.sin(m), 0, -brazo * math.cos(m)), r, _segmentos(brazo, paso)),
+             Hilo((0, 0, 0), (-brazo * math.sin(m), 0, -brazo * math.cos(m)), r, _segmentos(brazo, paso)))
+    return Modelo("Dipolo en V invertida", f_MHz, hilos, Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Dipolo en V invertida a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Brazos de {brazo * 1000:.1f} mm, apertura {apertura:g} grados"))
+
+
+def yagi_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"reflector_mm": YAGI_REFLECTOR * lam, "excitado_mm": YAGI_EXCITADO * lam, "director_mm": YAGI_DIRECTOR * lam,
+            "sep_reflector_mm": YAGI_SEP_REFLECTOR * lam, "sep_director_mm": YAGI_SEP_DIRECTOR * lam,
+            "sep_plegado_mm": YAGI_SEP_PLEGADO * lam}
+
+
+def yagi(f_MHz: float, diametro_mm: float, reflector_mm: float | None = None, excitado_mm: float | None = None,
+         director_mm: float | None = None, sep_reflector_mm: float | None = None, sep_director_mm: float | None = None,
+         sep_plegado_mm: float | None = None, barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Yagi de 3 elementos con el excitado en dipolo plegado (dos alambres paralelos unidos en los extremos), en espacio libre.
+
+    Los elementos van a lo largo de x y el eje (boom, aislante) a lo largo de y: reflector en y = 0, excitado a
+    `sep_reflector_mm` y director a `sep_director_mm` más. El dipolo plegado tiene su alambre alimentado abajo y el otro a
+    `sep_plegado_mm` por encima (eje z); la fuente va en el segmento central del alimentado.
+    """
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = yagi_por_defecto(f_MHz)
+    refl = (reflector_mm or p["reflector_mm"]) / 1000
+    exc = (excitado_mm or p["excitado_mm"]) / 1000
+    dire = (director_mm or p["director_mm"]) / 1000
+    y1 = (sep_reflector_mm or p["sep_reflector_mm"]) / 1000
+    y2 = y1 + (sep_director_mm or p["sep_director_mm"]) / 1000
+    sp = (sep_plegado_mm or p["sep_plegado_mm"]) / 1000
+    if sp <= 2 * diametro_mm / 1000:
+        raise ValueError("la separación del dipolo plegado es demasiado pequeña para ese diámetro")
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    n = _segmentos(exc, paso)
+    n += 1 - n % 2                                  # impar: la fuente va en el central
+    n_v = max(1, round(sp / paso))
+    hilos = [
+        Hilo((-refl / 2, 0, 0), (refl / 2, 0, 0), r, _segmentos(refl, paso)),                 # 1 reflector
+        Hilo((-exc / 2, y1, 0), (exc / 2, y1, 0), r, n),                                         # 2 excitado (alimentado)
+        Hilo((-exc / 2, y1, sp), (exc / 2, y1, sp), r, n),                                       # 3 excitado (plegado)
+        Hilo((-exc / 2, y1, 0), (-exc / 2, y1, sp), r, n_v),                                     # 4 cierre izquierdo
+        Hilo((exc / 2, y1, 0), (exc / 2, y1, sp), r, n_v),                                       # 5 cierre derecho
+        Hilo((-dire / 2, y2, 0), (dire / 2, y2, 0), r, _segmentos(dire, paso)),                # 6 director
+    ]
+    return Modelo("Yagi de 3 elementos", f_MHz, tuple(hilos), Puerto(2, n // 2 + 1), barrido=barrido,
+                  comentarios=(f"Yagi de 3 elementos con dipolo plegado a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Reflector {refl * 1000:.1f}, excitado {exc * 1000:.1f}, director {dire * 1000:.1f} mm; "
+                               f"separaciones {y1 * 1000:.1f} y {(y2 - y1) * 1000:.1f} mm"))
+
+
+def biconica_por_defecto(f_min_MHz: float, k_cono: float = 1.0) -> dict[str, float]:
+    lam = longitud_onda_m(f_min_MHz) * 1000
+    return {"cono_mm": k_cono * lam / 4, "hueco_mm": max(4.0, round(0.004 * lam)), "semiangulo": 35.0, "varillas": 8.0}
+
+
+def biconica(f_min_MHz: float, diametro_mm: float, cono_mm: float | None = None, hueco_mm: float | None = None,
+             semiangulo: float = 35.0, varillas: int = 8, barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Antena bicónica de varillas: dos conos iguales, vértice con vértice (uno hacia arriba y otro hacia abajo), con la
+    fuente en el hueco entre los vértices. Banda ancha. Espacio libre."""
+    if f_min_MHz <= 0 or diametro_mm <= 0 or varillas < 3:
+        raise ValueError("frecuencia y diámetro positivos y al menos 3 varillas")
+    p = biconica_por_defecto(f_min_MHz)
+    cono = (cono_mm or p["cono_mm"]) / 1000
+    g = (hueco_mm or p["hueco_mm"]) / 1000
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_min_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    al = math.radians(semiangulo)
+    hilos = [Hilo((0, 0, 0), (0, 0, g), r, 1)]
+    for signo, z0 in ((1, g), (-1, 0.0)):
+        for i in range(varillas):
+            a = 2 * math.pi * i / varillas
+            fin = (cono * math.sin(al) * math.cos(a), cono * math.sin(al) * math.sin(a), z0 + signo * cono * math.cos(al))
+            hilos.append(Hilo((0, 0, z0), fin, r, _segmentos(math.dist((0, 0, z0), fin), paso)))
+    return Modelo("Bicónica", f_min_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Biconica de {varillas} varillas, frecuencia minima {f_min_MHz:g} MHz",
+                               f"Generatriz {cono * 1000:.1f} mm, hueco {g * 1000:.1f} mm, semiangulo {semiangulo:g} grados"))

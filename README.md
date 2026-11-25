@@ -19,10 +19,14 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 |---|---|---|
 | Dipolo de media onda | **Simulado** (validado contra la teoría, sin medir) | 1 hoja A4: vista general, lista de corte, ROE simulada, detalle del centro a 1:1 |
 | J-pole de alambre | **Simulado** (sin medir) | 2 hojas A4: resumen y detalle 1:1 del fondo de la U, el adaptador y la toma |
-| Dipolo de manga de coaxial | **Simulado** (modelo de banda estrecha, sin medir) | 1 hoja A4: tramos, lista de corte, ROE simulada y pelado 1:1; cable y VF en el cajetín |
-| Colineal CoCo (2–8 tramos de coaxial) | **Simulado, sin validar frente a un caso publicado** ni medido | 2 hojas A4: tramos sin escala con su longitud física y eléctrica, red en L, y detalle 1:1 de la unión cruzada |
+| Dipolo de manga de coaxial | **Simulado** (modelo de banda estrecha, sin medir) | 1 hoja A4 y el **patrón del extremo del cable a 1:1**: tramos, lista de corte, ROE simulada y pelado; cable y VF en el cajetín |
+| Colineal CoCo (2–8 tramos de coaxial) | **Simulado, sin validar frente a un caso publicado** ni medido | 2 hojas A4 más el **patrón del coaxial a 1:1** (tramo y punta, con los pelados, en A4 apaisadas con solape): tramos sin escala con su longitud física y eléctrica, red en L y detalle 1:1 de la unión cruzada |
 | J-pole de Koch | **Simulado** (sin medir; la J-pole recta tampoco) | Resumen y plantilla del alambre a 1:1: una hoja, **A3** o **mosaico de A4** con solape, marcas de registro y mapa de montaje |
 | Discone (8 o 16 varillas) | **Simulado** (sin medir ni validar frente a un caso publicado) | 1 hoja A4: cotas, lista de corte, ROE y plantilla 1:1 de la pieza central y del ángulo del cono |
+| Ground plane (radiador λ/4 y 4 radiales a 45°) | **Simulado** en espacio libre, sin medir | 1 hoja A4: cotas, lista de corte, ROE y plantilla 1:1 de la brida del conector (SO-239 o N, cotas orientativas) y del ángulo de los radiales |
+| Dipolo en V invertida | **Simulado** en espacio libre, sin medir | 1 hoja A4: cotas, lista de corte, ROE y vértice a 1:1 con el ángulo |
+| Yagi de 3 elementos (dipolo plegado) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: elementos y separaciones, lista de corte, ROE y el centro del plegado a 1:1 |
+| Bicónica | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: cotas, lista de corte, ROE y pieza central a 1:1 |
 
 Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
 

@@ -35,4 +35,21 @@ MINIATURAS = {
 <path d="M28 14 H92" stroke="{COBRE}" stroke-width="3"/><path d="M34 11 L60 14 L86 11" stroke="{COBRE}" stroke-width="2"/>
 <path d="M60 20 L28 52 M60 20 L92 52 M60 20 L44 52 M60 20 L76 52" stroke="{COBRE}" stroke-width="2.4"/>
 <path d="M26 52 H94" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/></svg>''',
+    "gp": f'''<svg {_CAB}>
+<line x1="60" y1="8" x2="60" y2="32" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 32 L28 52 M60 32 L92 52 M60 32 L44 54 M60 32 L76 54" stroke="{COBRE}" stroke-width="2.4"/>
+<rect x="55" y="31" width="10" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>''',
+    "vinv": f'''<svg {_CAB}>
+<path d="M60 10 L18 48 M60 10 L102 48" stroke="{COBRE}" stroke-width="3"/>
+<rect x="55" y="7" width="10" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+<line x1="60" y1="3" x2="60" y2="9" stroke="currentColor" stroke-width="2"/></svg>''',
+    "yagi": f'''<svg {_CAB}>
+<line x1="12" y1="30" x2="108" y2="30" stroke="currentColor" stroke-width="1.6"/>
+<line x1="26" y1="8" x2="26" y2="52" stroke="{COBRE}" stroke-width="3"/>
+<line x1="58" y1="14" x2="58" y2="46" stroke="{COBRE}" stroke-width="3"/><line x1="64" y1="14" x2="64" y2="46" stroke="{COBRE}" stroke-width="3"/>
+<line x1="94" y1="18" x2="94" y2="42" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "biconica": f'''<svg {_CAB}>
+<path d="M60 30 L36 6 M60 30 L84 6 M60 30 L48 6 M60 30 L72 6" stroke="{COBRE}" stroke-width="2.4"/>
+<path d="M60 30 L36 54 M60 30 L84 54 M60 30 L48 54 M60 30 L72 54" stroke="{COBRE}" stroke-width="2.4"/>
+<circle cx="60" cy="30" r="2.2" stroke="currentColor" stroke-width="1.3"/></svg>''',
 }

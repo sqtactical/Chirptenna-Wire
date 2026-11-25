@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from ..diseno import ConfigPlano, Diseno
 from ..i18n import tr
-from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PAPELES, TINTA, VERDE, Circulo, Hoja, Linea, Polilinea, Rect, Texto,
-                   _recortar)
+from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PAPELES, TINTA, VERDE, Circulo, Cota, Hoja, Linea, Polilinea, Rect,
+                   Texto, _recortar)
 
 MARGEN = 10.0  # mm, marco de la hoja
 ALTO_CAJETIN = 44.0  # mm, lo que el cajetín quita al área útil por abajo
@@ -39,12 +39,16 @@ def decidir_papel(ancho_mm: float, alto_mm: float, config: ConfigPlano) -> dict:
             if cabe("A3", apaisada):
                 return {"modo": "A3", "papel": "A3", "apaisada": apaisada, "hojas": (1, 1)}
     if config.grandes == "mosaico":
-        w, h = area_util(config.papel, False)
-        paso_x, paso_y = w - config.solape_mm, h - config.solape_mm
-        columnas = max(1, -int(-(ancho_mm - config.solape_mm) // paso_x))
-        filas = max(1, -int(-(alto_mm - config.solape_mm) // paso_y))
-        if columnas * filas <= MAX_HOJAS_MOSAICO:
-            return {"modo": "mosaico", "papel": config.papel, "apaisada": False, "hojas": (columnas, filas)}
+        mejor = None
+        for apaisada in orientaciones:
+            w, h = area_util(config.papel, apaisada)
+            paso_x, paso_y = w - config.solape_mm, h - config.solape_mm
+            columnas = max(1, -int(-(ancho_mm - config.solape_mm) // paso_x))
+            filas = max(1, -int(-(alto_mm - config.solape_mm) // paso_y))
+            if columnas * filas <= MAX_HOJAS_MOSAICO and (mejor is None or columnas * filas < mejor[0]):
+                mejor = (columnas * filas, columnas, filas, apaisada)
+        if mejor:
+            return {"modo": "mosaico", "papel": config.papel, "apaisada": mejor[3], "hojas": (mejor[1], mejor[2])}
     return {"modo": "sin_escala", "papel": config.papel, "apaisada": False, "hojas": (1, 1)}
 
 
@@ -68,7 +72,10 @@ def recortar_primitivas(primitivas: list, ventana: tuple[float, float, float, fl
     `ventana`, trasladada (+dx, +dy). Un texto o un círculo que no cabe entero se queda para la hoja que lo contiene."""
     x0, y0, x1, y1 = ventana
     salida: list = []
+    expandidas: list = []
     for p in primitivas:
+        expandidas.extend(p.primitivas() if isinstance(p, Cota) else [p])
+    for p in expandidas:
         if isinstance(p, Linea):
             seg = _recortar(p.x1, p.y1, p.x2, p.y2, x0, y0, x1, y1)
             if seg:
@@ -150,7 +157,7 @@ def hojas_plantilla(diseno: Diseno, titulo: str, subtitulo: str, primitivas: lis
         _regla(hoja)
         return [hoja], d
     columnas, filas = d["hojas"]
-    w, h = area_util(d["papel"], False)
+    w, h = area_util(d["papel"], d["apaisada"])
     solape = cfg.solape_mm
     paso_x, paso_y = w - solape, h - solape
     marcas = marcas_registro(ancho, alto, columnas, filas, paso_x, paso_y, solape, primitivas, diseno.diametro_mm)
@@ -170,7 +177,7 @@ def hojas_plantilla(diseno: Diseno, titulo: str, subtitulo: str, primitivas: lis
                 vecinas.append("↑ " + etiqueta_hoja(c, r - 1))
             hoja = hoja_papel_plantilla(diseno, titulo, tr("Escala 1:1 · hoja {0} de {1} · solapa {2} mm con {3}",
                                                            etiqueta, columnas * filas, f"{solape:g}", " ".join(vecinas)),
-                                        d["papel"], False)
+                                        d["papel"], d["apaisada"])
             ventana = (x0, y0, x0 + w, y0 + h)
             dx, dy = MARGEN - x0, MARGEN + CABECERA - y0
             hoja.anadir(*recortar_primitivas(primitivas, ventana, dx, dy))
@@ -186,7 +193,7 @@ def hojas_plantilla(diseno: Diseno, titulo: str, subtitulo: str, primitivas: lis
             if r < filas - 1:
                 yl = y0 + h - solape + dy
                 hoja.anadir(Linea(MARGEN, yl, MARGEN + w, yl, GRIS, 0.15, (2.0, 1.5), "solape"))
-            hoja.anadir(Texto(PAPELES[d["papel"]][0] - 14, 25.5, etiqueta, 12, VERDE, "negrita", "derecha"))
+            hoja.anadir(Texto(hoja.tamano[0] - 14, 25.5, etiqueta, 12, VERDE, "negrita", "derecha"))
             _regla(hoja)
             hojas.append(hoja)
     return hojas, d
@@ -207,7 +214,7 @@ def mapa_montaje(hoja: Hoja, x: float, y: float, max_ancho: float, max_alto: flo
                  primitivas: list, diseno: Diseno) -> None:
     """Mapa del mosaico: qué hoja va dónde, con la silueta de la antena entera (no solo lo que cae en la hoja 1)."""
     columnas, filas = d["hojas"]
-    w, h = area_util(d["papel"], False)
+    w, h = area_util(d["papel"], d.get("apaisada", False))
     solape = diseno.plano.solape_mm
     paso_x, paso_y = w - solape, h - solape
     total_w, total_h = (columnas - 1) * paso_x + w, (filas - 1) * paso_y + h
