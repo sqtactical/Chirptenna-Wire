@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirptenna Wire</title>
+<link rel="icon" href="img/favicon-32.png">
+<style>
+:root{--fondo:#f6f7f5;--tarjeta:#fff;--texto:#1f2a24;--muted:#5d6a63;--linea:#d8ddd9;--acento:#c8892b;--aviso:#8a5a00;--aviso-fondo:#fff4dc}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]){--fondo:#14181a;--tarjeta:#1d2326;--texto:#e9eee9;--muted:#9aa7a0;--linea:#2e383c;--aviso:#f1c97a;--aviso-fondo:#33290f}}
+:root[data-tema="oscuro"]{--fondo:#14181a;--tarjeta:#1d2326;--texto:#e9eee9;--muted:#9aa7a0;--linea:#2e383c;--aviso:#f1c97a;--aviso-fondo:#33290f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--texto);font:16px/1.45 system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--linea)}
+header img{height:44px}
+header .logo-oscuro{display:none}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) header .logo-claro{display:none}:root:not([data-tema="claro"]) header .logo-oscuro{display:block}}
+:root[data-tema="oscuro"] header .logo-claro{display:none}:root[data-tema="oscuro"] header .logo-oscuro{display:block}
+header .espacio{flex:1}
+main{display:grid;grid-template-columns:minmax(260px,320px) 1fr;gap:16px;padding:16px;max-width:1200px;margin:0 auto}
+@media (max-width:760px){main{grid-template-columns:1fr}}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--linea);border-radius:14px;padding:16px}
+label{display:block;margin:10px 0 4px;color:var(--muted);font-size:14px}
+input,select,button{font:inherit;color:inherit;background:var(--tarjeta);border:1px solid var(--linea);border-radius:8px;padding:8px 10px;width:100%}
+button{cursor:pointer;width:auto}
+button.principal{background:var(--acento);color:#1b1305;border-color:var(--acento);font-weight:600;width:100%;margin-top:14px}
+button:disabled{opacity:.5;cursor:default}
+.fila{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.aviso{background:var(--aviso-fondo);color:var(--aviso);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px}
+.estado{display:inline-block;border:1px solid var(--linea);border-radius:99px;padding:2px 10px;font-size:13px;color:var(--muted)}
+#vista{background:#fff;border:1px solid var(--linea);border-radius:8px;overflow:auto;margin-top:12px}
+#vista svg{display:block;width:100%;height:auto;max-width:620px;margin:0 auto}
+#progreso{color:var(--muted);font-size:14px}
+.oculto{display:none}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo-claro" src="img/logo-wire.svg" alt="Chirptenna Wire">
+  <img class="logo-oscuro" src="img/logo-wire-oscuro.svg" alt="Chirptenna Wire">
+  <span class="espacio"></span>
+  <button id="tema" title="Tema claro/oscuro">◐</button>
+</header>
+<main>
+  <section class="tarjeta">
+    <h2 style="margin-top:0">Diseño</h2>
+    <label for="tipo">Tipo de antena</label><select id="tipo"></select>
+    <label for="banda">Banda</label><select id="banda"><option value="">— otra —</option></select>
+    <label for="f">Frecuencia (MHz)</label><input id="f" type="number" step="0.001" min="30" max="3000" value="145">
+    <label for="diametro">Diámetro del alambre (mm)</label><input id="diametro" type="number" step="0.1" min="0.5" max="20" value="2">
+    <label for="papel">Papel</label><select id="papel"></select>
+    <label for="unidades">Unidades</label><select id="unidades"></select>
+    <button id="generar" class="principal" disabled>Generar plano</button>
+    <div class="fila"><label style="margin:0;flex:1"><button id="abrir" type="button" style="width:100%">Abrir diseno.json…</button></label>
+      <input id="archivo" type="file" accept=".json,application/json" class="oculto"></div>
+    <p id="progreso">Cargando…</p>
+  </section>
+  <section class="tarjeta">
+    <div id="cabecera" class="oculto"><strong id="titulo"></strong> <span id="estado" class="estado"></span></div>
+    <div class="aviso">Esta versión web <strong>no simula</strong>: usa las cotas de partida (estado «Sin validar»). Para el ajuste con NEC2,
+      usa la versión de escritorio y abre aquí su <code>diseno.json</code>. <strong>Imprime al 100 %</strong> («tamaño real») y comprueba la regla
+      de 80 mm antes de usar los detalles 1:1.</div>
+    <div id="hojas" class="fila oculto"></div>
+    <div id="vista"></div>
+    <div id="descargas" class="fila oculto">
+      <button id="d-pdf">PDF</button><button id="d-svg">SVG (hoja)</button><button id="d-nec">.nec</button><button id="d-json">diseno.json</button>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
