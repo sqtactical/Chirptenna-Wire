@@ -1,8 +1,10 @@
 """Chirptenna Wire: planos de antenas de alambre, varilla y coaxial con simulación NEC2."""
 
-from .generadores import dipolo
-from .modelo import Barrido, Carga, Conductividad, Hilo, Linea, Modelo, Puerto, longitud_onda_m
+__version__ = "0.1.0-dev"
+
+from .generadores import dipolo, jpole  # noqa: E402
+from .modelo import Barrido, Carga, Conductividad, Hilo, Linea, Modelo, Puerto, longitud_onda_m  # noqa: E402
 
 __all__ = [
-    "Barrido", "Carga", "Conductividad", "Hilo", "Linea", "Modelo", "Puerto", "dipolo", "longitud_onda_m",
+    "Barrido", "Carga", "Conductividad", "Hilo", "Linea", "Modelo", "Puerto", "dipolo", "jpole", "longitud_onda_m",
 ]

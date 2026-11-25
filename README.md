@@ -9,29 +9,39 @@ Planos para construir antenas de **alambre, varilla y cable coaxial** (dipolo, J
 de coaxial, colineal CoCo) para una frecuencia: cotas, lista de corte con margen de ajuste, materiales y montaje, con la
 simulación (NEC2) que los respalda y el modelo en `.nec` para abrirlo en 4nec2 o xnec2c.
 
-**Estado: en desarrollo, fase 0.** El alcance, el modelo (hilos y líneas de transmisión), las fases, la identidad visual y
-las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md).
+**Estado: en desarrollo, fase 1.** El alcance, el modelo (hilos y líneas de transmisión), las fases, la identidad visual y
+las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el diseño de los planos, en
+[`docs/PLANOS.md`](docs/PLANOS.md).
 
-## Qué hay ahora (fase 0)
+## Qué hay ahora
 
-- `wire/modelo.py`: modelo de hilos (`Hilo`, `Puerto`, `Linea` con Z0 y factor de velocidad, `Carga`, `Conductividad`,
-  `Barrido`, `Modelo`).
-- `wire/generadores.py`: un solo tipo, `dipolo(f_MHz, radio_mm)`. Estado: **Simulado** (validado contra la teoría,
-  sin medir).
-- `wire/nec.py`: exportador `.nec` (CM/CE, GW, GE, GN, LD, EX, TL, FR, RP, EN) para 4nec2, xnec2c o nec2c.
-- `wire/motor.py`: simulación con [PyNEC](https://pypi.org/project/PyNEC/): Z de entrada, S11/ROE en un barrido,
-  ganancia máxima y búsqueda de la resonancia. Ejecuta el mismo `.nec` que se exporta.
+| Tipo | Estado | Plano |
+|---|---|---|
+| Dipolo de media onda | **Simulado** (validado contra la teoría, sin medir) | 1 hoja A4: vista general, lista de corte, ROE simulada, detalle del centro a 1:1 |
+| J-pole de alambre | **Simulado** (sin medir) | 2 hojas A4: resumen y detalle 1:1 del fondo de la U, el adaptador y la toma |
 
-Validación del motor (dipolo de hilo fino, radio 0,001 λ, 25 segmentos): resonancia con longitud total 0,474 λ,
-R = 71,8 Ω y 2,14 dBi; doblar los segmentos mueve la resonancia menos de un 0,1 %.
+Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
 
-```python
-from wire import dipolo, nec, motor
-
-d = dipolo(145.0, radio_mm=1.0)
-nec.guardar(d, "dipolo_145.nec")        # para abrirlo en 4nec2 o xnec2c
-f, z = motor.resonancia(d, 130, 160)    # MHz y ohmios
+```powershell
+python -m wire plano jpole 145 --diametro 2 --salida jpole_145.pdf --guardar jpole_145.json
+python -m wire plano --desde jpole_145.json --salida jpole_145.svg
+python -m wire nec jpole 145 --diametro 2 --salida jpole_145.nec
 ```
+
+- `wire/modelo.py`, `wire/generadores.py`, `wire/nec.py`, `wire/diseno.py` y `wire/planos/`: **Python puro**, corren
+  igual en escritorio y en la web lite (Pyodide). `diseno.json` guarda cotas, resultados y el bloque `plano`.
+- `wire/motor.py` y `wire/ajuste.py`: solo escritorio, con [PyNEC](https://pypi.org/project/PyNEC/). El ajuste busca la
+  resonancia del dipolo y, en la J-pole, el brazo largo, el brazo corto y la toma que dan la ROE mínima a 50 Ω.
+- `wire/planos/`: descripción vectorial de las hojas en mm reales → SVG (vista previa) y PDF con
+  [fpdf2](https://py-pdf.github.io/fpdf2/) (que carga en Pyodide con micropip). Fuente DejaVu Sans incluida.
+
+Validación (NEC2, espacio libre, alambre de 2 mm):
+
+| | Resonancia o mínimo de ROE | Z | S11 a f | Ganancia |
+|---|---|---|---|---|
+| Dipolo λ/2 hilo fino (radio 0,001 λ) | longitud 0,474 λ | 71,8 Ω | — | 2,14 dBi |
+| J-pole 145 MHz | 145,00 MHz | 50,0 + j0,0 Ω | < −40 dB | 1,94 dBi |
+| J-pole 435 MHz | 435,00 MHz | 50,0 − j0,0 Ω | < −40 dB | 1,96 dBi |
 
 ## Instalación
 
@@ -39,12 +49,15 @@ Python 3.11 o posterior. En Windows, crea el entorno fuera de OneDrive (las ruta
 
 ```powershell
 py -3.14 -m venv $env:LOCALAPPDATA\chirptenna-wire\venv
-& $env:LOCALAPPDATA\chirptenna-wire\venv\Scripts\python.exe -m pip install PyNEC numpy pytest
+& $env:LOCALAPPDATA\chirptenna-wire\venv\Scripts\python.exe -m pip install PyNEC numpy fpdf2 pytest
 & $env:LOCALAPPDATA\chirptenna-wire\venv\Scripts\python.exe -m pytest
 ```
 
-El exportador no necesita PyNEC; las pruebas del motor se saltan si no está. La CI pasa también el `.nec` por nec2c en
-Linux y exige la misma impedancia que PyNEC a ≤ 0,5 %.
+Sin PyNEC, los planos salen con las cotas de partida y el estado «Sin validar»; las pruebas del motor se saltan. La CI
+pasa también el `.nec` por nec2c en Linux (misma impedancia que PyNEC a ≤ 0,5 %) y genera un plano dentro de Pyodide
+(misma descripción vectorial que en escritorio).
+
+**Imprime los planos al 100 % («tamaño real»)** y comprueba la regla de 80 mm antes de usar los detalles 1:1.
 
 ## Licencia
 

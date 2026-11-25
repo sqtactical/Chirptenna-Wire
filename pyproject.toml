@@ -1,17 +1,21 @@
 [project]
 name = "chirptenna-wire"
-version = "0.0.1"
+version = "0.1.0.dev0"
 description = "Planos de antenas de alambre, varilla y coaxial con simulación NEC2"
 license = "AGPL-3.0-only"
 requires-python = ">=3.11"
-dependencies = []
+# fpdf2 (con fonttools y Pillow) es lo único que necesitan los planos; también carga en Pyodide con micropip.
+dependencies = ["fpdf2>=2.8"]
 
 [project.optional-dependencies]
 motor = ["PyNEC>=2.4", "numpy"]
 pruebas = ["pytest"]
 
 [tool.setuptools]
-packages = ["wire"]
+packages = ["wire", "wire.planos"]
+
+[tool.setuptools.package-data]
+"wire.planos" = ["recursos/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["pruebas"]

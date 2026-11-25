@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      - run: python -m pip install PyNEC numpy pytest
+      - run: python -m pip install PyNEC numpy fpdf2 pytest
       - run: python -m pytest -v -rs
 
   linux-nec2c:
@@ -25,5 +25,22 @@ jobs:
         with:
           python-version: "3.12"
       - run: sudo apt-get update && sudo apt-get install -y nec2c
-      - run: python -m pip install PyNEC numpy pytest
+      - run: python -m pip install PyNEC numpy fpdf2 pytest
       - run: python -m pytest -v -rs
+
+  pyodide:
+    # Web lite: el generador de planos dentro de Pyodide da la misma descripción vectorial que en escritorio.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: mkdir -p "$RUNNER_TEMP/pyodide" && cd "$RUNNER_TEMP/pyodide" && npm init -y && npm install pyodide
+      - run: python -m pip install fpdf2 pytest
+      - run: python -m pytest -v -rs pruebas/test_pyodide.py
+        env:
+          CHIRPTENNA_PYODIDE: ${{ runner.temp }}/pyodide
