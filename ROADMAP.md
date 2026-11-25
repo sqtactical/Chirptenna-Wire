@@ -18,13 +18,13 @@ El porqué de cada decisión está en [`docs/PROPUESTA.md`](docs/PROPUESTA.md) y
 
 ## Fase 1 · J-pole y planos (en curso desde el 25-11)
 
-- [ ] W1.1 fpdf2 en Pyodide: comprobar o elegir alternativa
-- [ ] W1.2 J-pole de alambre en el motor, con ajuste de largo y toma
-- [ ] W1.3 Generador de planos común (descripción vectorial → SVG y PDF), cajetín, regla, A4
-- [ ] W1.4 Hojas del dipolo y de la J-pole según las maquetas aprobadas (`docs/maquetas/`)
-- [ ] W1.5 `diseno.json` con el bloque `plano`
-- [ ] W1.6 Línea de comandos `python -m wire`
-- [ ] W1.7 Pruebas de escala, solapes y equivalencia con/sin PyNEC
+- [x] W1.1 fpdf2 en Pyodide: comprobar o elegir alternativa — 25-11-2026 (Pyodide 0.29.3; requiere cargar `ssl`)
+- [x] W1.2 J-pole de alambre en el motor, con ajuste de largo y toma — 25-11-2026 (3 × segmentos: converge)
+- [x] W1.3 Generador de planos común (descripción vectorial → SVG y PDF), cajetín, regla, A4 — 25-11-2026
+- [x] W1.4 Hojas del dipolo y de la J-pole según las maquetas aprobadas (`docs/maquetas/`) — 25-11-2026
+- [x] W1.5 `diseno.json` con el bloque `plano` — 25-11-2026
+- [x] W1.6 Línea de comandos `python -m wire` — 25-11-2026 (`--help` en castellano)
+- [ ] W1.7 Pruebas de escala, solapes y equivalencia con/sin PyNEC — escritas y pasan en local (25-11-2026); falta verlas pasar en la CI (no se ha empujado)
 - [ ] W1.8 **Usuario delante**: construir y medir una J-pole con el plano (≤ 2 % en f)
 
 Salida: J-pole medida a ≤ 2 % de la simulada, o la causa identificada.

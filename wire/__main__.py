@@ -25,12 +25,32 @@ def _diseno(args) -> Diseno:
     return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, **plano)
 
 
+class _Ayuda(argparse.HelpFormatter):
+    """argparse trae «usage:» en inglés; aquí va en castellano."""
+
+    def _format_usage(self, usage, actions, groups, prefix):
+        return super()._format_usage(usage, actions, groups, "uso: " if prefix is None else prefix)
+
+
+def _en_castellano(parser: argparse.ArgumentParser) -> None:
+    """Títulos de los grupos de argumentos (argparse no los traduce; atributos privados, por eso con cuidado)."""
+    for atributo, titulo in (("_positionals", "argumentos"), ("_optionals", "opciones")):
+        grupo = getattr(parser, atributo, None)
+        if grupo is not None:
+            grupo.title = titulo
+
+
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="python -m wire", description="Chirptenna Wire: planos de antenas de alambre")
-    sub = p.add_subparsers(dest="orden", required=True)
+    p = argparse.ArgumentParser(prog="python -m wire", add_help=False, formatter_class=_Ayuda,
+                                description="Chirptenna Wire: planos de antenas de alambre")
+    _en_castellano(p)
+    p.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
+    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec}")
     for nombre, ayuda in (("plano", "plano en PDF o SVG"), ("nec", "modelo .nec para 4nec2, xnec2c o nec2c")):
-        s = sub.add_parser(nombre, help=ayuda)
-        s.add_argument("tipo", nargs="?", choices=sorted(TIPOS))
+        s = sub.add_parser(nombre, help=ayuda, description=ayuda, add_help=False, formatter_class=_Ayuda)
+        _en_castellano(s)
+        s.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
+        s.add_argument("tipo", nargs="?", choices=sorted(TIPOS), help="tipo de antena: " + ", ".join(sorted(TIPOS)))
         s.add_argument("f_MHz", nargs="?", type=float, help="frecuencia en MHz")
         s.add_argument("--diametro", type=float, default=2.0, help="diámetro del alambre en mm (2)")
         s.add_argument("--desde", help="diseno.json guardado antes")

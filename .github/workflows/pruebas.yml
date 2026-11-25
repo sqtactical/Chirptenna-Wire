@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: mkdir -p "$RUNNER_TEMP/pyodide" && cd "$RUNNER_TEMP/pyodide" && npm init -y && npm install pyodide
+      - run: mkdir -p "$RUNNER_TEMP/pyodide" && cd "$RUNNER_TEMP/pyodide" && npm init -y && npm install pyodide@0.29.3
       - run: python -m pip install fpdf2 pytest
       - run: python -m pytest -v -rs pruebas/test_pyodide.py
         env:

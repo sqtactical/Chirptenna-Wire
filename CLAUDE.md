@@ -16,8 +16,10 @@ no pide otra cosa, lo siguiente es la primera tarea sin marcar de la primera fas
 - git portable: `%LOCALAPPDATA%\Programs\MinGit\cmd\git.exe` (no está en el PATH). Commits con el correo noreply ya
   configurado. **No empujar ni hacer público el repositorio sin que lo diga el usuario.**
 - Pruebas: `python -m pytest` desde la raíz (las de motor se saltan sin PyNEC; la de nec2c, sin nec2c; la de Pyodide,
-  sin Node + `npm install pyodide` en `%LOCALAPPDATA%\chirptenna-wire\pyodide-prueba` o `CHIRPTENNA_PYODIDE`).
-- Planos: fpdf2 2.9 (PDF) carga en Pyodide 0.29 con micropip (comprobado con `herramientas/prueba_pyodide.mjs`).
+  sin Node + `npm install pyodide@0.29.3` en `%LOCALAPPDATA%\chirptenna-wire\pyodide-0293` o `CHIRPTENNA_PYODIDE`).
+- Planos: fpdf2 2.9 (PDF) carga en **Pyodide 0.29.3** (Python 3.13) con micropip, **pero hay que cargar antes el paquete
+  `ssl`** (`loadPackage(["micropip", "ssl"])`): fpdf importa `urllib.request.HTTPSHandler`. Sin él: ImportError.
+  Comprobado con `herramientas/prueba_pyodide.mjs` (la versión npm `pyodide@314.x` es otra línea, Python 3.14).
   Para ver un PDF o SVG: `msedge --headless=new --screenshot` (no hay pdftoppm).
 - Los ejemplos de `docs/ejemplos/` se regeneran con `python -m wire plano ... --guardar`; las pruebas de planos los leen.
 - En PowerShell 5.1 no pasar código con comillas a `python -c`: se pierden. Usar un script en un archivo.

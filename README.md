@@ -40,8 +40,11 @@ Validación (NEC2, espacio libre, alambre de 2 mm):
 | | Resonancia o mínimo de ROE | Z | S11 a f | Ganancia |
 |---|---|---|---|---|
 | Dipolo λ/2 hilo fino (radio 0,001 λ) | longitud 0,474 λ | 71,8 Ω | — | 2,14 dBi |
-| J-pole 145 MHz | 145,00 MHz | 50,0 + j0,0 Ω | < −40 dB | 1,94 dBi |
-| J-pole 435 MHz | 435,00 MHz | 50,0 − j0,0 Ω | < −40 dB | 1,96 dBi |
+| J-pole 145 MHz | 145,00 MHz | 50,0 + j0,0 Ω | < −40 dB | 2,40 dBi |
+| J-pole 435 MHz | 435,00 MHz | 50,0 + j0,0 Ω | < −40 dB | 2,72 dBi |
+
+La J-pole se ajusta con ~250 segmentos a 145 MHz y ~170 a 435 MHz (3 × min(λ/50, separación)): con menos, el mínimo de
+ROE se mueve de 0,3 a 0,8 % al subdividir; con el doble de segmentos se mueve menos de 0,1 %.
 
 ## Instalación
 

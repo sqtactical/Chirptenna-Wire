@@ -20,6 +20,10 @@ JPOLE_CORTO = 0.245  # brazo corto (adaptador λ/4), del fondo de la U a su punt
 JPOLE_TOMA = 0.03  # altura del punto de toma sobre el fondo de la U
 JPOLE_SEPARACION = 0.012  # separación entre ejes de los dos brazos
 
+# Segmentación de la J-pole, en múltiplos de min(λ/50, separación). Con 1 el ajuste «converge» a una frecuencia
+# 0,3–0,8 % más alta que la real; a partir de 3 el mínimo de ROE ya no se mueve (medido a 145 y 435 MHz, 2 mm).
+DENSIDAD_JPOLE = 3.0
+
 
 def segmentos_para(longitud_m: float, lambda_m: float, minimo: int = 11) -> int:
     """Número impar de segmentos (para que haya un segmento central) a unos λ/50 cada uno."""
@@ -84,8 +88,11 @@ def jpole(
     toma_mm: float | None = None,
     separacion_mm: float | None = None,
     barrido: Barrido | None = None,
+    densidad: float = DENSIDAD_JPOLE,
 ) -> Modelo:
     """J-pole de alambre o varilla doblada en U, vertical, en espacio libre (sin mástil).
+
+    `densidad` multiplica el número de segmentos (para comprobar la convergencia: el doble debe dar lo mismo).
 
     Brazo largo en x = 0 y brazo corto en x = separación, unidos abajo (z = 0) por el tramo recto de la U.
     La alimentación es un hilo horizontal entre los dos brazos a la altura de la toma, con la fuente en él
@@ -104,12 +111,16 @@ def jpole(
     if s <= 2 * diametro_mm / 1000:
         raise ValueError("la separación entre brazos es demasiado pequeña para ese diámetro")
     lam = longitud_onda_m(f_MHz)
-    paso = min(lam / SEGMENTOS_POR_LAMBDA, s)  # segmentos parecidos en las uniones
+    paso = min(lam / SEGMENTOS_POR_LAMBDA, s) / densidad  # segmentos parecidos en las uniones
 
     def tramo(a, b):
         largo_tramo = sum((y - x) ** 2 for x, y in zip(a, b)) ** 0.5
         return Hilo(a, b, radio, max(1, round(largo_tramo / paso)))
 
+    # El puente de alimentación lleva un número impar de segmentos de la misma longitud que los de las ramas (la
+    # fuente va en el central): con un solo segmento largo, el resultado no converge al subdividir el resto.
+    n_puente = max(1, round(s / paso))
+    n_puente += 1 - n_puente % 2
     hilos = (
         tramo((0, 0, 0), (0, 0, toma)),  # 1 brazo largo: fondo → toma
         tramo((0, 0, toma), (0, 0, corto)),  # 2 brazo largo: toma → altura del corto
@@ -117,13 +128,13 @@ def jpole(
         tramo((s, 0, 0), (s, 0, toma)),  # 4 brazo corto: fondo → toma
         tramo((s, 0, toma), (s, 0, corto)),  # 5 brazo corto: toma → punta
         tramo((0, 0, 0), (s, 0, 0)),  # 6 fondo de la U
-        Hilo((0, 0, toma), (s, 0, toma), radio, 1),  # 7 alimentación
+        Hilo((0, 0, toma), (s, 0, toma), radio, n_puente),  # 7 alimentación
     )
     return Modelo(
         nombre="J-pole",
         f_MHz=f_MHz,
         hilos=hilos,
-        puerto=Puerto(hilo=7, segmento=1),
+        puerto=Puerto(hilo=7, segmento=n_puente // 2 + 1),
         barrido=barrido,
         comentarios=(
             f"J-pole a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",

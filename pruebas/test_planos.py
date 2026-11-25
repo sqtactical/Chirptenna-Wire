@@ -65,6 +65,13 @@ def test_regla_mide_80_mm_en_el_pdf():
     assert abs(abs(barra[0][3]) - 0.8 * PT_POR_MM) < 0.02
     cuadro = [r for r in rects if abs(r[2] - 20 * PT_POR_MM) < 0.02 and abs(abs(r[3]) - 7 * PT_POR_MM) < 0.02]
     assert cuadro
+    # El detalle 1:1 del centro: el aislador de 60 × 25 mm y los brazos del diámetro real, también en el PDF.
+    aislador = [r for r in rects if abs(r[2] - 60 * PT_POR_MM) < 0.02 and abs(abs(r[3]) - 25 * PT_POR_MM) < 0.02]
+    assert len(aislador) == 1
+    brazos = [r for r in rects if abs(abs(r[3]) - 2.0 * PT_POR_MM) < 0.02 and r[2] > 40 * PT_POR_MM]
+    assert len(brazos) == 2  # diámetro 2 mm
+    izq, der = sorted(brazos, key=lambda r: r[0])
+    assert (der[0] - (izq[0] + izq[2])) / PT_POR_MM == pytest.approx(10.0, abs=0.01)  # hueco del aislador
 
 
 def test_pdf_comprimido_tiene_todas_las_paginas():
@@ -189,6 +196,10 @@ def test_misma_descripcion_sin_pynec():
 def test_diseno_json_ida_y_vuelta():
     d = _ejemplo("jpole_145.json")
     assert Diseno.desde_json(d.a_json()) == d
+    # Un plano generado desde el JSON es igual al del diseño original (W1.5).
+    original = planos.descripcion(planos.generar(d, fecha="25-11-2026"))
+    desde_json = planos.descripcion(planos.generar(Diseno.desde_json(d.a_json()), fecha="25-11-2026"))
+    assert desde_json == original
     datos = json.loads(d.a_json())
     assert set(datos["plano"]) == {"papel", "grandes", "orientacion", "solape_mm", "unidades", "idioma",
                                    "sobrante_mm"}
