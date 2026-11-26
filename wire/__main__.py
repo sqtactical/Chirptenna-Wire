@@ -58,7 +58,15 @@ def main(argv: list[str] | None = None) -> int:
                                 description="Chirptenna Wire: planos de antenas de alambre")
     _en_castellano(p)
     p.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
-    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d,aisladores,s1p}")
+    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d,aisladores,s1p,recomendar}")
+    r = sub.add_parser("recomendar", help="qué antena elegir para una frecuencia, ganancia y tamaño", add_help=False, formatter_class=_Ayuda,
+                       description="Ordena los tipos que cumplen una ganancia mínima y un tamaño máximo (ganancias teóricas de referencia)")
+    _en_castellano(r)
+    r.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
+    r.add_argument("f_MHz", type=float, help="frecuencia en MHz")
+    r.add_argument("--ganancia", type=float, help="ganancia mínima en dBi")
+    r.add_argument("--tamano", type=float, help="tamaño máximo en m (la mayor dimensión de la antena)")
+    r.add_argument("--diametro", type=float, default=3.0, help="diámetro del alambre en mm (3)")
     for nombre, ayuda in (("plano", "plano en PDF o SVG"), ("nec", "modelo .nec para 4nec2, xnec2c o nec2c"),
                           ("plantilla3d", "plantilla de doblado para imprimir en 3D (zip con los STL)"),
                           ("aisladores", "aisladores (central y de extremo) para imprimir en 3D, zip con los STL"),
@@ -104,6 +112,17 @@ def main(argv: list[str] | None = None) -> int:
             s.add_argument("--radio", type=float, help="radio de doblado al eje del alambre en mm (2 × el diámetro, mínimo 3)")
             s.add_argument("--largo-guia", type=float, help="largo de los brazos de la J-pole recta que cubre la plantilla, en mm (250)")
     args = p.parse_args(argv)
+    if args.orden == "recomendar":
+        from . import recomendar
+        filas = recomendar.recomendar(args.f_MHz, args.ganancia, args.tamano, args.diametro)
+        if not filas:
+            print("Ningún tipo cumple: baja la ganancia pedida o sube el tamaño.")
+            return 1
+        print(f"{'Antena':<44}{'Ganancia (dBi)':>16}{'Tamaño (m)':>14}")
+        for f in filas:
+            print(f"{f['nombre']:<44}{f['ganancia_dBi']:>16.1f}{f['tamano_m']:>14.2f}")
+        print("Ganancias teóricas de referencia (espacio libre en VHF/UHF, suelo normal en HF): la de tu instalación cambia.")
+        return 0
     diseno = _diseno(args)
 
     if args.orden == "plantilla3d":

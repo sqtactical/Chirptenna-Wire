@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Recomendador (`wire/recomendar.py`, `python -m wire recomendar <MHz> --ganancia <dBi> --tamano <m>`): ordena por ganancia los tipos (Yagi de 3 a 15 elementos, colineales de 2 a 6 secciones y los dipolos, J-pole, ground plane… en VHF/UHF; dipolo, V invertida, EFHW, G5RV y vertical en HF) que cumplen una ganancia mínima y un tamaño máximo. Usa las ganancias teóricas de referencia y el tamaño de las cotas de partida, sin simular. Aún no está en la interfaz.
+
 - Chirptenna VNA ya tiene la herramienta **«Choke o balun 1:1»** (modo Avanzado → Herramientas de radioaficionado): da el |Z| mínimo y máximo por banda de HF de la medida del coaxial con el choke y un veredicto (bien ≥ 1 kΩ, justo ≥ 500 Ω, corto), con consejo; la hoja del balun de Wire apunta a ella en vez de decir que no existe. Sin probar con un NanoVNA ni un choke reales.
 
 - Aisladores 3D (`wire/aisladores.py`, `python -m wire aisladores …`, botón en la pestaña Plano del escritorio): aislador central (con un agujero por hilo y lado, el del abanico lleva más, cuerda arriba y ranuras para bridas del coaxial) y de extremo, en un zip con los STL y un LÉEME. Para los dipolos de HF, el de V invertida, el abanico, las trampas, la G5RV, el dipolo y la V de VHF y la EFHW (solo extremo). Agujeros cuadrados del lado del alambre más una holgura; **sin probar en una impresora**. Aún no está en la web.

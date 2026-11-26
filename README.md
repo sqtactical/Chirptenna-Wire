@@ -63,7 +63,11 @@ python -m wire plano jpole 145 --diametro 2 --salida jpole_145.pdf --guardar jpo
 python -m wire plano --desde jpole_145.json --salida jpole_145.svg
 python -m wire nec jpole 145 --diametro 2 --salida jpole_145.nec
 python -m wire s1p jpole 145 --diametro 2 --salida jpole_145_simulado.s1p
+python -m wire recomendar 145 --ganancia 8 --tamano 2
 ```
+
+`recomendar` ordena los tipos que cumplen una ganancia mínima (dBi) y un tamaño máximo (m, la mayor dimensión de la antena) a esa frecuencia,
+con las ganancias teóricas de referencia: sirve para decidir qué construir antes de abrir un plano.
 
 El último saca el S11 simulado en Touchstone (`.s1p`, 50 Ω): cárgalo como referencia en Chirptenna VNA y se superpone a tu medida
 con la desviación de la resonancia (también hay un botón en la pestaña Simulación del escritorio).
