@@ -1,0 +1,13 @@
+CM EFHW 49:1
+CM EFHW 49:1 a 7.1 MHz, hilo de 2 mm a 10 m sobre suelo normal
+CM Hilo de 20.51 m, contrapeso de 5.07 m; la ROE va contra 2450 ohm (transformador ideal)
+CM Generado por Chirptenna Wire
+CE
+GW 1 97 0 0 10 20.5075829 0 10 0.001
+GW 2 24 0 0 10 -5.06689113 0 10 0.001
+GE -1
+GN 2 0 0 0 13 0.005 0 0 0 0
+EX 0 1 1 0 1 0 0 0 0 0
+FR 0 1 0 0 7.1 0
+RP 0 19 72 1000 0 0 5 5 0 0
+EN

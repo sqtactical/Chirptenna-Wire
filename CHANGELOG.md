@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Primer tipo de HF: EFHW con transformador 49:1, 64:1 o 9:1 sobre suelo real, con hojas de montaje y ajuste del transformador (valores de aficionados, sin verificar). El motor admite suelo real.
+- La galería de la web se agrupa en categorías (HF, VHF y UHF, coaxial, banda ancha).
 - Yagi de 3 a 15 elementos y eje metálico o no (corrección de corte de DL6WU, sin comprobar con medidas); hoja de elementos y eje cuando hay más de 3 o eje metálico.
 - Plantilla de doblado para imprimir en 3D (STL en zip) de la J-pole y la J-pole de Koch, con radio de doblado y baldosas con encajes si pasa de la cama. Sin probar en una impresora.
 - VF medido con Chirptenna VNA: `--cable-medido archivo.json` en la CLI y «cargar el archivo» en la web rellenan el VF del diseño (formato `chirptenna-cable`, `wire.cables.leer_cable_medido`).

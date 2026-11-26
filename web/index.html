@@ -32,6 +32,7 @@ button:disabled{opacity:.5;cursor:default}
 #vista{background:#fff;border:1px solid var(--linea);border-radius:8px;overflow:auto;margin-top:12px}
 #vista svg{display:block;width:100%;height:auto;max-width:620px;margin:0 auto}
 .galeria{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.galeria .categoria{grid-column:1/-1;margin:10px 0 0;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase;opacity:.75}
 .carta{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;width:auto;padding:8px 6px;line-height:1.25;border-radius:12px}
 .carta svg{color:var(--texto);max-width:100%;height:auto}
 .carta b{font-size:14px}
@@ -61,6 +62,13 @@ button:disabled{opacity:.5;cursor:default}
       <label for="elementos" data-t>Elementos</label><input id="elementos" type="number" min="3" max="15" step="1" value="3">
       <label for="eje" data-t>Eje (boom)</label><select id="eje"><option value="ninguno" data-t>No metálico</option><option value="aislado" data-t>Metálico, elementos aislados</option><option value="unido" data-t>Metálico, elementos unidos</option></select>
       <label for="eje-mm" data-t>Ø del eje metálico (mm)</label><input id="eje-mm" type="number" min="4" max="60" step="1" placeholder="1 % de λ" data-t-placeholder="1 % de λ">
+    </div>
+    <div id="efhw" class="oculto">
+      <label for="relacion" data-t>Transformador</label><select id="relacion"><option value="49">49:1</option><option value="64">64:1</option><option value="9">9:1</option></select>
+      <label for="altura" data-t>Altura del hilo (m)</label><input id="altura" type="number" min="2" max="60" step="0.5" value="10">
+      <label for="suelo" data-t>Suelo</label><select id="suelo"><option value="pobre" data-t>pobre</option><option value="normal" data-t selected>normal</option><option value="bueno" data-t>bueno</option><option value="mar" data-t>de mar</option></select>
+      <label for="potencia" data-t>Potencia (W)</label><input id="potencia" type="number" min="5" max="1500" step="5" value="100">
+      <label for="largo-max" data-t>Largo máximo del hilo (m, opcional)</label><input id="largo-max" type="number" min="3" max="100" step="0.5" placeholder="sin límite" data-t-placeholder="sin límite">
     </div>
     <div id="coaxial" class="oculto">
       <label for="cable" data-t>Cable coaxial</label><select id="cable"></select>

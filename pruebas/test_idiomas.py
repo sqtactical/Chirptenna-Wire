@@ -53,6 +53,7 @@ DISENOS = {
     "biconica": lambda i: disenar("biconica", 145.0, 3.0, ajustar=False, idioma=i),
     "torniquete": lambda i: disenar("torniquete", 137.5, 3.0, ajustar=False, idioma=i),
     "batwing": lambda i: disenar("batwing", 145.0, 3.0, ajustar=False, idioma=i),
+    "efhw": lambda i: disenar("efhw", 7.1, 2.0, ajustar=False, idioma=i),
 }
 
 

@@ -474,6 +474,63 @@ def biconica(f_min_MHz: float, diametro_mm: float, cono_mm: float | None = None,
                                f"Generatriz {cono * 1000:.1f} mm, hueco {g * 1000:.1f} mm, semiangulo {semiangulo:g} grados"))
 
 
+# ---------------------------------------------------------------- HF: EFHW con transformador
+
+BANDAS_HF = (("160 m", 1.8, 2.0), ("80 m", 3.5, 3.8), ("60 m", 5.3515, 5.3665), ("40 m", 7.0, 7.2), ("30 m", 10.1, 10.15),
+             ("20 m", 14.0, 14.35), ("17 m", 18.068, 18.168), ("15 m", 21.0, 21.45), ("12 m", 24.89, 24.99), ("10 m", 28.0, 29.7))
+# Suelo real (εr, conductividad en S/m): los valores típicos de NEC y del ARRL, **sin medir en tu terreno**.
+SUELOS = {"pobre": (5.0, 0.001), "normal": (13.0, 0.005), "bueno": (20.0, 0.03), "mar": (80.0, 5.0)}
+RELACIONES = (9, 49, 64)                    # relación de impedancias del transformador (9:1 = 3:1 en vueltas, 49:1 = 7:1, 64:1 = 8:1)
+EFHW_LARGO, EFHW_CONTRAPESO = 0.475, 0.06   # en λ de la banda más baja
+
+
+def bandas_de(f_MHz: float, relacion: int) -> list[tuple[str, float, float]]:
+    """Bandas donde se mide una EFHW pensada para `f_MHz`: la propia y sus armónicos (49:1 y 64:1, que solo funcionan en múltiplos
+    de media onda) o todas las de HF por encima (9:1, de hilo no resonante)."""
+    sal = []
+    for nombre, a, b in BANDAS_HF:
+        c = (a + b) / 2
+        if a <= f_MHz <= b or (relacion != 9 and any(abs(c / (n * f_MHz) - 1) < 0.045 for n in (2, 3, 4, 5)) or (relacion == 9 and c >= f_MHz * 0.9)):
+            sal.append((nombre, a, b))
+    return sal
+
+
+def efhw_por_defecto(f_MHz: float, relacion: int = 49, altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    lam = 299.792458 / f_MHz
+    return {"largo_mm": EFHW_LARGO * lam * 1000, "contrapeso_mm": EFHW_CONTRAPESO * lam * 1000, "altura_mm": altura_m * 1000,
+            "relacion": float(relacion), "suelo": suelo}
+
+
+def efhw(f_MHz: float, diametro_mm: float, largo_mm: float | None = None, contrapeso_mm: float | None = None,
+         altura_mm: float = 10000.0, suelo: str = "normal", relacion: int = 49, barrido: Barrido | None = None,
+         densidad: float = 1.0) -> Modelo:
+    """Hilo horizontal alimentado por un extremo (EFHW) a `altura_mm` sobre suelo real, con un contrapeso corto.
+
+    La fuente está en el primer segmento del hilo; la impedancia que sale es la del extremo (miles de ohmios). El
+    transformador (`relacion`: 49 = 49:1…) **no está en el modelo**: se simula la antena y la ROE se calcula contra
+    50 Ω × `relacion` (`motor.simular(..., z0=...)`), es decir, con un transformador ideal, sin pérdidas ni parásitos."""
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    if suelo not in SUELOS:
+        raise ValueError(f"suelo desconocido: {suelo} (hay: {', '.join(SUELOS)})")
+    if relacion not in RELACIONES:
+        raise ValueError(f"relación desconocida: {relacion}:1 (hay: {', '.join(str(r) for r in RELACIONES)})")
+    p = efhw_por_defecto(f_MHz, relacion, altura_mm / 1000, suelo)
+    largo = (largo_mm or p["largo_mm"]) / 1000
+    cp = (contrapeso_mm if contrapeso_mm is not None else p["contrapeso_mm"]) / 1000
+    h = altura_mm / 1000
+    if h <= 1.0:
+        raise ValueError("la altura debe ser de más de 1 m")
+    r = diametro_mm / 2000
+    paso = 299.792458 / min(4 * f_MHz, 30.0) / SEGMENTOS_POR_LAMBDA / densidad
+    hilos = [Hilo((0, 0, h), (largo, 0, h), r, max(3, round(largo / paso)))]
+    if cp > 0.05:
+        hilos.append(Hilo((0, 0, h), (-cp, 0, h), r, max(1, round(cp / paso))))
+    return Modelo(f"EFHW {relacion}:1", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"EFHW {relacion}:1 a {f_MHz:g} MHz, hilo de {diametro_mm:g} mm a {h:g} m sobre suelo {suelo}",
+                               f"Hilo de {largo:.2f} m, contrapeso de {cp:.2f} m; la ROE va contra {50 * relacion} ohm (transformador ideal)"))
+
+
 # ---------------------------------------------------------------- torniquete y batwing
 
 TORN_BRAZO, TORN_SEP, TORN_Z0, TORN_VF = 0.236, 0.02, 75.0, 0.66    # brazo en λ, separación entre los dos dipolos en λ, coaxial de 75 Ω

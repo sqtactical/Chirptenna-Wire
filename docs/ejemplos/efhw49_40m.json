@@ -1,0 +1,75 @@
+{
+  "tipo": "efhw",
+  "f_MHz": 7.1,
+  "diametro_mm": 2.0,
+  "geometria": {
+    "largo_mm": 20507.58292348381,
+    "contrapeso_mm": 5066.891128999622,
+    "altura_mm": 10000.0,
+    "relacion": 49.0,
+    "suelo": "normal",
+    "potencia_w": 100.0
+  },
+  "nombre": "efhw_7.1",
+  "material": "varilla de latón o aluminio",
+  "resultados": {
+    "motor": "PyNEC",
+    "z0_ohm": 2450.0,
+    "f_MHz": 7.1,
+    "r_ohm": 3296.7054681786317,
+    "x_ohm": -1294.630766759158,
+    "roe": 1.7122447286316314,
+    "ganancia_dBi": 6.049740237782456,
+    "bandas": [
+      {
+        "banda": "40 m",
+        "f_MHz": 7.1,
+        "r_ohm": 3296.7054681786317,
+        "x_ohm": -1294.630766759158,
+        "roe": 1.7122447286316314,
+        "roe_max": 2.105516957867084,
+        "ganancia_dBi": 6.049740237782456
+      },
+      {
+        "banda": "20 m",
+        "f_MHz": 14.175,
+        "r_ohm": 1865.958221466359,
+        "x_ohm": 847.3010326141344,
+        "roe": 1.6108705511470627,
+        "roe_max": 2.179197639740155,
+        "ganancia_dBi": 7.457651219974537
+      },
+      {
+        "banda": "15 m",
+        "f_MHz": 21.225,
+        "r_ohm": 1517.0720607172705,
+        "x_ohm": 1363.8575358066907,
+        "roe": 2.299801738717261,
+        "roe_max": 3.0177709764305063,
+        "ganancia_dBi": 8.718775223426258
+      },
+      {
+        "banda": "10 m",
+        "f_MHz": 28.85,
+        "r_ohm": 2679.2598967097815,
+        "x_ohm": -1063.3247747932198,
+        "roe": 1.5241507182338243,
+        "roe_max": 2.5033229584270806,
+        "ganancia_dBi": 8.46334937470209
+      }
+    ]
+  },
+  "estado": "Simulado",
+  "plano": {
+    "papel": "A4",
+    "grandes": "mosaico",
+    "orientacion": "auto",
+    "solape_mm": 10.0,
+    "unidades": "mm",
+    "idioma": "es",
+    "sobrante_mm": null
+  },
+  "version": 1,
+  "cable": null,
+  "medida": null
+}

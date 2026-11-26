@@ -141,6 +141,7 @@ class Modelo:
     plano_masa: bool = False  # False: espacio libre; True: suelo perfecto en z = 0
     barrido: Barrido | None = None  # si no hay, solo la frecuencia de diseño
     comentarios: tuple[str, ...] = field(default=())
+    suelo: tuple[float, float] | None = None  # suelo real en z = 0: (εr, conductividad en S/m); en HF cambia mucho la antena
 
     def __post_init__(self) -> None:
         if not self.hilos:

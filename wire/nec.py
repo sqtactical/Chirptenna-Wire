@@ -58,7 +58,10 @@ def tarjetas(modelo: Modelo, diagrama: bool = True) -> list[Tarjeta]:
     t: list[Tarjeta] = []
     for etiqueta, h in enumerate(modelo.hilos, start=1):
         t.append(Tarjeta("GW", (etiqueta, h.segmentos), (*h.inicio, *h.fin, h.radio)))
-    if modelo.plano_masa:
+    if modelo.suelo is not None:                # suelo real (Sommerfeld/Norton, GN tipo 2)
+        t.append(Tarjeta("GE", (1 if modelo.toca_el_suelo else -1,)))
+        t.append(Tarjeta("GN", (2, 0, 0, 0), (modelo.suelo[0], modelo.suelo[1], 0.0, 0.0, 0.0, 0.0)))
+    elif modelo.plano_masa:
         t.append(Tarjeta("GE", (1 if modelo.toca_el_suelo else -1,)))
         t.append(Tarjeta("GN", (1, 0, 0, 0), (0.0,) * 6))
     else:
@@ -81,6 +84,8 @@ def tarjetas(modelo: Modelo, diagrama: bool = True) -> list[Tarjeta]:
     t.append(Tarjeta("FR", (0, n, 0, 0), (f0, df)))
     if diagrama:
         enteros, reales = RP_POR_DEFECTO
+        if modelo.suelo is not None:            # con suelo real NEC no calcula bajo tierra: solo el hemisferio de arriba
+            enteros = [enteros[0], 19, *enteros[2:]]
         t.append(Tarjeta("RP", tuple(enteros), tuple(reales)))
     t.append(Tarjeta("EN"))
     return t

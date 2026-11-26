@@ -57,6 +57,12 @@ MINIATURAS = {
 <path d="M54 30 L14 12 M54 30 L14 30 M54 30 L14 48 M14 12 V48" stroke="{COBRE}" stroke-width="2.6"/>
 <path d="M66 30 L106 12 M66 30 L106 30 M66 30 L106 48 M106 12 V48" stroke="{COBRE}" stroke-width="2.6"/>
 <rect x="54" y="26" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>''',
+    "efhw": f'''<svg {_CAB}>
+<line x1="6" y1="52" x2="114" y2="52" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="22" y1="52" x2="22" y2="16" stroke="currentColor" stroke-width="1.6"/><line x1="106" y1="52" x2="106" y2="16" stroke="currentColor" stroke-width="1.6"/>
+<line x1="22" y1="20" x2="106" y2="20" stroke="{COBRE}" stroke-width="3"/><line x1="22" y1="20" x2="12" y2="20" stroke="{COBRE}" stroke-width="2"/>
+<rect x="16" y="22" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+<path d="M22 30 V48" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2"/></svg>''',
     "biconica": f'''<svg {_CAB}>
 <path d="M60 30 L36 6 M60 30 L84 6 M60 30 L48 6 M60 30 L72 6" stroke="{COBRE}" stroke-width="2.4"/>
 <path d="M60 30 L36 54 M60 30 L84 54 M60 30 L48 54 M60 30 L72 54" stroke="{COBRE}" stroke-width="2.4"/>

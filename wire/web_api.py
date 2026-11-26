@@ -11,7 +11,7 @@ import json
 from . import nec, planos
 from .i18n import IDIOMAS, tr, usar
 from .cables import CABLES
-from .diseno import BANDAS, CONECTORES, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
+from .diseno import BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
 from .impresion3d import TIPOS_3D
 from .miniaturas import MINIATURAS
 
@@ -28,6 +28,7 @@ def _catalogo() -> str:
         "version_api": VERSION_API,
         "tipos": [{"clave": c, "nombre": tr(n), "resumen": tr(RESUMEN[c]), "estado": tr(ESTADO_TIPO[c]), "miniatura": MINIATURAS[c]}
                   for c, n in TIPOS.items()],
+        "categorias": [{"clave": c, "nombre": tr(n), "tipos": list(t)} for c, n, t in CATEGORIAS],
         "estados": list(ESTADOS),
         "bandas": [{"nombre": tr(n), "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},
@@ -47,7 +48,9 @@ def _diseno(entrada: str) -> Diseno:
     plano = {k: datos[k] for k in ("papel", "unidades", "idioma") if k in datos}
     return disenar(datos["tipo"], float(datos["f_MHz"]), float(datos.get("diametro_mm", 2.0)), ajustar=False,
                    cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), conector=datos.get("conector"),
-                   elementos=datos.get("elementos"), eje=datos.get("eje"), eje_mm=datos.get("eje_mm"), **plano)
+                   elementos=datos.get("elementos"), eje=datos.get("eje"), eje_mm=datos.get("eje_mm"), relacion=datos.get("relacion"),
+                   altura_m=datos.get("altura_m"), suelo=datos.get("suelo"), potencia_w=datos.get("potencia_w"),
+                   largo_max_m=datos.get("largo_max_m"), **plano)
 
 
 def disenar_json(entrada: str) -> str:

@@ -33,7 +33,9 @@ def _diseno(args) -> Diseno:
         vf = medido["vf"]
         cable = cable or medido.get("cable") or None      # el nombre del archivo es libre: solo vale si es uno de la tabla
     return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=cable,
-                   vf_medido=vf, conector=args.conector, elementos=args.elementos, eje=args.eje, eje_mm=args.eje_mm, **plano)
+                   vf_medido=vf, conector=args.conector, elementos=args.elementos, eje=args.eje, eje_mm=args.eje_mm,
+                   relacion=args.relacion, altura_m=args.altura, suelo=args.suelo, potencia_w=args.potencia, largo_max_m=args.largo_max,
+                   **plano)
 
 
 class _Ayuda(argparse.HelpFormatter):
@@ -73,6 +75,11 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--eje", choices=("ninguno", "aislado", "unido"),
                        help="eje de la Yagi: no metálico (ninguno), metálico con los elementos aislados o con ellos unidos")
         s.add_argument("--eje-mm", type=float, help="diámetro del eje metálico en mm (1 %% de λ)")
+        s.add_argument("--relacion", type=int, choices=(9, 49, 64), help="relación del transformador de la EFHW: 9, 49 o 64 (49)")
+        s.add_argument("--altura", type=float, help="altura de la EFHW sobre el suelo en m (10)")
+        s.add_argument("--suelo", choices=("pobre", "normal", "bueno", "mar"), help="tipo de suelo de la EFHW (normal)")
+        s.add_argument("--potencia", type=float, help="potencia en W para elegir el núcleo del transformador (100)")
+        s.add_argument("--largo-max", type=float, help="largo máximo del hilo de la EFHW en m, si falta sitio")
         s.add_argument("--desde", help="diseno.json guardado antes")
         s.add_argument("--sin-motor", action="store_true", help="cotas de partida, sin ajustar con PyNEC")
         s.add_argument("--salida", required=True, help="archivo de salida (.pdf o .svg; .nec)")

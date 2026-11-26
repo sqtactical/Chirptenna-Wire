@@ -26,7 +26,16 @@ TIPOS = {
     "biconica": N_("Bicónica"),
     "torniquete": N_("Torniquete en X (dipolos cruzados)"),
     "batwing": N_("Batwing (dipolo de alas)"),
+    "efhw": N_("EFHW de HF con transformador"),
 }
+
+# Categorías de la galería: (clave, nombre, tipos). Cada tipo va en una sola.
+CATEGORIAS = (
+    ("hf", N_("HF · hilos con transformador"), ("efhw",)),
+    ("vhf", N_("VHF y UHF · alambre y varilla"), ("dipolo", "jpole", "jpole_koch", "gp", "vinv", "yagi", "torniquete", "batwing")),
+    ("coaxial", N_("Antenas de coaxial"), ("manga", "coco")),
+    ("banda_ancha", N_("Banda ancha"), ("discone", "biconica")),
+)
 
 CONECTORES = ("SO-239", "N")
 
@@ -46,6 +55,7 @@ RESUMEN = {
     "biconica": N_("Dos conos de varillas vértice con vértice: banda ancha (más de 4:1)."),
     "torniquete": N_("Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz)."),
     "batwing": N_("Dipolo con dos alas de abanico: algo más de banda que el dipolo, sin panel ni reflector."),
+    "efhw": N_("Hilo de media onda alimentado por el extremo con transformador 49:1, 64:1 o 9:1: varias bandas de HF."),
 }
 ESTADO_TIPO = {
     "dipolo": N_("Simulado (validado contra la teoría), sin medir"),
@@ -60,6 +70,7 @@ ESTADO_TIPO = {
     "biconica": N_("Simulado, sin medir ni validar frente a un caso publicado"),
     "torniquete": N_("Simulado (en espacio libre, con razón axial calculada), sin medir"),
     "batwing": N_("Simulado, sin medir ni validar frente a un caso publicado"),
+    "efhw": N_("Simulado sobre suelo real con transformador ideal, sin medir; el transformador real hay que ajustarlo"),
 }
 CABLE_POR_DEFECTO = "RG-58"
 
@@ -68,7 +79,7 @@ ESTADOS = ("Simulado", "Medido", "Sin validar")
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
 SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0,
              "gp": 15.0, "vinv": 15.0, "yagi": 15.0, "biconica": 15.0,
-             "torniquete": 15.0, "batwing": 15.0}
+             "torniquete": 15.0, "batwing": 15.0, "efhw": 150.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
     (N_("banda aérea"), 118.0, 137.0),
@@ -79,6 +90,7 @@ BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuest
     (N_("LoRa 868"), 863.0, 870.0),
     (N_("LoRa 915"), 902.0, 928.0),
     (N_("ADS-B"), 1089.0, 1091.0),
+    *[(N_(n), a, b) for n, a, b in generadores.BANDAS_HF],     # HF: 160 m a 10 m
 ]
 
 
@@ -195,6 +207,9 @@ class Diseno:
         if self.tipo == "biconica":
             return generadores.biconica(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], hueco_mm=g["hueco_mm"],
                                         semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
+        if self.tipo == "efhw":
+            return generadores.efhw(self.f_MHz, self.diametro_mm, largo_mm=g["largo_mm"], contrapeso_mm=g["contrapeso_mm"],
+                                    altura_mm=g["altura_mm"], suelo=g["suelo"], relacion=int(g["relacion"]))
         if self.tipo == "torniquete":
             return generadores.torniquete(self.f_MHz, self.diametro_mm, brazo_mm=g["brazo_mm"], sep_mm=g["sep_mm"],
                                           z0_linea=g["z0_linea"], vf_linea=g["vf_linea"], linea_mm=g["linea_mm"])
@@ -242,7 +257,8 @@ class Diseno:
 
 def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, cable: str | None = None,
             vf_medido: float | None = None, conector: str | None = None, elementos: int | None = None,
-            eje: str | None = None, eje_mm: float | None = None, **plano) -> Diseno:
+            eje: str | None = None, eje_mm: float | None = None, relacion: int | None = None, altura_m: float | None = None,
+            suelo: str | None = None, potencia_w: float | None = None, largo_max_m: float | None = None, **plano) -> Diseno:
     """Diseño con las cotas ajustadas por el motor si está (escritorio) o las de partida si no (estado «Sin validar»).
 
     En los tipos de coaxial (`manga`, `coco`) `cable` es el nombre de la tabla (por defecto RG-58) y `vf_medido`, si se
@@ -257,6 +273,19 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
             raise ValueError(f"eje desconocido: {eje} (hay: {', '.join(generadores.BOOMS)})")
     elif elementos is not None or eje is not None or eje_mm is not None:
         raise ValueError("el número de elementos y el eje solo valen para la Yagi")
+    if tipo == "efhw":
+        relacion = 49 if relacion is None else int(relacion)
+        altura_m = 10.0 if altura_m is None else float(altura_m)
+        suelo = suelo or "normal"
+        potencia_w = 100.0 if potencia_w is None else float(potencia_w)
+        if relacion not in generadores.RELACIONES:
+            raise ValueError(f"relación desconocida: {relacion}:1 (hay: {', '.join(str(r) for r in generadores.RELACIONES)})")
+        if suelo not in generadores.SUELOS:
+            raise ValueError(f"suelo desconocido: {suelo} (hay: {', '.join(generadores.SUELOS)})")
+        if not 1.5 <= altura_m <= 60 or potencia_w <= 0:
+            raise ValueError("la altura debe estar entre 1,5 y 60 m y la potencia ser positiva")
+    elif any(v is not None for v in (relacion, altura_m, suelo, potencia_w, largo_max_m)):
+        raise ValueError("la relación, la altura, el suelo y la potencia solo valen para la EFHW")
     if tipo in TIPOS_COAXIAL:
         return _disenar_coaxial(tipo, f_MHz, ajustar, cable or CABLE_POR_DEFECTO, vf_medido, config)
     if ajustar:
@@ -265,9 +294,13 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
             funcion = {"dipolo": ajuste.ajustar_dipolo, "jpole": ajuste.ajustar_jpole,
                        "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone, "gp": ajuste.ajustar_gp,
                        "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
-                       "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing}[tipo]
+                       "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing,
+                       "efhw": ajuste.ajustar_efhw}[tipo]
             if tipo == "yagi":
                 r = funcion(f_MHz, diametro_mm, n_elementos=elementos, boom=eje or "ninguno", boom_mm=eje_mm)
+            elif tipo == "efhw":
+                r = funcion(f_MHz, diametro_mm, relacion=relacion, altura_m=altura_m, suelo=suelo, largo_max_m=largo_max_m)
+                r["geometria"]["potencia_w"] = potencia_w
             else:
                 r = funcion(f_MHz, diametro_mm)
             if tipo == "gp":
@@ -293,6 +326,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = generadores.biconica_por_defecto(f_MHz)
     elif tipo == "torniquete":
         geometria = generadores.torniquete_por_defecto(f_MHz)
+    elif tipo == "efhw":
+        geometria = {**generadores.efhw_por_defecto(f_MHz, relacion, altura_m, suelo), "potencia_w": potencia_w}
     elif tipo == "batwing":
         geometria = {**generadores.batwing_por_defecto(f_MHz), "radios": float(generadores.BAT_RADIOS)}
     else:

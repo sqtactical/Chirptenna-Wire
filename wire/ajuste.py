@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 
 from . import motor
+from .generadores import bandas_de, efhw, efhw_por_defecto
 from .generadores import (BAT_ANCHO, BAT_RADIOS, batwing, batwing_por_defecto, torniquete, torniquete_por_defecto)
 from .generadores import biconica, biconica_por_defecto, gp, gp_por_defecto, vinv, vinv_por_defecto, yagi, yagi_por_defecto, discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
 from .modelo import Barrido, Modelo
@@ -381,6 +382,58 @@ def ajustar_batwing(f_MHz: float, diametro_mm: float, radios: int = BAT_RADIOS) 
     else:
         r["resultados"].update({"f_inferior_roe2_MHz": 0.0, "f_superior_roe2_MHz": 0.0, "ancho_roe2_pct": 0.0})
     return r
+
+
+def _bandas_efhw(modelo: Modelo, bandas, z0: float) -> list[dict]:
+    """ROE (contra `z0`), impedancia y ganancia de cada banda: en el centro y el peor de 5 puntos entre sus bordes."""
+    sal = []
+    for nombre, a, b in bandas:
+        fs = [a + (b - a) * k / 4 for k in range(5)]
+        r = motor.simular(modelo, Barrido(fs[0], fs[-1], 5), diagrama=False, z0=z0)
+        c = motor.simular(modelo, Barrido(fs[2], fs[2], 1), diagrama=True, z0=z0)
+        sal.append({"banda": nombre, "f_MHz": fs[2], "r_ohm": c.z[0].real, "x_ohm": c.z[0].imag, "roe": c.roe[0],
+                    "roe_max": max(r.roe), "ganancia_dBi": c.ganancia_max[0]})
+    return sal
+
+
+def ajustar_efhw(f_MHz: float, diametro_mm: float, relacion: int = 49, altura_m: float = 10.0, suelo: str = "normal",
+                 largo_max_m: float | None = None) -> dict:
+    """EFHW: ajusta el largo del hilo y el contrapeso para la mejor ROE (contra 50 Ω × `relacion`) en la banda de diseño y en
+    sus armónicos, con la banda de diseño pesando diez veces más. `largo_max_m` recorta el largo posible (poco sitio)."""
+    p = efhw_por_defecto(f_MHz, relacion, altura_m, suelo)
+    z0 = Z0 * relacion
+    bandas = bandas_de(f_MHz, relacion)
+    if not bandas:
+        raise ValueError(f"{f_MHz:g} MHz no cae en ninguna banda de HF de la lista")
+    pesos = [1.5 if a <= f_MHz <= b else 1.0 for _, a, b in bandas]
+    centros = [(a + b) / 2 for _, a, b in bandas]
+    centros = [f_MHz if a <= f_MHz <= b else c for (_, a, b), c in zip(bandas, centros)]
+    tope = (largo_max_m or 1e9) * 1000
+
+    def construir(x):
+        return efhw(f_MHz, diametro_mm, largo_mm=x[0], contrapeso_mm=x[1], altura_mm=altura_m * 1000, suelo=suelo, relacion=relacion)
+
+    def coste(x):
+        if not (0.2 * p["largo_mm"] < x[0] <= min(1.3 * p["largo_mm"], tope) and 0 <= x[1] <= 2.0 * p["contrapeso_mm"]):
+            return 10.0
+        m = construir(x)
+        peor = mean = 0.0
+        for w, f in zip(pesos, centros):
+            z = motor.simular(m, Barrido(f, f, 1), diagrama=False, z0=z0).z[0]
+            g = w * abs((z - z0) / (z + z0))
+            peor, mean = max(peor, g), mean + g / len(pesos)
+        return 0.7 * peor + 0.3 * mean
+
+    x0 = [min(p["largo_mm"], tope), p["contrapeso_mm"]]
+    x, _ = nelder_mead(coste, x0, [0.02 * p["largo_mm"], 0.3 * p["contrapeso_mm"]], tolerancia=1e-5, iteraciones=150)
+    x, _ = nelder_mead(coste, x, [0.004 * p["largo_mm"], 0.1 * p["contrapeso_mm"]], tolerancia=1e-7, iteraciones=150)
+    modelo = construir(x)
+    tabla = _bandas_efhw(modelo, bandas, z0)
+    propia = next(b for b in tabla if b["banda"] == bandas[pesos.index(1.5)][0]) if 1.5 in pesos else tabla[0]
+    resultados = {"motor": "PyNEC", "z0_ohm": z0, "f_MHz": f_MHz, "r_ohm": propia["r_ohm"], "x_ohm": propia["x_ohm"], "roe": propia["roe"],
+                  "ganancia_dBi": propia["ganancia_dBi"], "bandas": tabla}
+    geometria = {"largo_mm": x[0], "contrapeso_mm": x[1], "altura_mm": altura_m * 1000, "relacion": float(relacion), "suelo": suelo}
+    return {"geometria": geometria, "resultados": resultados}
 
 
 def ajustar_manga(f_MHz: float, cable) -> dict:

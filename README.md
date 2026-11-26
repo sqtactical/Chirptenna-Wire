@@ -28,6 +28,7 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Yagi de 3 a 15 elementos (dipolo plegado, eje de plástico o metal) | **Simulado**, sin medir ni validar frente a un caso publicado; la corrección del eje metálico sale de la bibliografía, no del modelo | 1 hoja A4 (más una de elementos y eje si hay más de 3 o eje metálico): elementos y separaciones, lista de corte, ROE y el centro del plegado a 1:1 |
 | Bicónica | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: cotas, lista de corte, ROE y pieza central a 1:1 |
 | Torniquete en X (dipolos cruzados) | **Simulado** (razón axial 0 dB en el cénit, en espacio libre), sin medir | 1 hoja A4: vista, lista de corte (brazos y línea de 75 Ω), ROE y centro del cruce a 1:1 |
+| EFHW de HF con transformador 49:1, 64:1 o 9:1 | **Simulado** sobre suelo real con transformador ideal, sin medir; los datos del transformador real son de montajes de aficionados, sin verificar | 3 hojas A4: la antena con la ROE por banda, el transformador (núcleo, vueltas, condensador y dibujo a 1:1) y su ajuste con carga de prueba y NanoVNA |
 | Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |
 
 Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
