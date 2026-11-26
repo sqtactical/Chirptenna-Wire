@@ -9,7 +9,7 @@ from wire.motor import disponible
 PYNEC = pytest.mark.skipif(not disponible(), reason="PyNEC no está instalado")
 
 
-@pytest.mark.parametrize("n", [2, 3, 4])
+@pytest.mark.parametrize("n", [2, 3, 4, 5, 6])
 def test_modelo_tiene_n_secciones_y_n_menos_uno_bobinas(n):
     d = disenar("colineal", 145.0, 3.0, ajustar=False, elementos=n)
     m = d.modelo()
@@ -26,7 +26,7 @@ def test_la_bobina_escala_con_la_frecuencia():
 
 def test_validaciones():
     with pytest.raises(ValueError):
-        disenar("colineal", 145.0, 3.0, ajustar=False, elementos=5)
+        disenar("colineal", 145.0, 3.0, ajustar=False, elementos=7)
     with pytest.raises(ValueError):
         disenar("colineal", 145.0, 3.0, ajustar=False, eje="unido")
     with pytest.raises(ValueError):

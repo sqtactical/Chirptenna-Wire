@@ -34,9 +34,25 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Dipolo de dos bandas con trampas | **Simulado** con trampas ideales (Q = 100), sin medir; la trampa real hay que ajustarla | 3 hojas A4: antena, balun y bobina y condensador de la trampa |
 | G5RV con escalerilla | **Simulado**, sin medir; con línea ideal; no adapta sola en todas las bandas (se usa con acoplador) | 2 hojas A4 |
 | EFHW de HF con transformador 49:1, 64:1 o 9:1 | **Simulado** sobre suelo real con transformador ideal, sin medir; los datos del transformador real son de montajes de aficionados, sin verificar | 3 hojas A4: la antena con la ROE por banda, el transformador (núcleo, vueltas, condensador y dibujo a 1:1) y su ajuste con carga de prueba y NanoVNA |
-| Colineal con bobinas de fase (2 a 4 secciones) | **Simulado** en espacio libre con bobinas ideales, sin medir; la bobina real hay que medirla y ajustarla | 2 hojas A4: vista, lista de corte y ROE simulada; y la bobina de fase a 1:1 con su medida y ajuste con el NanoVNA |
+| Colineal con bobinas de fase (2 a 6 secciones) | **Simulado** en espacio libre con bobinas ideales, sin medir; la bobina real hay que medirla y ajustarla | 2 hojas A4: vista, lista de corte y ROE simulada; y la bobina de fase a 1:1 con su medida y ajuste con el NanoVNA |
 | Colineal bibanda 145 / 433 MHz (2 o 4 secciones) | **Simulado** en espacio libre con componentes ideales, sin medir; banda estrecha en 145 MHz | 2 hojas A4: antena con la ROE de las dos bandas, y el enlace bobina + condensador en serie a 1:1 con su medida y ajuste con el NanoVNA |
 | Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |
+
+### Ganancia teórica
+
+Ganancia máxima simulada (NEC2) del diseño de cada tipo, que sale también en el cajetín de los planos y en la galería de la web
+(`wire/ganancias.json`). Es **de referencia**: espacio libre en VHF/UHF, suelo normal a 10 m en HF, sin mástil ni entorno. Si el diseño trae su
+propia simulación, el cajetín da esa.
+
+| Tipo | dBi |
+|---|---|
+| Dipolo, J-pole, V invertida, ground plane, manga, torniquete | 1,8 a 2,4 |
+| Discone, bicónica, batwing | 1,4 / 2,9 / 4,4 |
+| Colineal con bobinas de fase, 2 / 3 / 4 / 5 / 6 secciones | 3,3 / 4,8 / 5,5 / 6,2 / 6,7 |
+| Colineal bibanda (145 / 433 MHz), 2 y 4 secciones | 2,2 / 3,9 y 3,2 / 4,7 |
+| CoCo de coaxial (4 tramos) | 6,2 |
+| Yagi, 3 / 5 / 7 / 10 / 15 elementos | 8,7 / 10,2 / 11,7 / 12,2 / 13,2 |
+| HF sobre suelo (dipolo, EFHW, G5RV, trampas, V invertida) | 5,2 a 6,4 |
 
 Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
 

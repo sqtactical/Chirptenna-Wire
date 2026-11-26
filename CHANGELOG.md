@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Ganancia teórica de cada diseño (`wire/ganancias.json`): en el cajetín de los planos, en la galería y en la cabecera de la web, y tabla en el README.
+- La colineal con bobinas de fase llega a 6 secciones (5 y 6: 6,2 y 6,7 dBi, para 433 MHz dentro de un tubo de PVC de 1,6 a 2,2 m).
 - Colineal bibanda 145 / 433 MHz: bobinas con un condensador en serie (resonante en 145 MHz: no hacen nada) que en 433 MHz apilan 2 o 4 medias ondas (3,9 y 4,7 dBi en espacio libre; en 145 es un ¼ o 5/8 de onda). 50 Ω en las dos bandas. Sin medir.
 - Colineal con bobinas de fase para VHF/UHF (2 a 4 secciones, la «de 2 / 5 dBi»): ≈ 3, 4,8 y 5,5 dBi en espacio libre con 50 Ω, con hoja de la bobina y su ajuste con el NanoVNA. Sin medir.
 - Trampas: esquema, trampa montada en su tubo y ajuste con el VNA (S21 con dos lazos) en la hoja de las trampas.

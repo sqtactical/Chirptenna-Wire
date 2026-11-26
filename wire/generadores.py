@@ -533,16 +533,17 @@ def efhw(f_MHz: float, diametro_mm: float, largo_mm: float | None = None, contra
 
 # ---------------------------------------------------------------- colineal con bobinas de fase (VHF/UHF)
 
-COL_SECCIONES = (2, 3, 4)
+COL_SECCIONES = (2, 3, 4, 5, 6)
 COL_HUECO_MM = 10.0                     # el modelo concentra cada bobina en un tramo de 10 mm
 # Cotas de partida en λ a 145 MHz (salen de ajustar a 50 Ω con el motor); la bobina escala con 1/f (misma reactancia)
-COL_BASE = {2: ([0.253, 0.467], 0.78, 0.259), 3: ([0.265, 0.517, 0.537], 1.1, 0.211), 4: ([0.265, 0.517, 0.537, 0.537], 1.1, 0.211)}
-COL_GANANCIA_MIN = {2: 3.0, 3: 4.5, 4: 5.5}   # dBi (espacio libre) que pide el ajuste, además de 50 Ω
+COL_BASE = {2: ([0.253, 0.467], 0.78, 0.259), 3: ([0.265, 0.517, 0.537], 1.1, 0.211), 4: ([0.265, 0.517, 0.537, 0.537], 1.1, 0.211),
+            5: ([0.265, 0.517, 0.537, 0.537, 0.537], 1.1, 0.211), 6: ([0.265, 0.517, 0.537, 0.537, 0.537, 0.537], 1.1, 0.211)}
+COL_GANANCIA_MIN = {2: 3.0, 3: 4.5, 4: 5.5, 5: 6.2, 6: 6.8}   # dBi (espacio libre) que pide el ajuste, además de 50 Ω
 
 
 def colineal_por_defecto(f_MHz: float, secciones: int = 3) -> dict:
     if secciones not in COL_SECCIONES:
-        raise ValueError("la colineal lleva de 2 a 4 secciones")
+        raise ValueError("la colineal lleva de 2 a 6 secciones")
     lam = longitud_onda_m(f_MHz) * 1000
     largos, bobina, radial = COL_BASE[secciones]
     return {"secciones_mm": [v * lam for v in largos], "bobina_uH": bobina * 145.0 / f_MHz, "radial_mm": radial * lam,
@@ -563,8 +564,8 @@ def colineal(f_MHz: float, diametro_mm: float, secciones_mm: list[float] | None 
         raise ValueError("frecuencia y diámetro positivos y al menos 2 radiales")
     p = colineal_por_defecto(f_MHz, len(secciones_mm) if secciones_mm else 3)
     largos = [v / 1000 for v in (secciones_mm or p["secciones_mm"])]
-    if not 2 <= len(largos) <= 4 or min(largos) <= 0:
-        raise ValueError("la colineal lleva de 2 a 4 secciones de largo positivo")
+    if not 2 <= len(largos) <= 6 or min(largos) <= 0:
+        raise ValueError("la colineal lleva de 2 a 6 secciones de largo positivo")
     lb = (bobina_uH if bobina_uH is not None else p["bobina_uH"]) * 1e-6
     rl = (radial_mm or p["radial_mm"]) / 1000
     r = diametro_mm / 2000

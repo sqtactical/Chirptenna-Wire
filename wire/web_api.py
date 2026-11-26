@@ -11,6 +11,8 @@ import json
 from . import nec, planos
 from .i18n import IDIOMAS, tr, usar
 from .cables import CABLES
+from . import ganancias
+from .planos.comun import fmt
 from .diseno import BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
 from .generadores import TIPOS_HF
 from .impresion3d import TIPOS_3D
@@ -27,7 +29,8 @@ def catalogo(idioma: str = "es") -> str:
 def _catalogo() -> str:
     return json.dumps({
         "version_api": VERSION_API,
-        "tipos": [{"clave": c, "nombre": tr(n), "resumen": tr(RESUMEN[c]), "estado": tr(ESTADO_TIPO[c]), "miniatura": MINIATURAS[c]}
+        "tipos": [{"clave": c, "nombre": tr(n), "resumen": tr(RESUMEN[c]), "estado": tr(ESTADO_TIPO[c]), "miniatura": MINIATURAS[c],
+                   "ganancia": ganancias.rango_tipo(c, fmt)}
                   for c, n in TIPOS.items()],
         "categorias": [{"clave": c, "nombre": tr(n), "tipos": list(t)} for c, n, t in CATEGORIAS],
         "estados": list(ESTADOS),
@@ -69,7 +72,9 @@ def plano_svg(entrada: str) -> str:
     """Igual entrada → {nombre, estado, hojas: [svg…]}."""
     diseno = _diseno(entrada)
     plano = planos.generar(diseno)
-    return json.dumps({"nombre": diseno.nombre, "estado": diseno.estado, "tipo": _nombre_tipo(diseno),
+    with usar(diseno.plano.idioma):
+        ganancia = ganancias.texto(diseno, fmt)
+    return json.dumps({"nombre": diseno.nombre, "estado": diseno.estado, "tipo": _nombre_tipo(diseno), "ganancia": ganancia,
                        "f_MHz": diseno.f_MHz, "hojas": [planos.a_svg(h) for h in plano.hojas],
                        "diseno": diseno.a_dict()}, ensure_ascii=False)
 

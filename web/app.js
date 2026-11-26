@@ -96,7 +96,7 @@ function entrada() {
 
 function pintarGaleria() {
   const carta = (k) => `<button type="button" class="carta" data-tipo="${k.clave}" title="${k.resumen}">` +
-    `${k.miniatura}<b>${k.nombre}</b><small>${k.estado}</small></button>`;
+    `${k.miniatura}<b>${k.nombre}</b>${k.ganancia ? `<span class="ganancia">${k.ganancia}</span>` : ''}<small>${k.estado}</small></button>`;
   // por categorías (HF, VHF/UHF, coaxial, banda ancha); los tipos que ninguna recoja van al final
   const vistos = new Set();
   let html = categorias.map((c) => {
@@ -143,6 +143,7 @@ function mostrar(plano) {
   hojaActual = Math.min(hojaActual, plano.hojas.length - 1);
   $('titulo').textContent = `${plano.tipo} · ${plano.f_MHz} MHz`;
   $('estado').textContent = estadoTxt(plano.estado);
+  $('ganancia').textContent = plano.ganancia ? T('Ganancia') + ': ' + plano.ganancia : '';
   $('cabecera').classList.remove('oculto');
   $('hojas').innerHTML = plano.hojas.map((_, i) => `<button data-i="${i}"${i === hojaActual ? ' disabled' : ''}>${T('Hoja {0}', i + 1)}</button>`).join('');
   $('hojas').classList.toggle('oculto', plano.hojas.length < 2);
@@ -224,7 +225,7 @@ $('eje').addEventListener('change', ajustarEje);
 $('f').addEventListener('input', ajustarEje);
 $('secciones').addEventListener('change', () => {
   const n = Math.round(parseFloat($('secciones').value));
-  $('secciones').value = Number.isFinite(n) ? Math.min(4, Math.max(2, n)) : 3;
+  $('secciones').value = Number.isFinite(n) ? Math.min(6, Math.max(2, n)) : 3;
 });
 $('elementos').addEventListener('change', () => {          // entero entre 3 y 15, aunque se escriba otra cosa
   const n = Math.round(parseFloat($('elementos').value));

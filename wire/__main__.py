@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--vf-medido", type=float, help="factor de velocidad medido del cable (sustituye al de catálogo)")
         s.add_argument("--cable-medido", help="JSON del VF medido con Chirptenna VNA (sustituye a --vf-medido)")
         s.add_argument("--conector", choices=("SO-239", "N"), help="conector del ground plane (SO-239 por defecto)")
-        s.add_argument("--elementos", type=int, help="número de elementos de la Yagi, de 3 a 15 (3), o de secciones de la colineal, de 2 a 4 (3)")
+        s.add_argument("--elementos", type=int, help="número de elementos de la Yagi, de 3 a 15 (3), o de secciones de la colineal, de 2 a 6 (3)")
         s.add_argument("--eje", choices=("ninguno", "aislado", "unido"),
                        help="eje de la Yagi: no metálico (ninguno), metálico con los elementos aislados o con ellos unidos")
         s.add_argument("--eje-mm", type=float, help="diámetro del eje metálico en mm (1 %% de λ)")

@@ -7,6 +7,7 @@ from dataclasses import replace
 
 from .. import __version__
 from ..diseno import Diseno, banda_de
+from .. import ganancias
 from ..i18n import N_, separador_decimal, tr
 from .hoja import (BLANCO, COBRE, GRIS, GRIS_CLARO, PAPELES, PT, ROJO, TINTA, VERDE, Hoja, Imagen, Linea, Polilinea, Rect,
                    Texto, ancho_texto)
@@ -98,8 +99,11 @@ def cajetin(hoja: Hoja, diseno: Diseno, escala: str, n: int, total: int, fecha: 
         (tr("Licencia"), tr("{0} (diseños)", LICENCIA)),
         (tr("Proyecto"), URL),
     ]
+    g = ganancias.texto(diseno, fmt)
+    if g:
+        campos.insert(3, (tr("Ganancia"), g))
     if diseno.cable:
-        campos.insert(4, (tr("Cable"), tr("{0} · VF {1} ({2})", diseno.cable['nombre'], fmt(diseno.cable['vf'], 2), tr(diseno.cable['vf_origen']))))
+        campos.insert(5 if g else 4, (tr("Cable"), tr("{0} · VF {1} ({2})", diseno.cable['nombre'], fmt(diseno.cable['vf'], 2), tr(diseno.cable['vf_origen']))))
     paso = (y1 - y0 - 2.5) / len(campos)
     for i, (clave, valor) in enumerate(campos):
         yy = y0 + 4.2 + i * paso

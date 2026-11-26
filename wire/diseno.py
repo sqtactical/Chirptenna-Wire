@@ -337,7 +337,7 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
     elif tipo == "colineal":
         elementos = 3 if elementos is None else int(elementos)
         if elementos not in generadores.COL_SECCIONES:
-            raise ValueError("la colineal lleva de 2 a 4 secciones")
+            raise ValueError("la colineal lleva de 2 a 6 secciones")
         if eje is not None or eje_mm is not None:
             raise ValueError("el eje solo vale para la Yagi")
     elif elementos is not None or eje is not None or eje_mm is not None:
