@@ -52,7 +52,7 @@ def _diseno(entrada: str) -> Diseno:
                    cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), conector=datos.get("conector"),
                    elementos=datos.get("elementos"), eje=datos.get("eje"), eje_mm=datos.get("eje_mm"), relacion=datos.get("relacion"),
                    altura_m=datos.get("altura_m"), suelo=datos.get("suelo"), potencia_w=datos.get("potencia_w"),
-                   largo_max_m=datos.get("largo_max_m"), bandas=datos.get("bandas"), **plano)
+                   largo_max_m=datos.get("largo_max_m"), bandas=datos.get("bandas"), f_alta_MHz=datos.get("f_alta_MHz"), **plano)
 
 
 def disenar_json(entrada: str) -> str:

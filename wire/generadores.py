@@ -531,6 +531,97 @@ def efhw(f_MHz: float, diametro_mm: float, largo_mm: float | None = None, contra
                                f"Hilo de {largo:.2f} m, contrapeso de {cp:.2f} m; la ROE va contra {50 * relacion} ohm (transformador ideal)"))
 
 
+# ---------------------------------------------------------------- colineal con bobinas de fase (VHF/UHF)
+
+COL_SECCIONES = (2, 3, 4)
+COL_HUECO_MM = 10.0                     # el modelo concentra cada bobina en un tramo de 10 mm
+# Cotas de partida en λ a 145 MHz (salen de ajustar a 50 Ω con el motor); la bobina escala con 1/f (misma reactancia)
+COL_BASE = {2: ([0.253, 0.467], 0.78, 0.259), 3: ([0.265, 0.517, 0.537], 1.1, 0.211), 4: ([0.265, 0.517, 0.537, 0.537], 1.1, 0.211)}
+COL_GANANCIA_MIN = {2: 3.0, 3: 4.5, 4: 5.5}   # dBi (espacio libre) que pide el ajuste, además de 50 Ω
+
+
+def colineal_por_defecto(f_MHz: float, secciones: int = 3) -> dict:
+    if secciones not in COL_SECCIONES:
+        raise ValueError("la colineal lleva de 2 a 4 secciones")
+    lam = longitud_onda_m(f_MHz) * 1000
+    largos, bobina, radial = COL_BASE[secciones]
+    return {"secciones_mm": [v * lam for v in largos], "bobina_uH": bobina * 145.0 / f_MHz, "radial_mm": radial * lam,
+            "n_secciones": float(secciones), "angulo": GP_ANGULO, "radiales": float(GP_RADIALES)}
+
+
+def colineal(f_MHz: float, diametro_mm: float, secciones_mm: list[float] | None = None, bobina_uH: float | None = None,
+             radial_mm: float | None = None, angulo: float = GP_ANGULO, radiales: int = GP_RADIALES,
+             barrido: Barrido | None = None, densidad: float = 1.0, condensador_pF: float | None = None,
+             f_alta_MHz: float | None = None) -> Modelo:
+    """Colineal vertical de `n` secciones con una bobina de fase (inductancia en serie) entre cada dos, sobre `radiales`
+    radiales como un ground plane. La bobina hace que la corriente de la sección de arriba vaya en fase con la de abajo
+    (sin ella, media onda sobre media onda se anularían en el horizonte). La fuente va en la base. Espacio libre.
+
+    Con `condensador_pF` cada bobina lleva un condensador **en serie**: resonante a `f_MHz` (la banda baja) el enlace no hace
+    nada, y en `f_alta_MHz` queda una reactancia inductiva que sí invierte la fase (colineal bibanda)."""
+    if f_MHz <= 0 or diametro_mm <= 0 or radiales < 2:
+        raise ValueError("frecuencia y diámetro positivos y al menos 2 radiales")
+    p = colineal_por_defecto(f_MHz, len(secciones_mm) if secciones_mm else 3)
+    largos = [v / 1000 for v in (secciones_mm or p["secciones_mm"])]
+    if not 2 <= len(largos) <= 4 or min(largos) <= 0:
+        raise ValueError("la colineal lleva de 2 a 4 secciones de largo positivo")
+    lb = (bobina_uH if bobina_uH is not None else p["bobina_uH"]) * 1e-6
+    rl = (radial_mm or p["radial_mm"]) / 1000
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(max(f_MHz, f_alta_MHz or 0.0)) / SEGMENTOS_POR_LAMBDA / densidad
+    hilos: list[Hilo] = []
+    cargas: list[Carga] = []
+    z = 0.0
+    for i, largo in enumerate(largos):
+        hilos.append(Hilo((0, 0, z), (0, 0, z + largo), r, _segmentos(largo, paso)))
+        z += largo
+        if i < len(largos) - 1:
+            hilos.append(Hilo((0, 0, z), (0, 0, z + COL_HUECO_MM / 1000), r, 1))
+            cargas.append(Carga(len(hilos), 1, 1, l=lb, c=(condensador_pF or 0.0) * 1e-12))
+            z += COL_HUECO_MM / 1000
+    c, s = math.cos(math.radians(angulo)), math.sin(math.radians(angulo))
+    for i in range(radiales):
+        a = 2 * math.pi * i / radiales
+        hilos.append(Hilo((0, 0, 0), (rl * c * math.cos(a), rl * c * math.sin(a), -rl * s), r, _segmentos(rl, paso)))
+    return Modelo("Colineal con bobinas de fase", f_MHz, tuple(hilos), Puerto(1, 1), cargas=tuple(cargas), barrido=barrido,
+                  comentarios=(f"Colineal de {len(largos)} secciones a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               "Secciones " + ", ".join(f"{v * 1000:.1f}" for v in largos) + f" mm; bobinas de {lb * 1e6:.2f} uH",
+                               f"{radiales} radiales de {rl * 1000:.1f} mm a {angulo:g} grados"))
+
+
+# Colineal bibanda 145 / 433 MHz: enlaces L-C en serie, resonantes en la banda baja (transparentes) e inductivos en la alta.
+# Cotas de partida en λ de la banda alta, bobina a f_alta = 433 MHz y C a f_baja = 145 MHz (salen de ajustar a 50 Ω en las dos bandas).
+COLB_SECCIONES = (2, 4)               # con 3 el conjunto mide ≈ λ/2 en la banda baja (alimentado por el extremo: no adapta)
+COLB_RAZON = (2.5, 3.5)               # f_alta / f_baja simulada
+COLB_BASE = {2: ([0.272, 0.579], 0.40, 3.77, 0.209), 4: ([0.261, 0.529, 0.63, 0.59], 0.46, 3.86, 0.198)}
+COLB_GANANCIA_MIN = {2: 3.0, 4: 4.5}  # dBi en la banda alta (espacio libre)
+
+
+def colineal_bibanda_por_defecto(f_baja: float, f_alta: float, secciones: int = 4) -> dict:
+    if secciones not in COLB_SECCIONES:
+        raise ValueError("la colineal bibanda lleva 2 o 4 secciones")
+    if not COLB_RAZON[0] <= f_alta / f_baja <= COLB_RAZON[1]:
+        raise ValueError("la banda alta debe ser de 2,5 a 3,5 veces la baja (145 y 433 MHz, por ejemplo)")
+    lam = longitud_onda_m(f_alta) * 1000
+    largos, bobina, cond, radial = COLB_BASE[secciones]
+    return {"secciones_mm": [v * lam for v in largos], "bobina_uH": bobina * 433.0 / f_alta,
+            "condensador_pF": cond * (f_alta / 433.0) * (145.0 / f_baja) ** 2,
+            "radial_mm": radial * lam, "n_secciones": float(secciones), "angulo": GP_ANGULO, "radiales": float(GP_RADIALES),
+            "f_alta_MHz": f_alta}
+
+
+def colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, secciones_mm: list[float] | None = None,
+                     bobina_uH: float | None = None, condensador_pF: float | None = None, radial_mm: float | None = None,
+                     angulo: float = GP_ANGULO, radiales: int = GP_RADIALES, barrido: Barrido | None = None,
+                     densidad: float = 1.0) -> Modelo:
+    """Colineal de `n` secciones con enlaces L-C en serie: resonantes a `f_baja` (no hacen nada: la antena es un ¼ o 5/8 de
+    onda) e inductivos a `f_alta` (invierten la fase y apilan las medias ondas). Espacio libre, componentes ideales."""
+    p = colineal_bibanda_por_defecto(f_baja, f_alta, len(secciones_mm) if secciones_mm else 4)
+    return colineal(f_baja, diametro_mm, secciones_mm or p["secciones_mm"], bobina_uH if bobina_uH is not None else p["bobina_uH"],
+                    radial_mm or p["radial_mm"], angulo, radiales, barrido, densidad,
+                    condensador_pF=condensador_pF if condensador_pF is not None else p["condensador_pF"], f_alta_MHz=f_alta)
+
+
 # ---------------------------------------------------------------- HF: dipolos sobre suelo real
 
 TIPOS_HF = ("efhw", "dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv")

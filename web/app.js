@@ -29,6 +29,7 @@ function aplicarIdioma() {
     e.innerHTML = T(e.dataset.t0);
   });
   document.querySelectorAll('[data-t-placeholder]').forEach((e) => { e.placeholder = T(e.dataset.tPlaceholder); });
+  if (typeof ajustarEje === 'function' && $('eje-mm')) ajustarEje();
   document.querySelectorAll('[data-t-title]').forEach((e) => { e.title = T(e.dataset.tTitle); });
 }
 
@@ -54,7 +55,7 @@ function idiomaInicial() {
 trabajador.onmessage = (ev) => {
   const m = ev.data;
   if (m.progreso) { $('progreso').textContent = T(m.progreso); return; }
-  if (m.listo) { $('progreso').textContent = T('Listo.'); $('generar').disabled = false; iniciar().then(() => generar()); return; }
+  if (m.listo) { $('progreso').textContent = T('Listo.'); $('generar').disabled = false; iniciar(); return; }
   if (m.fallo) { $('progreso').textContent = T('No se pudo cargar Python: {0}', m.fallo); return; }
   const p = pendientes.get(m.id);
   if (!p) return;
@@ -81,19 +82,20 @@ function entrada() {
   return JSON.stringify({ tipo: $('tipo').value, f_MHz: parseFloat($('f').value), diametro_mm: parseFloat($('diametro').value),
                           papel: $('papel').value, unidades: $('unidades').value, idioma: IDIOMA,
                           cable: $('cable').value || null, conector: $('tipo').value === 'gp' ? $('conector').value : null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null,
-                          elementos: $('tipo').value === 'yagi' ? parseInt($('elementos').value, 10) : null,
+                          elementos: $('tipo').value === 'yagi' ? parseInt($('elementos').value, 10) : (['colineal', 'colineal_bibanda'].includes($('tipo').value) ? parseInt($('secciones').value, 10) : null),
                           relacion: $('tipo').value === 'efhw' ? parseInt($('relacion').value, 10) : null,
                           altura_m: tiposHF.includes($('tipo').value) ? parseFloat($('altura').value) : null,
                           suelo: tiposHF.includes($('tipo').value) ? $('suelo').value : null,
                           bandas: ['abanico', 'trampas'].includes($('tipo').value) ? $('bandas').value.split(',').map((s) => s.trim()).filter(Boolean) : null,
                           potencia_w: $('tipo').value === 'efhw' ? parseFloat($('potencia').value) : null,
                           largo_max_m: $('tipo').value === 'efhw' && $('largo-max').value ? parseFloat($('largo-max').value) : null,
+                          f_alta_MHz: $('tipo').value === 'colineal_bibanda' ? parseFloat($('f-alta').value) : null,
                           eje: $('tipo').value === 'yagi' ? $('eje').value : null,
                           eje_mm: $('tipo').value === 'yagi' && $('eje').value !== 'ninguno' && $('eje-mm').value ? parseFloat($('eje-mm').value) : null });
 }
 
 function pintarGaleria() {
-  const carta = (k) => `<button type="button" class="carta" data-tipo="${k.clave}" title="${k.resumen}" aria-pressed="${k.clave === $('tipo').value}">` +
+  const carta = (k) => `<button type="button" class="carta" data-tipo="${k.clave}" title="${k.resumen}">` +
     `${k.miniatura}<b>${k.nombre}</b><small>${k.estado}</small></button>`;
   // por categorías (HF, VHF/UHF, coaxial, banda ancha); los tipos que ninguna recoja van al final
   const vistos = new Set();
@@ -122,7 +124,19 @@ async function iniciar() {
   $('unidades').innerHTML = c.plano.unidades.map((p) => `<option>${p}</option>`).join('');
   if (tipoActual) $('tipo').value = tipoActual;
   pintarGaleria();
+  rotular();
   aplicarIdioma();
+}
+
+// Dos pantallas: primero se elige la antena y después se ajustan sus parámetros.
+function pantalla(nombre) {
+  $('elegir').classList.toggle('oculto', nombre !== 'elegir');
+  $('diseno').classList.toggle('oculto', nombre !== 'diseno');
+  window.scrollTo(0, 0);
+}
+function rotular() {
+  const k = tiposCatalogo.find((t) => t.clave === $('tipo').value);
+  $('tipo-elegido').textContent = k ? k.nombre : '';
 }
 
 function mostrar(plano) {
@@ -137,17 +151,42 @@ function mostrar(plano) {
   $('d3d').classList.toggle('oculto', !plantilla3d.includes(plano.diseno.tipo));
 }
 
+let generando = false, repetir = false, temporizador = null;
 async function generar(textoEntrada) {
+  if (generando) { repetir = true; return; }       // cambió algo mientras se calculaba: se repite al acabar
+  generando = true;
   $('generar').disabled = true;
   try {
     const e = textoEntrada ? JSON.stringify({ ...JSON.parse(textoEntrada), idioma: IDIOMA }) : entrada();
     const plano = await llamar('plano_svg', e);
     actual = { entrada: JSON.stringify({ diseno: plano.diseno, idioma: IDIOMA }), plano };
+    $('error').classList.add('oculto');
     mostrar(plano);
   } catch (err) {
-    $('progreso').textContent = T('Error: {0}', err.message);
+    // el plano de antes ya no corresponde a lo pedido: se quita y se dice por qué
+    $('error').textContent = T('Error: {0}', err.message);
+    $('error').classList.remove('oculto');
+    $('vista').innerHTML = ''; $('hojas').classList.add('oculto'); $('descargas').classList.add('oculto'); $('d3d').classList.add('oculto');
+    $('cabecera').classList.add('oculto');
+    actual = null;
   } finally {
+    generando = false;
     $('generar').disabled = false;
+    if (repetir) { repetir = false; if (!textoEntrada) generar(); }
+  }
+}
+// Al cambiar cualquier campo el plano se rehace solo (con una pausa para no calcular a cada tecla).
+function programar() {
+  clearTimeout(temporizador);
+  temporizador = setTimeout(() => { if (!$('diseno').classList.contains('oculto')) { hojaActual = 0; generar(); } }, 450);
+}
+function ajustarEje() {
+  const metal = $('eje').value !== 'ninguno';
+  $('eje-mm-fila').classList.toggle('oculto', !metal);
+  const f = parseFloat($('f').value);
+  if (f > 0) {
+    const lam = 299792.458 / f;     // mm
+    $('eje-mm').placeholder = T('{0} mm (1 % de λ)', Math.max(8, Math.round(0.01 * lam)));
   }
 }
 
@@ -162,8 +201,10 @@ $('galeria').onclick = (ev) => {
   $('tipo').value = carta.dataset.tipo;
   $('tipo').onchange();
   hojaActual = 0;
+  pantalla('diseno');
   generar();
 };
+$('atras').onclick = () => pantalla('elegir');
 $('tipo').onchange = () => {
   // al pasar de VHF/UHF a HF (o al revés) la frecuencia de antes no sirve: se propone la de 40 m o la de 2 m
   const f = parseFloat($('f').value);
@@ -176,8 +217,21 @@ $('tipo').onchange = () => {
   else if ($('tipo').value !== 'vinv_hf' && parseFloat($('altura').value) === 12) $('altura').value = 10;
   if ($('tipo').value === 'trampas') $('bandas').value = '40 m, 20 m';          // las trampas son de dos bandas
   else if ($('tipo').value === 'abanico') $('bandas').value = '40 m, 20 m, 15 m';
-  pintarGaleria(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('yagi').classList.toggle('oculto', $('tipo').value !== 'yagi'); $('efhw').classList.toggle('oculto', $('tipo').value !== 'efhw'); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
+  rotular(); ajustarEje(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('yagi').classList.toggle('oculto', $('tipo').value !== 'yagi'); $('colineal').classList.toggle('oculto', !['colineal', 'colineal_bibanda'].includes($('tipo').value)); $('bibanda').classList.toggle('oculto', $('tipo').value !== 'colineal_bibanda');
+  if ($('tipo').value === 'colineal_bibanda' && ![2, 4].includes(parseInt($('secciones').value, 10))) $('secciones').value = 4; $('efhw').classList.toggle('oculto', $('tipo').value !== 'efhw'); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
 $('generar').onclick = () => { hojaActual = 0; generar(); };
+$('eje').addEventListener('change', ajustarEje);
+$('f').addEventListener('input', ajustarEje);
+$('secciones').addEventListener('change', () => {
+  const n = Math.round(parseFloat($('secciones').value));
+  $('secciones').value = Number.isFinite(n) ? Math.min(4, Math.max(2, n)) : 3;
+});
+$('elementos').addEventListener('change', () => {          // entero entre 3 y 15, aunque se escriba otra cosa
+  const n = Math.round(parseFloat($('elementos').value));
+  $('elementos').value = Number.isFinite(n) ? Math.min(15, Math.max(3, n)) : 3;
+});
+['banda', 'f', 'diametro', 'conector', 'elementos', 'secciones', 'f-alta', 'eje', 'eje-mm', 'altura', 'suelo', 'bandas', 'relacion', 'potencia', 'largo-max',
+  'cable', 'vf', 'papel', 'unidades'].forEach((id) => { $(id).addEventListener('input', programar); $(id).addEventListener('change', programar); });
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };
 $('abrir').onclick = () => $('archivo').click();
@@ -207,8 +261,11 @@ $('archivo').onchange = async () => {
     $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
     if (tiposHF.includes(d.tipo)) { $('altura').value = d.geometria.altura_mm / 1000; $('suelo').value = d.geometria.suelo; if (d.geometria.bandas) $('bandas').value = d.geometria.bandas.join(', '); }
     if (d.tipo === 'efhw') { $('relacion').value = Math.round(d.geometria.relacion); $('potencia').value = d.geometria.potencia_w || 100; }
+    if (d.tipo === 'colineal_bibanda') $('f-alta').value = d.geometria.f_alta_MHz;
+    if (['colineal', 'colineal_bibanda'].includes(d.tipo)) $('secciones').value = d.geometria.n_elementos || d.geometria.n_secciones || 3;
     if (d.tipo === 'yagi') { $('elementos').value = d.geometria.n_elementos || 3; $('eje').value = d.geometria.boom || 'ninguno'; $('eje-mm').value = d.geometria.boom && d.geometria.boom !== 'ninguno' ? d.geometria.boom_mm : ''; }
     $('papel').value = d.plano.papel; $('unidades').value = d.plano.unidades;
+    pantalla('diseno');
   } catch (err) {
     $('progreso').textContent = T('No se pudo abrir el diseño: {0}', err.message);
   }
@@ -221,7 +278,7 @@ $('d-3d').onclick = async () => {
     const entrada = JSON.stringify({ ...JSON.parse(actual.entrada), cama_mm: parseFloat($('cama').value), holgura_mm: parseFloat($('holgura').value),
       radio_mm: $('radio').value ? parseFloat($('radio').value) : null });
     guardar(actual.plano.nombre + '_plantilla3d.zip', await llamar('plantilla3d_zip', entrada), 'application/zip');
-  } catch (err) { $('progreso').textContent = String(err.message || err); }
+  } catch (err) { $('error').textContent = String(err.message || err); $('error').classList.remove('oculto'); }
 };
 $('d-nec').onclick = async () => guardar(actual.plano.nombre + '.nec', await llamar('nec_texto', actual.entrada), 'text/plain');
 $('d-json').onclick = () => guardar(actual.plano.nombre + '.json', JSON.stringify(actual.plano.diseno, null, 2), 'application/json');

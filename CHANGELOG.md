@@ -2,6 +2,10 @@
 
 ## Sin publicar
 
+- Colineal bibanda 145 / 433 MHz: bobinas con un condensador en serie (resonante en 145 MHz: no hacen nada) que en 433 MHz apilan 2 o 4 medias ondas (3,9 y 4,7 dBi en espacio libre; en 145 es un ¼ o 5/8 de onda). 50 Ω en las dos bandas. Sin medir.
+- Colineal con bobinas de fase para VHF/UHF (2 a 4 secciones, la «de 2 / 5 dBi»): ≈ 3, 4,8 y 5,5 dBi en espacio libre con 50 Ω, con hoja de la bobina y su ajuste con el NanoVNA. Sin medir.
+- Trampas: esquema, trampa montada en su tubo y ajuste con el VNA (S21 con dos lazos) en la hoja de las trampas.
+- Web: la galería es una pantalla de selección y los parámetros van en otra; el plano se rehace solo al cambiar un campo y los errores se ven; Yagi: eje y número de elementos validados.
 - Más tipos de HF sobre suelo real: dipolo, V invertida, dipolo en abanico multibanda, dipolo con trampas y G5RV, con hoja del balun o choke 1:1 (y de las trampas), sin medir.
 - Primer tipo de HF: EFHW con transformador 49:1, 64:1 o 9:1 sobre suelo real, con hojas de montaje y ajuste del transformador (valores de aficionados, sin verificar). El motor admite suelo real.
 - La galería de la web se agrupa en categorías (HF, VHF y UHF, coaxial, banda ancha).

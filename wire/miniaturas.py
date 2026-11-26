@@ -39,6 +39,18 @@ MINIATURAS = {
 <line x1="60" y1="8" x2="60" y2="32" stroke="{COBRE}" stroke-width="3"/>
 <path d="M60 32 L28 52 M60 32 L92 52 M60 32 L44 54 M60 32 L76 54" stroke="{COBRE}" stroke-width="2.4"/>
 <rect x="55" y="31" width="10" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>''',
+    "colineal": f'''<svg {_CAB}>
+<line x1="60" y1="4" x2="60" y2="13" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 13 l-4 2 8 3 -8 3 8 3 -4 2" stroke="currentColor" stroke-width="1.4"/>
+<line x1="60" y1="26" x2="60" y2="34" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 34 l-4 1.5 8 2.5 -8 2.5 4 1.5" stroke="currentColor" stroke-width="1.4"/>
+<line x1="60" y1="42" x2="60" y2="46" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 46 L40 56 M60 46 L80 56" stroke="{COBRE}" stroke-width="2.4"/></svg>''',
+    "colineal_bibanda": f'''<svg {_CAB}>
+<line x1="60" y1="4" x2="60" y2="14" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 14 l-4 1.5 8 2.5 -8 2.5 4 1.5" stroke="currentColor" stroke-width="1.4"/><path d="M54 25 h12 M54 28 h12" stroke="{COBRE}" stroke-width="1.6"/>
+<line x1="60" y1="31" x2="60" y2="44" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 44 L40 56 M60 44 L80 56" stroke="{COBRE}" stroke-width="2.4"/></svg>''',
     "vinv": f'''<svg {_CAB}>
 <path d="M60 10 L18 48 M60 10 L102 48" stroke="{COBRE}" stroke-width="3"/>
 <rect x="55" y="7" width="10" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>

@@ -193,14 +193,92 @@ def _hoja_trampas(diseno: Diseno) -> Hoja:
              [tr("Condensador"), tr("{0} pF", fmt(g["trampa_C_pF"], 0)), tr("mica o C0G, ≥ 3 kV: dos o tres en paralelo reparten la tensión y la corriente")],
              [tr("Resonancia"), tr("{0} MHz", fmt(g["f_alta_MHz"], 2)), tr("en paralelo con Q ≈ 100 en el modelo; una trampa real pierde algo más")]]
     tabla(hoja, 14, 46, [0, 36, 66], [tr("Pieza"), tr("Valor"), tr("Montaje")], filas, 184)
-    seccion(hoja, 14, 82, tr("MONTAJE Y AJUSTE"), tr("Antes de subirla al hilo"), VERDE)
+    seccion(hoja, 14, 82, tr("ESQUEMA Y MONTAJE"), tr("Circuito eléctrico y trampa montada en su tubo"), VERDE)
+    _dibujo_trampa(hoja, g, forma, n, largo)
+    seccion(hoja, 14, 154, tr("AJUSTE CON EL VNA"), tr("Antes de subirla al hilo"), VERDE)
     pasos = [tr("1. Enrolla la bobina con las espiras juntas y suelda el condensador en paralelo, con las patillas más cortas posible."),
-             tr("2. Acopla el VNA con un lazo de una o dos vueltas muy flojo y busca el pozo de resonancia (modo En vivo de Chirptenna VNA)."),
-             tr("3. Ajusta hasta {0} MHz abriendo o cerrando las espiras (más espiras juntas = frecuencia más baja).", fmt(g["f_alta_MHz"], 2)),
-             tr("4. El hilo entra y sale por los extremos de la bobina; el condensador y la bobina van dentro de un tubo cerrado."),
-             tr("5. Con la antena puesta, retoca el tramo exterior (no la trampa) hasta la mejor ROE en la banda baja.")]
-    hoja.anadir(Texto(14, 94, "\n".join(pasos), 6.3))
-    hoja.anadir(Texto(14, 130, tr("La trampa alarga algo el dipolo en la banda baja y su pérdida estrecha las dos bandas: la simulación\n"
+             tr("2. Pon la trampa entre dos lazos de una vuelta, muy separados de ella, uno en cada puerto del VNA, y mide S21."),
+             tr("3. En la resonancia hay un pozo estrecho de S21; con un solo lazo, un pico en el módulo de S11 o un cambio de Z."),
+             tr("4. Ajusta hasta {0} MHz abriendo o cerrando las espiras (más espiras juntas = frecuencia más baja).", fmt(g["f_alta_MHz"], 2)),
+             tr("5. Acopla lo menos posible: con los lazos pegados la lectura baja de frecuencia y miente."),
+             tr("6. Cierra el tubo (el hilo entra y sale por los extremos) y mide otra vez: la tapa y el pegamento mueven la frecuencia."),
+             tr("7. Con la antena puesta, retoca el tramo exterior (no la trampa) hasta la mejor ROE en la banda baja.")]
+    hoja.anadir(Texto(14, 166, "\n".join(pasos), 6.3))
+    # medida: VNA — lazo — trampa — lazo — VNA
+    y = 212
+    hoja.anadir(Rect(14, y - 7, 26, 14, TINTA, 0.25, None))
+    hoja.anadir(Texto(27, y + 1, "VNA CH0", 6.0, TINTA, "negrita", "centro"))
+    hoja.anadir(Rect(170, y - 7, 26, 14, TINTA, 0.25, None))
+    hoja.anadir(Texto(183, y + 1, "VNA CH1", 6.0, TINTA, "negrita", "centro"))
+    hoja.anadir(Linea(40, y, 62, y, TINTA, 0.25))
+    hoja.anadir(Circulo(68, y, 6, COBRE, 0.35))
+    hoja.anadir(Rect(92, y - 7, 36, 14, COBRE, 0.5, None))
+    hoja.anadir(Texto(110, y + 1, tr("trampa"), 6.0, TINTA, "normal", "centro"))
+    hoja.anadir(Circulo(152, y, 6, COBRE, 0.35))
+    hoja.anadir(Linea(158, y, 170, y, TINTA, 0.25))
+    hoja.anadir(Linea(74, y, 92, y, GRIS, 0.15, (1, 1)))
+    hoja.anadir(Linea(128, y, 146, y, GRIS, 0.15, (1, 1)))
+    hoja.anadir(Texto(68, y + 10, tr("lazo"), 6.0, GRIS, "cursiva", "centro"))
+    hoja.anadir(Texto(152, y + 10, tr("lazo"), 6.0, GRIS, "cursiva", "centro"))
+    hoja.anadir(Texto(14, 230, tr("La trampa alarga algo el dipolo en la banda baja y su pérdida estrecha las dos bandas: la simulación\n"
                                   "usa trampas ideales de Q = 100, y la trampa real conviene medirla antes de fiarse de las cotas."), 6.0, ROJO))
     regla(hoja, 14, 244)
     return hoja
+
+
+def _dibujo_trampa(hoja: Hoja, g: dict, forma: float, n: int, largo: float) -> None:
+    """Esquema L-C (izquierda) y la trampa montada en su tubo (derecha, a 1:1 si cabe)."""
+    # --- esquema eléctrico
+    y = 114
+    hoja.anadir(Texto(14, 94, tr("Esquema"), 6.3, GRIS, "cursiva"))
+    hoja.anadir(Linea(14, y, 24, y))
+    hoja.anadir(Linea(24, y - 12, 24, y + 12))
+    hoja.anadir(Linea(24, y - 12, 80, y - 12))
+    hoja.anadir(Linea(24, y + 12, 80, y + 12))
+    # bobina: zigzag redondeado de 5 picos entre x = 34 y x = 70
+    xs = [34 + k * 36 / 10 for k in range(11)]
+    hoja.anadir(Linea(24, y - 12, 34, y - 12))
+    zig = [(xs[0], y - 12)] + [(xs[k], y - 12 + (-5 if k % 2 else 5)) for k in range(1, 10)] + [(xs[10], y - 12)]
+    for a, b in zip(zig, zig[1:]):
+        hoja.anadir(Linea(a[0], a[1], b[0], b[1], COBRE, 0.35))
+    hoja.anadir(Linea(70, y - 12, 80, y - 12))
+    hoja.anadir(Texto(52, y - 20, tr("L = {0} µH", fmt(g["trampa_L_uH"], 2)), 6.3, TINTA, "normal", "centro"))
+    # condensador (dos placas) en la rama de abajo
+    hoja.anadir(Linea(24, y + 12, 49, y + 12))
+    hoja.anadir(Linea(49, y + 6, 49, y + 18, COBRE, 0.5))
+    hoja.anadir(Linea(55, y + 6, 55, y + 18, COBRE, 0.5))
+    hoja.anadir(Linea(55, y + 12, 80, y + 12))
+    hoja.anadir(Texto(52, y + 26, tr("C = {0} pF", fmt(g["trampa_C_pF"], 0)), 6.3, TINTA, "normal", "centro"))
+    hoja.anadir(Linea(80, y - 12, 80, y + 12))
+    hoja.anadir(Linea(80, y, 90, y))
+    hoja.anadir(Texto(14, y + 8, tr("hilo"), 6.0, GRIS, "cursiva"))
+    hoja.anadir(Texto(84, y + 8, tr("hilo"), 6.0, GRIS, "cursiva"))
+    # --- trampa montada: tubo de PVC con la bobina
+    hoja.anadir(Texto(100, 94, tr("Montada"), 6.3, GRIS, "cursiva"))
+    tapa = 12.0
+    largo_tubo = largo + 2 * 10
+    esc = min(1.0, 78.0 / (largo_tubo + 2 * tapa))
+    x0, yc = 114.0, 114.0
+    r = forma / 2 * esc
+    lt = largo_tubo * esc
+    hoja.anadir(Rect(x0 + tapa * esc, yc - r, lt, 2 * r, PVC, 0.4, None))
+    hoja.anadir(Rect(x0, yc - r - 2, tapa * esc, 2 * r + 4, PVC, 0.3, "#d8ddd9"))
+    hoja.anadir(Rect(x0 + (tapa + largo_tubo) * esc, yc - r - 2, tapa * esc, 2 * r + 4, PVC, 0.3, "#d8ddd9"))
+    xb = x0 + (tapa + 10) * esc
+    paso = largo / max(n, 1) * esc
+    for k in range(n):
+        x = xb + k * paso
+        hoja.anadir(Linea(x, yc - r - 0.6, x + paso * 0.5, yc + r + 0.6, COBRE, 0.35))
+    xe = xb + largo * esc
+    hoja.anadir(Linea(x0 - 8, yc, xb, yc, COBRE, 0.35))
+    hoja.anadir(Linea(xb, yc, xb, yc - r, COBRE, 0.35))             # el hilo entra por la tapa y se une a la primera espira
+    hoja.anadir(Linea(xe, yc, xe + (10 + tapa) * esc + 8, yc, COBRE, 0.35))
+    hoja.anadir(Linea(xe, yc, xe, yc + r, COBRE, 0.35))
+    hoja.anadir(Rect((xb + xe) / 2 - 3, yc - 2, 6, 4, ROJO, 0.3, "#f3d7a8"))   # el condensador, dentro
+    hoja.anadir(Linea(xb, yc, (xb + xe) / 2 - 3, yc, GRIS, 0.2, (1, 0.8)))
+    hoja.anadir(Linea((xb + xe) / 2 + 3, yc, xe, yc, GRIS, 0.2, (1, 0.8)))
+    hoja.anadir(Texto((xb + xe) / 2, yc + 6, "C", 6.0, ROJO, "negrita", "centro"))
+    hoja.anadir(Cota(xb, yc + r + 7, xe, yc + r + 7, tr("{0} mm", fmt(largo, 0)), 6.0, ref1=(xb, yc + r), ref2=(xe, yc + r)))
+    hoja.anadir(Cota(x0 + tapa * esc + lt + 6, yc - r, x0 + tapa * esc + lt + 6, yc + r, tr("Ø {0}", fmt(forma, 0)), 6.0))
+    hoja.anadir(Texto(104, 148, tr("Tubo de PVC de Ø {0} mm, tapas pegadas con un agujero por donde sale el hilo ({1}).", fmt(forma, 0),
+                                   tr("1:1") if esc >= 0.999 else tr("reducido")), 5.8, GRIS, "cursiva"))

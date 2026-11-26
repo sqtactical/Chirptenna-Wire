@@ -31,13 +31,22 @@ button:disabled{opacity:.5;cursor:default}
 .estado{display:inline-block;border:1px solid var(--linea);border-radius:99px;padding:2px 10px;font-size:13px;color:var(--muted)}
 #vista{background:#fff;border:1px solid var(--linea);border-radius:8px;overflow:auto;margin-top:12px}
 #vista svg{display:block;width:100%;height:auto;max-width:620px;margin:0 auto}
-.galeria{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 .galeria .categoria{grid-column:1/-1;margin:10px 0 0;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase;opacity:.75}
-.carta{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;width:auto;padding:8px 6px;line-height:1.25;border-radius:12px}
+.carta{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;width:auto;padding:14px 10px;line-height:1.25;border-radius:12px}
 .carta svg{color:var(--texto);max-width:100%;height:auto}
 .carta b{font-size:14px}
 .carta small{color:var(--muted);font-size:11.5px}
-.carta[aria-pressed="true"]{border-color:var(--acento);box-shadow:0 0 0 2px var(--acento) inset}
+.carta:hover,.carta:focus-visible{border-color:var(--acento);box-shadow:0 0 0 2px var(--acento) inset}
+#elegir{max-width:1200px;margin:0 auto;padding:16px}
+#elegir h1{margin:4px 0 2px;font-size:1.5rem}
+#elegir .sub{margin:0 0 8px;color:var(--muted)}
+#elegir .galeria .categoria{font-size:.95rem;margin-top:22px}
+#error{background:#fbe3e0;color:#8c1d12}
+:root[data-tema="oscuro"] #error{background:#3a1713;color:#f3b4ab}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) #error{background:#3a1713;color:#f3b4ab}}
+.atras{width:auto;margin-bottom:8px}
+#tipo-elegido{margin:0 0 4px}
 #progreso{color:var(--muted);font-size:14px}
 .oculto{display:none}
 </style>
@@ -50,10 +59,19 @@ button:disabled{opacity:.5;cursor:default}
   <select id="idioma" title="Idioma" data-t-title="Idioma" aria-label="Idioma"><option value="es">Castellano</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option></select>
   <button id="tema" title="Tema claro/oscuro" data-t-title="Tema claro/oscuro">◐</button>
 </header>
-<main>
+<section id="elegir">
+  <h1 data-t>Elige una antena</h1>
+  <p class="sub" data-t>Primero el tipo; después se ajustan frecuencia, cable, papel y demás.</p>
+  <div id="galeria" class="galeria"></div>
+  <div class="fila"><button id="abrir" type="button" data-t>Abrir diseno.json…</button>
+    <input id="archivo" type="file" accept=".json,application/json" class="oculto"></div>
+  <p id="progreso">Cargando…</p>
+</section>
+<main id="diseno" class="oculto">
   <section class="tarjeta">
-    <h2 style="margin-top:0" data-t>Diseño</h2>
-    <label for="tipo" data-t>Tipo de antena</label><div id="galeria" class="galeria"></div><select id="tipo" class="oculto" aria-hidden="true"></select>
+    <button id="atras" type="button" class="atras" data-t>← Cambiar de antena</button>
+    <h2 id="tipo-elegido"></h2>
+    <select id="tipo" class="oculto" aria-hidden="true"></select>
     <label for="banda" data-t>Banda</label><select id="banda"><option value="" data-t>— otra —</option></select>
     <label for="f" data-t>Frecuencia (MHz)</label><input id="f" type="number" step="0.001" min="1.8" max="3000" value="145">
     <label for="diametro" data-t>Diámetro del alambre (mm)</label><input id="diametro" type="number" step="0.1" min="0.5" max="20" value="2">
@@ -61,7 +79,12 @@ button:disabled{opacity:.5;cursor:default}
     <div id="yagi" class="oculto">
       <label for="elementos" data-t>Elementos</label><input id="elementos" type="number" min="3" max="15" step="1" value="3">
       <label for="eje" data-t>Eje (boom)</label><select id="eje"><option value="ninguno" data-t>No metálico</option><option value="aislado" data-t>Metálico, elementos aislados</option><option value="unido" data-t>Metálico, elementos unidos</option></select>
-      <label for="eje-mm" data-t>Ø del eje metálico (mm)</label><input id="eje-mm" type="number" min="4" max="60" step="1" placeholder="1 % de λ" data-t-placeholder="1 % de λ">
+      <div id="eje-mm-fila" class="oculto"><label for="eje-mm" data-t>Ø del eje metálico (mm)</label><input id="eje-mm" type="number" min="4" max="60" step="1" placeholder="1 % de λ"></div>
+    </div>
+    <div id="colineal" class="oculto">
+      <label for="secciones" data-t>Secciones</label><input id="secciones" type="number" min="2" max="4" step="1" value="3">
+      <div id="bibanda" class="oculto"><label for="f-alta" data-t>Frecuencia de la banda alta (MHz)</label><input id="f-alta" type="number" step="0.001" min="100" max="3000" value="433">
+        <div class="leyenda" data-t>Banda baja = la frecuencia de arriba. Secciones: 2 o 4.</div></div>
     </div>
     <div id="hf" class="oculto">
       <label for="altura" data-t>Altura del hilo (m)</label><input id="altura" type="number" min="2" max="60" step="0.5" value="10">
@@ -82,13 +105,11 @@ button:disabled{opacity:.5;cursor:default}
     <label for="papel" data-t>Papel</label><select id="papel"></select>
     <label for="unidades" data-t>Unidades</label><select id="unidades"></select>
     <button id="generar" class="principal" data-t disabled>Generar plano</button>
-    <div class="fila"><label style="margin:0;flex:1"><button id="abrir" type="button" style="width:100%" data-t>Abrir diseno.json…</button></label>
-      <input id="archivo" type="file" accept=".json,application/json" class="oculto"></div>
-    <p id="progreso">Cargando…</p>
   </section>
   <section class="tarjeta">
     <div id="cabecera" class="oculto"><strong id="titulo"></strong> <span id="estado" class="estado"></span></div>
     <div class="aviso" data-t="Esta versión web <strong>no simula</strong>: usa las cotas de partida (estado «Sin validar»). Para el ajuste con NEC2, usa la versión de escritorio y abre aquí su <code>diseno.json</code>. <strong>Imprime al 100 %</strong> («tamaño real») y comprueba la regla de 80 mm antes de usar los detalles 1:1.">Esta versión web <strong>no simula</strong>: usa las cotas de partida (estado «Sin validar»). Para el ajuste con NEC2, usa la versión de escritorio y abre aquí su <code>diseno.json</code>. <strong>Imprime al 100 %</strong> («tamaño real») y comprueba la regla de 80 mm antes de usar los detalles 1:1.</div>
+    <div id="error" class="aviso oculto" role="alert"></div>
     <div id="hojas" class="fila oculto"></div>
     <div id="vista"></div>
     <div id="descargas" class="fila oculto">

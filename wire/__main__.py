@@ -35,7 +35,7 @@ def _diseno(args) -> Diseno:
     return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=cable,
                    vf_medido=vf, conector=args.conector, elementos=args.elementos, eje=args.eje, eje_mm=args.eje_mm,
                    relacion=args.relacion, altura_m=args.altura, suelo=args.suelo, potencia_w=args.potencia, largo_max_m=args.largo_max,
-                   bandas=[b.strip() for b in args.bandas.split(",")] if args.bandas else None, **plano)
+                   bandas=[b.strip() for b in args.bandas.split(",")] if args.bandas else None, f_alta_MHz=args.f_alta, **plano)
 
 
 class _Ayuda(argparse.HelpFormatter):
@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--vf-medido", type=float, help="factor de velocidad medido del cable (sustituye al de catálogo)")
         s.add_argument("--cable-medido", help="JSON del VF medido con Chirptenna VNA (sustituye a --vf-medido)")
         s.add_argument("--conector", choices=("SO-239", "N"), help="conector del ground plane (SO-239 por defecto)")
-        s.add_argument("--elementos", type=int, help="número de elementos de la Yagi, de 3 a 15 (3)")
+        s.add_argument("--elementos", type=int, help="número de elementos de la Yagi, de 3 a 15 (3), o de secciones de la colineal, de 2 a 4 (3)")
         s.add_argument("--eje", choices=("ninguno", "aislado", "unido"),
                        help="eje de la Yagi: no metálico (ninguno), metálico con los elementos aislados o con ellos unidos")
         s.add_argument("--eje-mm", type=float, help="diámetro del eje metálico en mm (1 %% de λ)")
@@ -79,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--altura", type=float, help="altura de la EFHW sobre el suelo en m (10)")
         s.add_argument("--suelo", choices=("pobre", "normal", "bueno", "mar"), help="tipo de suelo de la EFHW (normal)")
         s.add_argument("--bandas", help="bandas del dipolo en abanico o con trampas, separadas por comas, p. ej. \"40 m,20 m,15 m\"")
+        s.add_argument("--f-alta", type=float, help="banda alta de la colineal bibanda en MHz (433)")
         s.add_argument("--potencia", type=float, help="potencia en W para elegir el núcleo del transformador (100)")
         s.add_argument("--largo-max", type=float, help="largo máximo del hilo de la EFHW en m, si falta sitio")
         s.add_argument("--desde", help="diseno.json guardado antes")

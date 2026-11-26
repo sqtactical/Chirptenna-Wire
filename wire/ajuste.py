@@ -13,6 +13,8 @@ from .generadores import (BANDAS_HF, abanico, abanico_por_defecto, banda_hf, ban
                           efhw, efhw_por_defecto, g5rv, g5rv_por_defecto, trampas, trampas_por_defecto, vinv_hf, vinv_hf_por_defecto)
 from .generadores import (BAT_ANCHO, BAT_RADIOS, batwing, batwing_por_defecto, torniquete, torniquete_por_defecto)
 from .generadores import biconica, biconica_por_defecto, gp, gp_por_defecto, vinv, vinv_por_defecto, yagi, yagi_por_defecto, discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
+from .generadores import (COL_GANANCIA_MIN, COLB_GANANCIA_MIN, colineal, colineal_bibanda, colineal_bibanda_por_defecto,
+                          colineal_por_defecto)
 from .modelo import Barrido, Modelo
 
 Z0 = 50.0
@@ -257,6 +259,67 @@ def ajustar_gp(f_MHz: float, diametro_mm: float, angulo: float = 45.0, radiales:
         return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz) - f0) / 5, "sensibilidad_pieza": "el radiador"}
 
     return _con_resultados(construir(x), f_MHz, {"radiador_mm": x[0], "radial_mm": x[1], "angulo": angulo, "radiales": float(radiales)}, sens)
+
+
+def ajustar_colineal(f_MHz: float, diametro_mm: float, secciones: int = 3) -> dict:
+    """Colineal con bobinas de fase: ajusta el largo de cada sección, la bobina (µH) y los radiales para 50 Ω a f,
+    sin bajar de la ganancia mínima de su número de secciones."""
+    p = colineal_por_defecto(f_MHz, secciones)
+    lam = 299792.458 / f_MHz
+    gmin = COL_GANANCIA_MIN[secciones]
+    construir = lambda x: colineal(f_MHz, diametro_mm, secciones_mm=list(x[:secciones]), bobina_uH=x[secciones], radial_mm=x[secciones + 1])  # noqa: E731
+
+    def penalizacion(m):
+        try:
+            return 0.05 * max(0.0, gmin - motor.simular(m, Barrido(f_MHz, f_MHz, 1)).ganancia_max[0])
+        except RuntimeError:
+            return 1.0
+
+    x = _nm_gamma(f_MHz, construir, p["secciones_mm"] + [p["bobina_uH"], p["radial_mm"]],
+                  [0.03 * lam] * secciones + [0.2 * p["bobina_uH"], 0.02 * lam],
+                  valido=lambda x: all(v > 5 for v in x[:secciones]) and 0.05 < x[secciones] < 5 and x[secciones + 1] > 0.1 * lam,
+                  penalizacion=penalizacion)
+
+    def sens(m, f0):
+        corto = colineal(f_MHz, diametro_mm, secciones_mm=list(x[:secciones - 1]) + [x[secciones - 1] - 25], bobina_uH=x[secciones], radial_mm=x[secciones + 1])
+        return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz, 151) - f0) / 25, "sensibilidad_pieza": "la sección de arriba"}
+
+    return _con_resultados(construir(x), f_MHz, {"secciones_mm": list(x[:secciones]), "bobina_uH": x[secciones], "radial_mm": x[secciones + 1],
+                                                 "n_secciones": float(secciones), "angulo": 45.0, "radiales": 4.0}, sens)
+
+
+def ajustar_colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, secciones: int = 4) -> dict:
+    """Colineal bibanda: ajusta secciones, bobina, condensador en serie y radiales para 50 Ω en las dos bandas, con la
+    ganancia mínima en la alta. Los resultados son los de la banda baja; los de la alta van en `resultados["alta"]`."""
+    p = colineal_bibanda_por_defecto(f_baja, f_alta, secciones)
+    lam = 299792.458 / f_alta
+    gmin = COLB_GANANCIA_MIN[secciones]
+    n = secciones
+    construir = lambda x: colineal_bibanda(f_baja, f_alta, diametro_mm, secciones_mm=list(x[:n]), bobina_uH=x[n],  # noqa: E731
+                                           condensador_pF=x[n + 2], radial_mm=x[n + 1])
+
+    def coste(x):
+        if any(v < 5 for v in x[:n]) or not 0.02 < x[n] < 3 or x[n + 1] < 0.1 * lam or not 0.3 < x[n + 2] < 30:
+            return 10.0
+        m = construir(x)
+        try:
+            gan = motor.simular(m, Barrido(f_alta, f_alta, 1)).ganancia_max[0]
+        except RuntimeError:
+            return 10.0
+        return _gamma_en(m, f_baja) + _gamma_en(m, f_alta) + 0.05 * max(0.0, gmin - gan)
+
+    x0 = p["secciones_mm"] + [p["bobina_uH"], p["radial_mm"], p["condensador_pF"]]
+    pasos = [0.03 * lam] * n + [0.08, 0.02 * lam, 0.5]
+    x, _ = nelder_mead(coste, x0, pasos, tolerancia=1e-5, iteraciones=250)
+    x, _ = nelder_mead(coste, x, [e / 5 for e in pasos], tolerancia=1e-7, iteraciones=250)
+    modelo = construir(x)
+    r = _resultados(modelo, f_baja)
+    r["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.9 * f_baja, 1.1 * f_baja)
+    alta = _resultados(modelo, f_alta)
+    alta["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.95 * f_alta, 1.05 * f_alta)
+    r["alta"] = alta
+    return {"geometria": {"secciones_mm": list(x[:n]), "bobina_uH": x[n], "condensador_pF": x[n + 2], "radial_mm": x[n + 1],
+                          "n_secciones": float(n), "angulo": 45.0, "radiales": 4.0, "f_alta_MHz": f_alta}, "resultados": r}
 
 
 def ajustar_vinv(f_MHz: float, diametro_mm: float, apertura: float = 120.0) -> dict:

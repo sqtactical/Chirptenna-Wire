@@ -12,14 +12,14 @@ from datetime import date
 
 from ..diseno import Diseno
 from ..i18n import tr, usar
-from . import coaxial, comun, discone, dipolo, hf, hf_dipolos, hilos, jpole, koch
+from . import coaxial, colineal, comun, discone, dipolo, hf, hf_dipolos, hilos, jpole, koch
 from .hoja import Hoja, Plano
 from .paginacion import decidir_papel
 from .pdf import a_pdf
 from .svg import a_svg
 
 GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.hojas_manga, "coco": coaxial.hojas_coco,
-               "jpole_koch": koch.hojas, "discone": discone.hojas, "gp": hilos.hojas_gp,
+               "jpole_koch": koch.hojas, "discone": discone.hojas, "gp": hilos.hojas_gp, "colineal": colineal.hojas, "colineal_bibanda": colineal.hojas,
                "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "biconica": hilos.hojas_biconica,
                "torniquete": hilos.hojas_torniquete, "batwing": hilos.hojas_batwing,
                "efhw": hf.hojas, "dipolo_hf": hf_dipolos.hojas_hilo, "vinv_hf": hf_dipolos.hojas_hilo, "abanico": hf_dipolos.hojas_hilo,
