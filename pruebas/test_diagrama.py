@@ -29,3 +29,12 @@ def test_svg_con_dos_cortes():
     d = disenar("yagi", 145.0, 2.0, ajustar=False, elementos=5)
     svg = svg_diagrama(*motor.diagrama(d.modelo()))
     assert svg.startswith("<svg") and svg.count("<polygon") == 2 and "nan" not in svg
+
+
+def test_nube_de_puntos_3d():
+    from wire.graficas import puntos_diagrama
+    d = disenar("dipolo", 145.0, 2.0, ajustar=False)
+    th, ph, g = motor.diagrama(d.modelo())
+    p, c, gmax = puntos_diagrama(th, ph, g)
+    assert len(p) == len(c) == g.size and gmax == pytest.approx(g.max())
+    assert max(np.linalg.norm(p, axis=1)) == pytest.approx(1.0, abs=1e-6) and all(0 <= v <= 1 for q in c for v in q)

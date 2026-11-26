@@ -69,6 +69,34 @@ def svg_diagrama(theta, phi, g, lado: int = 280) -> str:
             f'{cuerpo}</svg>')
 
 
+def _color_ganancia(t: float) -> tuple[float, float, float]:
+    """Escala azul → verde → amarillo → rojo para t de 0 a 1 (RGB de 0 a 1)."""
+    t = max(0.0, min(1.0, t))
+    paradas = ((0.0, (0.15, 0.25, 0.85)), (0.35, (0.1, 0.75, 0.55)), (0.7, (0.95, 0.85, 0.2)), (1.0, (0.9, 0.15, 0.1)))
+    for (t0, c0), (t1, c1) in zip(paradas, paradas[1:]):
+        if t <= t1:
+            u = (t - t0) / (t1 - t0)
+            return tuple(a + (b - a) * u for a, b in zip(c0, c1))
+    return paradas[-1][1]
+
+
+def puntos_diagrama(theta, phi, g, piso: float = 25.0):
+    """Nube de puntos del diagrama en 3D: (puntos [x, y, z], colores [r, g, b], máximo dBi).
+
+    El radio es proporcional a los dB por encima de `piso` dB bajo el máximo (1 en el máximo) y el color sigue la
+    misma escala. Ejes de NEC: θ desde +z, φ desde +x.
+    """
+    import numpy as np
+    g = np.asarray(g, float)
+    gmax = float(g.max())
+    t = np.clip((g - (gmax - piso)) / piso, 0.0, 1.0)
+    th, ph = np.meshgrid(np.radians(theta), np.radians(phi), indexing="ij")
+    r = t
+    xyz = np.stack([r * np.sin(th) * np.cos(ph), r * np.sin(th) * np.sin(ph), r * np.cos(th)], axis=-1).reshape(-1, 3)
+    colores = [_color_ganancia(v) for v in t.reshape(-1)]
+    return xyz.tolist(), colores, gmax
+
+
 def svg_roe(curvas: list[tuple[str, list[float], list[float]]], banda: tuple[float, float] | None = None,
             ancho: int = 560, alto: int = 240, techo: float = 3.0) -> str:
     """ROE frente a frecuencia de una o varias curvas [(nombre, f_MHz, roe)], con la banda sombreada y la leyenda."""

@@ -27,7 +27,7 @@ from wire.diseno import (BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, RESUMEN, T
 from wire.generadores import BOOMS, RELACIONES, SUELOS, TIPOS_HF  # noqa: E402
 from wire.impresion3d import TIPOS_3D  # noqa: E402
 from wire.planos.comun import fmt  # noqa: E402
-from wire.graficas import svg_diagrama, svg_roe  # noqa: E402
+from wire.graficas import puntos_diagrama, svg_diagrama, svg_roe  # noqa: E402
 from wire.i18n import tr  # noqa: E402
 from wire.miniaturas import MINIATURAS  # noqa: E402
 
@@ -55,6 +55,23 @@ def mensaje(error: Exception) -> str:
     """Última línea de un error de Python, sin el nombre de la excepción (lo que sirve al usuario)."""
     lineas = [x for x in str(error).strip().splitlines() if x.strip()]
     return (lineas[-1] if lineas else "").split("Error: ", 1)[-1]
+
+
+def escena_diagrama(theta, phi, g, modelo) -> None:
+    """Diagrama de radiación en 3D (nube de puntos coloreada por ganancia) con los hilos de la antena dentro, centrados."""
+    puntos, colores, gmax = puntos_diagrama(theta, phi, g)
+    ui.label(tr("Diagrama 3D (arrastra para girar; máx {0:.1f} dBi, color rojo = máximo)", gmax)).classes("text-xs opacity-70")
+    hilos = [(h.inicio, h.fin) for h in modelo.hilos]
+    todos = [p for par in hilos for p in par]
+    centro = [sum(p[i] for p in todos) / len(todos) for i in range(3)]
+    semi = max((max(abs(p[i] - centro[i]) for p in todos) for i in range(3)), default=1.0) or 1.0
+    k = 0.45 / semi                                          # la antena ocupa ~la mitad del radio del diagrama
+    with ui.scene(width=640, height=460, background_color="#f4f6f8").classes("max-w-full") as escena:
+        escena.point_cloud(puntos, colores, point_size=0.06)
+        for a, b in hilos:
+            escena.line([(a[i] - centro[i]) * k for i in range(3)], [(b[i] - centro[i]) * k for i in range(3)]).material("#111111")
+        escena.axes_helper(length=1.15)
+        escena.move_camera(x=1.0, y=-1.3, z=0.8, look_at_x=0, look_at_y=0, look_at_z=0)
 
 
 def estado_texto(estado: str) -> str:
@@ -360,6 +377,7 @@ def pagina(idioma: str | None = None) -> None:
                     th, ph, gd = motor.diagrama(d.modelo())
                     ui.label(tr("Diagrama de radiación (NEC2) a {0} MHz", f"{d.f_MHz:g}")).classes("font-bold")
                     ui.html(svg_diagrama(th, ph, gd), sanitize=False).classes("w-full max-w-3xl")
+                    escena_diagrama(th, ph, gd, d.modelo())
                 except Exception as error:  # noqa: BLE001
                     ui.label(tr("Sin diagrama: {0}", mensaje(error))).classes("text-xs opacity-70")
                 ui.label(tr("Espacio libre, sin mástil ni cable de bajada")).classes("text-xs opacity-70")

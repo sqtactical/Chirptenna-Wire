@@ -214,6 +214,7 @@
   "DETALLE DEL CENTRO": "CENTRE DETAIL",
   "DETALLE DEL PELADO": "STRIPPING DETAIL",
   "Detalle del adaptador y la toma": "Detail of the matching section and the feed point",
+  "Diagrama 3D (arrastra para girar; máx {0:.1f} dBi, color rojo = máximo)": "3D pattern (drag to rotate; peak {0:.1f} dBi, red = peak)",
   "Diagrama de radiación (NEC2) a {0} MHz": "Radiation pattern (NEC2) at {0} MHz",
   "Dieléctrico que se deja a la vista": "Dielectric left exposed",
   "Dipolo 1 (cobre): el coaxial de bajada se suelda en su hueco,\nvivo a un brazo y malla al otro.": "Dipole 1 (copper): the downlead coax is soldered at its gap,\ncentre conductor to one arm and shield to the other.",

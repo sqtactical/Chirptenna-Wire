@@ -214,6 +214,7 @@
   "DETALLE DEL CENTRO": "DETAIL DER MITTE",
   "DETALLE DEL PELADO": "ABISOLIERDETAIL",
   "Detalle del adaptador y la toma": "Detail der Anpassung und des Speisepunkts",
+  "Diagrama 3D (arrastra para girar; máx {0:.1f} dBi, color rojo = máximo)": "3D-Diagramm (zum Drehen ziehen; Max {0:.1f} dBi, rot = Maximum)",
   "Diagrama de radiación (NEC2) a {0} MHz": "Strahlungsdiagramm (NEC2) bei {0} MHz",
   "Dieléctrico que se deja a la vista": "Freigelassenes Dielektrikum",
   "Dipolo 1 (cobre): el coaxial de bajada se suelda en su hueco,\nvivo a un brazo y malla al otro.": "Dipol 1 (Kupfer): das Zuleitungskoax wird an seiner Lücke angelötet,\nSeele an einen Arm, Schirm an den anderen.",
