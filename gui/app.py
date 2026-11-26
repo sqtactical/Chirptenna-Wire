@@ -27,7 +27,7 @@ from wire.diseno import (BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, RESUMEN, T
 from wire.generadores import BOOMS, RELACIONES, SUELOS, TIPOS_HF  # noqa: E402
 from wire.impresion3d import TIPOS_3D  # noqa: E402
 from wire.planos.comun import fmt  # noqa: E402
-from wire.graficas import svg_roe  # noqa: E402
+from wire.graficas import svg_diagrama, svg_roe  # noqa: E402
 from wire.i18n import tr  # noqa: E402
 from wire.miniaturas import MINIATURAS  # noqa: E402
 
@@ -356,6 +356,12 @@ def pagina(idioma: str | None = None) -> None:
                     red = (r.get("red") or {})
                     if red:
                         ui.label(", ".join(f"{k}: {v:.3g}" for k, v in red.items() if isinstance(v, float)))
+                try:
+                    th, ph, gd = motor.diagrama(d.modelo())
+                    ui.label(tr("Diagrama de radiación (NEC2) a {0} MHz", f"{d.f_MHz:g}")).classes("font-bold")
+                    ui.html(svg_diagrama(th, ph, gd), sanitize=False).classes("w-full max-w-3xl")
+                except Exception as error:  # noqa: BLE001
+                    ui.label(tr("Sin diagrama: {0}", mensaje(error))).classes("text-xs opacity-70")
                 ui.label(tr("Espacio libre, sin mástil ni cable de bajada")).classes("text-xs opacity-70")
 
             simulacion()

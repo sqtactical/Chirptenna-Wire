@@ -109,6 +109,20 @@ def ganancias_en(modelo: Modelo, f_MHz: float, direcciones: list[tuple[float, fl
     return [float(g[int(np.argmin(abs(th - t))), int(np.argmin(abs(ph - (p % 360.0))))]) for t, p in direcciones]
 
 
+def diagrama(modelo: Modelo, f_MHz: float | None = None):
+    """Diagrama de radiación a `f_MHz` (por defecto la del modelo): (θ, φ, ganancia dBi con forma θ × φ), ángulos en grados.
+
+    Rejilla de 5°; con suelo real NEC solo calcula el hemisferio de arriba (θ de 0° a 90°).
+    """
+    import numpy as np
+    f = modelo.f_MHz if f_MHz is None else f_MHz
+    texto = nec.exportar(replace(modelo, barrido=Barrido(f, f, 1)), diagrama=True)
+    contexto, _, _ = _contexto(nec.leer(texto))
+    patron = contexto.get_radiation_pattern(0)
+    g = np.array(patron.get_gain()).reshape(patron.get_ntheta(), patron.get_nphi())
+    return np.array(patron.get_theta_angles()), np.array(patron.get_phi_angles()), g
+
+
 def ejecutar_tarjetas(tarjetas: list[nec.Tarjeta], z0: float = Z0_POR_DEFECTO) -> Resultado:
     """Ejecuta en PyNEC una lista de tarjetas (las de `nec.leer`)."""
     contexto, frecuencias, con_diagrama = _contexto(tarjetas)

@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Diagrama de radiación en la pestaña Simulación del escritorio: cortes polares de azimut y elevación por el máximo (`motor.diagrama`, `graficas.svg_diagrama`), como en Chirptenna.
 - Interfaz de escritorio al día: galería por categorías con la ganancia teórica, campos propios de cada tipo (Yagi, colineal, bibanda, HF, EFHW) y botón de la plantilla de doblado 3D.
 - Ganancia teórica de cada diseño (`wire/ganancias.json`): en el cajetín de los planos, en la galería y en la cabecera de la web, y tabla en el README.
 - La colineal con bobinas de fase llega a 6 secciones (5 y 6: 6,2 y 6,7 dBi, para 433 MHz dentro de un tubo de PVC de 1,6 a 2,2 m).
