@@ -129,7 +129,7 @@ def pagina(idioma: str | None = None) -> None:
                     s["f"] = 7.1
                 elif not hf and s["f"] < 30:
                     s["f"] = 145.0
-                s["altura"] = 12.0 if clave == "vinv_hf" else 10.0
+                s["altura"] = {"vinv_hf": 12.0, "vertical_hf": 2.0}.get(clave, 10.0)
                 if clave == "trampas":
                     s["bandas"] = "40 m, 20 m"
                 elif clave == "abanico":

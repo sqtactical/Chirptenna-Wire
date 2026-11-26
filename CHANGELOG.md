@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Vertical de HF (`vertical_hf`): radiador de λ/4 con 8 radiales horizontales elevados sobre suelo real, ajustada con PyNEC (7,1 MHz, 2 m de altura de radiales, suelo normal: R ≈ 45 Ω, ROE 1,1, ≈ 0 dBi por las pérdidas del suelo). Hoja con vista, lista de corte, tabla simulada y montaje con choke; en la galería de HF de la web y del escritorio. **Sin medir**; los radiales reales y el suelo del terreno cambian la impedancia. Sin bobina de carga todavía.
 - Guía de cómo llevar y traer una antena entre Wire y Chirptenna VNA (README en castellano e inglés, y desplegable en la pestaña Medir del escritorio) y botón «Abrir cable medido» en Diseño para cargar el JSON del VF que descarga Chirptenna VNA. Los cuatro README de Chirptenna VNA llevan la sección equivalente.
 - S11 simulado en Touchstone (`python -m wire s1p …` y botón en Simulación; `wire/touchstone.py`) para superponerlo a la medida en Chirptenna VNA, que ya carga `.s1p` como referencia y da la desviación de la resonancia (comprobado con su `leerTouchstone` y `compararConReferencia`).
 - Diagrama de radiación en la pestaña Simulación del escritorio: cortes polares de azimut y elevación por el máximo (`motor.diagrama`, `graficas.svg_diagrama`), y vista 3D que se gira con el ratón (nube de puntos coloreada por ganancia con la antena dentro), como en Chirptenna.

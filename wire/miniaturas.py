@@ -79,6 +79,11 @@ MINIATURAS = {
 <line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="60" y1="54" x2="60" y2="26" stroke="currentColor" stroke-width="1.6"/>
 <line x1="10" y1="22" x2="110" y2="22" stroke="{COBRE}" stroke-width="3"/><rect x="55" y="18" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>''',
+    "vertical_hf": f'''<svg {_CAB}>
+<line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="60" y1="46" x2="60" y2="8" stroke="{COBRE}" stroke-width="3"/>
+<path d="M60 46 L16 46 M60 46 L104 46 M60 46 L30 52 M60 46 L90 52" stroke="{COBRE}" stroke-width="2"/>
+<rect x="56" y="43" width="8" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>''',
     "vinv_hf": f'''<svg {_CAB}>
 <line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="60" y1="54" x2="60" y2="10" stroke="currentColor" stroke-width="1.6"/>

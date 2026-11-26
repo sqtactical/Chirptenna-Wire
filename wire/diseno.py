@@ -34,11 +34,12 @@ TIPOS = {
     "abanico": N_("Dipolo en abanico multibanda"),
     "trampas": N_("Dipolo de dos bandas con trampas"),
     "g5rv": N_("G5RV con escalerilla"),
+    "vertical_hf": N_("Vertical de HF con radiales"),
 }
 
 # Categorías de la galería: (clave, nombre, tipos). Cada tipo va en una sola.
 CATEGORIAS = (
-    ("hf", N_("HF · hilos sobre suelo real"), ("dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv", "efhw")),
+    ("hf", N_("HF · hilos sobre suelo real"), ("dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv", "efhw", "vertical_hf")),
     ("vhf", N_("VHF y UHF · alambre y varilla"), ("dipolo", "jpole", "jpole_koch", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "torniquete", "batwing")),
     ("coaxial", N_("Antenas de coaxial"), ("manga", "coco")),
     ("banda_ancha", N_("Banda ancha"), ("discone", "biconica")),
@@ -70,6 +71,7 @@ RESUMEN = {
     "abanico": N_("Un par de hilos por banda desde un mismo centro: varias bandas con un solo coaxial y sin acoplador."),
     "trampas": N_("Dipolo de dos bandas con una trampa LC a cada lado: más corto que dos dipolos."),
     "g5rv": N_("Dipolo largo con escalerilla de 450 Ω y coaxial: multibanda con acoplador."),
+    "vertical_hf": N_("Radiador vertical de λ/4 con 8 radiales elevados: omnidireccional y de ángulo bajo para DX; ocupa poco terreno."),
 }
 ESTADO_TIPO = {
     "dipolo": N_("Simulado (validado contra la teoría), sin medir"),
@@ -92,6 +94,7 @@ ESTADO_TIPO = {
     "abanico": N_("Simulado sobre suelo real, sin medir; los hilos se acoplan: hay que ajustar en la antena"),
     "trampas": N_("Simulado sobre suelo real con trampas ideales (Q = 100), sin medir; la trampa real hay que ajustarla"),
     "g5rv": N_("Simulado sobre suelo real, sin medir; la línea es ideal y sin pérdidas"),
+    "vertical_hf": N_("Simulado sobre suelo real, sin medir; los radiales reales y el suelo de tu terreno cambian la impedancia"),
 }
 CABLE_POR_DEFECTO = "RG-58"
 
@@ -101,7 +104,8 @@ ESTADOS = ("Simulado", "Medido", "Sin validar")
 SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0,
              "gp": 15.0, "colineal": 15.0, "colineal_bibanda": 15.0, "vinv": 15.0, "yagi": 15.0, "biconica": 15.0,
              "torniquete": 15.0, "batwing": 15.0, "efhw": 150.0,
-             "dipolo_hf": 150.0, "vinv_hf": 150.0, "abanico": 150.0, "trampas": 150.0, "g5rv": 150.0}
+             "dipolo_hf": 150.0, "vinv_hf": 150.0, "abanico": 150.0, "trampas": 150.0, "g5rv": 150.0,
+             "vertical_hf": 150.0}
 
 BANDAS = [  # (nombre, f_min, f_max) en MHz: las bandas iniciales de la propuesta
     (N_("banda aérea"), 118.0, 137.0),
@@ -241,6 +245,9 @@ class Diseno:
         if self.tipo == "vinv_hf":
             return generadores.vinv_hf(self.f_MHz, self.diametro_mm, brazo_mm=g["brazo_mm"], apertura=g["apertura"],
                                        altura_mm=g["altura_mm"], suelo=g["suelo"])
+        if self.tipo == "vertical_hf":
+            return generadores.vertical_hf(self.f_MHz, self.diametro_mm, radiador_mm=g["radiador_mm"], radial_mm=g["radial_mm"],
+                                           radiales=int(g["radiales"]), altura_mm=g["altura_mm"], suelo=g["suelo"])
         if self.tipo == "abanico":
             return generadores.abanico(self.f_MHz, self.diametro_mm, list(g["largos_mm"]), altura_mm=g["altura_mm"], suelo=g["suelo"],
                                        sep_mm=g["sep_mm"])
@@ -345,7 +352,7 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
     if f_alta_MHz is not None and tipo != "colineal_bibanda":
         raise ValueError("la frecuencia alta solo vale para la colineal bibanda")
     if tipo in generadores.TIPOS_HF:
-        altura_m = (12.0 if tipo == "vinv_hf" else 10.0) if altura_m is None else float(altura_m)
+        altura_m = ({"vinv_hf": 12.0, "vertical_hf": generadores.VERT_ALTURA_M}.get(tipo, 10.0)) if altura_m is None else float(altura_m)
         suelo = suelo or "normal"
         if suelo not in generadores.SUELOS:
             raise ValueError(f"suelo desconocido: {suelo} (hay: {', '.join(generadores.SUELOS)})")
@@ -383,7 +390,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
                        "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
                        "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing,
                        "efhw": ajuste.ajustar_efhw, "dipolo_hf": ajuste.ajustar_dipolo_hf, "vinv_hf": ajuste.ajustar_vinv_hf,
-                       "abanico": ajuste.ajustar_abanico, "trampas": ajuste.ajustar_trampas, "g5rv": ajuste.ajustar_g5rv}[tipo]
+                       "abanico": ajuste.ajustar_abanico, "trampas": ajuste.ajustar_trampas, "g5rv": ajuste.ajustar_g5rv,
+                       "vertical_hf": ajuste.ajustar_vertical_hf}[tipo]
             if tipo == "yagi":
                 r = funcion(f_MHz, diametro_mm, n_elementos=elementos, boom=eje or "ninguno", boom_mm=eje_mm)
             elif tipo == "colineal":
@@ -432,6 +440,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = generadores.dipolo_hf_por_defecto(f_MHz, altura_m, suelo)
     elif tipo == "vinv_hf":
         geometria = generadores.vinv_hf_por_defecto(f_MHz, altura_m, suelo)
+    elif tipo == "vertical_hf":
+        geometria = generadores.vertical_hf_por_defecto(f_MHz, altura_m, suelo)
     elif tipo == "abanico":
         geometria = generadores.abanico_por_defecto(bandas, altura_m, suelo)
     elif tipo == "trampas":

@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 
 from . import motor
-from .generadores import (BANDAS_HF, abanico, abanico_por_defecto, banda_hf, banda_por_nombre, bandas_de, dipolo_hf, dipolo_hf_por_defecto,
+from .generadores import (BANDAS_HF, abanico, abanico_por_defecto, banda_hf, banda_por_nombre, bandas_de, dipolo_hf, dipolo_hf_por_defecto, vertical_hf, vertical_hf_por_defecto,
                           efhw, efhw_por_defecto, g5rv, g5rv_por_defecto, trampas, trampas_por_defecto, vinv_hf, vinv_hf_por_defecto)
 from .generadores import (BAT_ANCHO, BAT_RADIOS, batwing, batwing_por_defecto, torniquete, torniquete_por_defecto)
 from .generadores import biconica, biconica_por_defecto, gp, gp_por_defecto, vinv, vinv_por_defecto, yagi, yagi_por_defecto, discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
@@ -523,6 +523,25 @@ def ajustar_dipolo_hf(f_MHz: float, diametro_mm: float, altura_m: float = 10.0, 
     construir = lambda x: dipolo_hf(f_MHz, diametro_mm, largo_mm=x[0], altura_mm=altura_m * 1000, suelo=suelo)  # noqa: E731
     x = _nm_gamma(f_MHz, construir, [p["largo_mm"]], [0.01 * p["largo_mm"]], valido=lambda x: 0.3 * p["largo_mm"] < x[0] < 1.3 * p["largo_mm"])
     return _resultado_hf(construir(x), [banda_hf(f_MHz)], {"largo_mm": x[0], "altura_mm": altura_m * 1000, "suelo": suelo})
+
+
+def ajustar_vertical_hf(f_MHz: float, diametro_mm: float, altura_m: float = 2.0, suelo: str = "normal") -> dict:
+    """Vertical de HF: ajusta el largo del radiador y el de los radiales para la mejor ROE a 50 Ω (con radiales elevados la R
+    queda por debajo de 50 Ω, así que la ROE mínima no llega a 1)."""
+    p = vertical_hf_por_defecto(f_MHz, altura_m, suelo)
+
+    def construir(x):
+        return vertical_hf(f_MHz, diametro_mm, radiador_mm=x[0], radial_mm=x[1], altura_mm=altura_m * 1000, suelo=suelo)
+
+    def coste(x):
+        if not (0.6 * p["radiador_mm"] < x[0] < 1.3 * p["radiador_mm"] and 0.5 * p["radial_mm"] < x[1] < 1.5 * p["radial_mm"]):
+            return 10.0
+        return _gamma_en(construir(x), f_MHz)
+
+    x, _ = nelder_mead(coste, [p["radiador_mm"], p["radial_mm"]], [0.02 * p["radiador_mm"], 0.04 * p["radial_mm"]], tolerancia=1e-5, iteraciones=200)
+    x, _ = nelder_mead(coste, x, [0.005 * p["radiador_mm"], 0.01 * p["radial_mm"]], tolerancia=1e-7, iteraciones=200)
+    return _resultado_hf(construir(x), [banda_hf(f_MHz)], {"radiador_mm": x[0], "radial_mm": x[1], "radiales": p["radiales"],
+                                                           "altura_mm": altura_m * 1000, "suelo": suelo})
 
 
 def ajustar_vinv_hf(f_MHz: float, diametro_mm: float, altura_m: float = 12.0, suelo: str = "normal", apertura: float = 110.0) -> dict:

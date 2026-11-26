@@ -33,6 +33,7 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Dipolo en abanico multibanda (2 a 5 bandas) | **Simulado** sobre suelo real, sin medir; los hilos se acoplan, hay que ajustar en la antena | 2 hojas A4 |
 | Dipolo de dos bandas con trampas | **Simulado** con trampas ideales (Q = 100), sin medir; la trampa real hay que ajustarla | 3 hojas A4: antena, balun y bobina y condensador de la trampa |
 | G5RV con escalerilla | **Simulado**, sin medir; con línea ideal; no adapta sola en todas las bandas (se usa con acoplador) | 2 hojas A4 |
+| Vertical de HF con 8 radiales elevados | **Simulado** sobre suelo real, sin medir; ROE ≈ 1,1 a 7,1 MHz con R ≈ 45 Ω, pero la ganancia sale ≈ 0 dBi por las pérdidas del suelo | 1 hoja A4 |
 | EFHW de HF con transformador 49:1, 64:1 o 9:1 | **Simulado** sobre suelo real con transformador ideal, sin medir; los datos del transformador real son de montajes de aficionados, sin verificar | 3 hojas A4: la antena con la ROE por banda, el transformador (núcleo, vueltas, condensador y dibujo a 1:1) y su ajuste con carga de prueba y NanoVNA |
 | Colineal con bobinas de fase (2 a 6 secciones) | **Simulado** en espacio libre con bobinas ideales, sin medir; la bobina real hay que medirla y ajustarla | 2 hojas A4: vista, lista de corte y ROE simulada; y la bobina de fase a 1:1 con su medida y ajuste con el NanoVNA |
 | Colineal bibanda 145 / 433 MHz (2 o 4 secciones) | **Simulado** en espacio libre con componentes ideales, sin medir; banda estrecha en 145 MHz | 2 hojas A4: antena con la ROE de las dos bandas, y el enlace bobina + condensador en serie a 1:1 con su medida y ajuste con el NanoVNA |
@@ -53,6 +54,7 @@ propia simulación, el cajetín da esa.
 | CoCo de coaxial (4 tramos) | 6,2 |
 | Yagi, 3 / 5 / 7 / 10 / 15 elementos | 8,7 / 10,2 / 11,7 / 12,2 / 13,2 |
 | HF sobre suelo (dipolo, EFHW, G5RV, trampas, V invertida) | 5,2 a 6,4 |
+| Vertical de HF con radiales elevados | 0,0 |
 
 Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json` y `.nec`).
 

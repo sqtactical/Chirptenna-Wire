@@ -625,7 +625,7 @@ def colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, secciones
 
 # ---------------------------------------------------------------- HF: dipolos sobre suelo real
 
-TIPOS_HF = ("efhw", "dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv")
+TIPOS_HF = ("efhw", "dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv", "vertical_hf")
 DIPOLO_HF_LARGO, VINV_HF_BRAZO, VINV_HF_APERTURA = 0.475, 0.235, 110.0   # en λ (largo total, cada brazo) y grados
 ABANICO_SEP_MM = 300.0                                                    # separación vertical entre los hilos de dos bandas
 TRAMPA_LARGO_MM, TRAMPA_Z_OHM, TRAMPA_Q = 100.0, 330.0, 100.0           # largo físico de la bobina, X de L y C, Q de la trampa
@@ -698,6 +698,39 @@ def vinv_hf(f_MHz: float, diametro_mm: float, brazo_mm: float | None = None, ape
     return Modelo("V invertida de HF", f_MHz, hilos, Puerto(1, 1), barrido=barrido, suelo=SUELOS[suelo],
                   comentarios=(f"V invertida de HF a {f_MHz:g} MHz, hilo de {diametro_mm:g} mm, vértice a {h:g} m sobre suelo {suelo}",
                                f"Brazos de {brazo:.2f} m, apertura {apertura:g} grados"))
+
+
+VERT_RADIADOR, VERT_RADIAL, VERT_RADIALES = 0.245, 0.25, 8             # en λ (radiador, cada radial) y número de radiales
+VERT_ALTURA_M = 2.0                                                       # altura de los radiales sobre el suelo (m)
+
+
+def vertical_hf_por_defecto(f_MHz: float, altura_m: float = VERT_ALTURA_M, suelo: str = "normal") -> dict:
+    lam = 299792.458 / f_MHz
+    return {"radiador_mm": VERT_RADIADOR * lam, "radial_mm": VERT_RADIAL * lam, "radiales": float(VERT_RADIALES),
+            "altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def vertical_hf(f_MHz: float, diametro_mm: float, radiador_mm: float | None = None, radial_mm: float | None = None,
+                radiales: int = VERT_RADIALES, altura_mm: float = VERT_ALTURA_M * 1000, suelo: str = "normal",
+                barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Vertical de λ/4 con `radiales` radiales horizontales elevados `altura_mm` sobre suelo real; la fuente en el primer
+    segmento del radiador, en la unión con los radiales. Los radiales elevados dan unos 30 a 36 Ω (no 50 Ω): la ROE contra 50 Ω
+    queda en ≈ 1,5; con radiales enterrados o inclinados (como el ground plane de VHF) subiría."""
+    _comprobar_hf(f_MHz, diametro_mm, altura_mm, suelo)
+    if radiales < 2:
+        raise ValueError("hacen falta al menos 2 radiales")
+    p = vertical_hf_por_defecto(f_MHz)
+    rad = (radiador_mm or p["radiador_mm"]) / 1000
+    rl = (radial_mm or p["radial_mm"]) / 1000
+    h, r = altura_mm / 1000, diametro_mm / 2000
+    paso = _paso_hf(f_MHz) / densidad
+    hilos = [Hilo((0, 0, h), (0, 0, h + rad), r, max(3, round(rad / paso)))]
+    for i in range(radiales):
+        a = 2 * math.pi * i / radiales
+        hilos.append(Hilo((0, 0, h), (rl * math.cos(a), rl * math.sin(a), h), r, max(2, round(rl / paso))))
+    return Modelo("Vertical de HF", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"Vertical de HF a {f_MHz:g} MHz, hilo de {diametro_mm:g} mm, radiales a {h:g} m sobre suelo {suelo}",
+                               f"Radiador {rad:.2f} m, {radiales} radiales de {rl:.2f} m"))
 
 
 def abanico_por_defecto(bandas: list[str], altura_m: float = 10.0, suelo: str = "normal") -> dict:

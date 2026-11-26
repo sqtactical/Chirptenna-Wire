@@ -219,8 +219,8 @@ $('tipo').onchange = () => {
   else if (!hf && f < 30) { $('f').value = 145; $('banda').value = ''; }
   $('hf').classList.toggle('oculto', !hf);
   $('hf-bandas').classList.toggle('oculto', !['abanico', 'trampas'].includes($('tipo').value));
-  if ($('tipo').value === 'vinv_hf' && parseFloat($('altura').value) === 10) $('altura').value = 12;        // el vértice va más alto
-  else if ($('tipo').value !== 'vinv_hf' && parseFloat($('altura').value) === 12) $('altura').value = 10;
+  { const porDefecto = { vinv_hf: 12, vertical_hf: 2 }, h = parseFloat($('altura').value);      // el vértice va más alto; los radiales de la vertical, bajos
+    if ([10, 12, 2].includes(h)) $('altura').value = porDefecto[$('tipo').value] ?? 10; }
   if ($('tipo').value === 'trampas') $('bandas').value = '40 m, 20 m';          // las trampas son de dos bandas
   else if ($('tipo').value === 'abanico') $('bandas').value = '40 m, 20 m, 15 m';
   rotular(); ajustarEje(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('yagi').classList.toggle('oculto', $('tipo').value !== 'yagi'); $('colineal').classList.toggle('oculto', !['colineal', 'colineal_bibanda'].includes($('tipo').value)); $('bibanda').classList.toggle('oculto', $('tipo').value !== 'colineal_bibanda');

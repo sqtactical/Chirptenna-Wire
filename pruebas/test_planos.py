@@ -47,6 +47,7 @@ DISENOS = {
     "abanico_sin_motor": lambda: disenar("abanico", 7.1, 2.0, ajustar=False, bandas=["40 m", "20 m", "15 m", "10 m"]),
     "trampas_sin_motor": lambda: disenar("trampas", 7.1, 2.0, ajustar=False, bandas=["40 m", "20 m"], suelo="bueno"),
     "g5rv_sin_motor": lambda: disenar("g5rv", 3.65, 2.0, ajustar=False),
+    "vertical_hf_sin_motor": lambda: disenar("vertical_hf", 7.1, 3.0, ajustar=False),
     "efhw9_sin_motor": lambda: disenar("efhw", 7.1, 2.0, ajustar=False, relacion=9, potencia_w=500),
     "efhw64_sin_motor": lambda: disenar("efhw", 3.65, 2.0, ajustar=False, relacion=64, altura_m=12, suelo="mar"),
     "torniquete_sin_motor": lambda: disenar("torniquete", 137.5, 3.0, ajustar=False),
