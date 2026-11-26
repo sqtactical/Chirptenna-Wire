@@ -35,7 +35,7 @@ def _diseno(args) -> Diseno:
     return disenar(args.tipo, args.f_MHz, args.diametro, ajustar=not args.sin_motor, cable=cable,
                    vf_medido=vf, conector=args.conector, elementos=args.elementos, eje=args.eje, eje_mm=args.eje_mm,
                    relacion=args.relacion, altura_m=args.altura, suelo=args.suelo, potencia_w=args.potencia, largo_max_m=args.largo_max,
-                   **plano)
+                   bandas=[b.strip() for b in args.bandas.split(",")] if args.bandas else None, **plano)
 
 
 class _Ayuda(argparse.HelpFormatter):
@@ -78,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
         s.add_argument("--relacion", type=int, choices=(9, 49, 64), help="relación del transformador de la EFHW: 9, 49 o 64 (49)")
         s.add_argument("--altura", type=float, help="altura de la EFHW sobre el suelo en m (10)")
         s.add_argument("--suelo", choices=("pobre", "normal", "bueno", "mar"), help="tipo de suelo de la EFHW (normal)")
+        s.add_argument("--bandas", help="bandas del dipolo en abanico o con trampas, separadas por comas, p. ej. \"40 m,20 m,15 m\"")
         s.add_argument("--potencia", type=float, help="potencia en W para elegir el núcleo del transformador (100)")
         s.add_argument("--largo-max", type=float, help="largo máximo del hilo de la EFHW en m, si falta sitio")
         s.add_argument("--desde", help="diseno.json guardado antes")

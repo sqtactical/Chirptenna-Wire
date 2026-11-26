@@ -1,0 +1,46 @@
+{
+  "tipo": "vinv_hf",
+  "f_MHz": 3.65,
+  "diametro_mm": 2.0,
+  "geometria": {
+    "brazo_mm": 19778.85794877617,
+    "apertura": 110.0,
+    "altura_mm": 15000.0,
+    "suelo": "normal"
+  },
+  "nombre": "vinv_hf_3.65",
+  "material": "varilla de latón o aluminio",
+  "resultados": {
+    "motor": "PyNEC",
+    "z0_ohm": 50.0,
+    "f_MHz": 3.65,
+    "r_ohm": 52.703437952358996,
+    "x_ohm": -0.25566084436087727,
+    "roe": 1.05431637496754,
+    "ganancia_dBi": 4.367092837292158,
+    "bandas": [
+      {
+        "banda": "80 m",
+        "f_MHz": 3.65,
+        "r_ohm": 52.703437952358996,
+        "x_ohm": -0.25566084436087727,
+        "roe": 1.05431637496754,
+        "roe_max": 4.119783893152657,
+        "ganancia_dBi": 4.367092837292158
+      }
+    ]
+  },
+  "estado": "Simulado",
+  "plano": {
+    "papel": "A4",
+    "grandes": "mosaico",
+    "orientacion": "auto",
+    "solape_mm": 10.0,
+    "unidades": "mm",
+    "idioma": "es",
+    "sobrante_mm": null
+  },
+  "version": 1,
+  "cable": null,
+  "medida": null
+}

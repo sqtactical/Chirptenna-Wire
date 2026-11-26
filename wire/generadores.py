@@ -8,7 +8,7 @@ from __future__ import annotations
 from . import geometria
 import math
 
-from .modelo import Barrido, Hilo, Linea, Modelo, Puerto, longitud_onda_m
+from .modelo import Barrido, Carga, Hilo, Linea, Modelo, Puerto, longitud_onda_m
 
 # Longitud total por defecto del dipolo, en fracciones de λ. Es un punto de partida, no el ajuste:
 # la resonancia real depende del radio y se busca con el motor (`ajuste.ajustar_dipolo`).
@@ -529,6 +529,175 @@ def efhw(f_MHz: float, diametro_mm: float, largo_mm: float | None = None, contra
     return Modelo(f"EFHW {relacion}:1", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido, suelo=SUELOS[suelo],
                   comentarios=(f"EFHW {relacion}:1 a {f_MHz:g} MHz, hilo de {diametro_mm:g} mm a {h:g} m sobre suelo {suelo}",
                                f"Hilo de {largo:.2f} m, contrapeso de {cp:.2f} m; la ROE va contra {50 * relacion} ohm (transformador ideal)"))
+
+
+# ---------------------------------------------------------------- HF: dipolos sobre suelo real
+
+TIPOS_HF = ("efhw", "dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv")
+DIPOLO_HF_LARGO, VINV_HF_BRAZO, VINV_HF_APERTURA = 0.475, 0.235, 110.0   # en λ (largo total, cada brazo) y grados
+ABANICO_SEP_MM = 300.0                                                    # separación vertical entre los hilos de dos bandas
+TRAMPA_LARGO_MM, TRAMPA_Z_OHM, TRAMPA_Q = 100.0, 330.0, 100.0           # largo físico de la bobina, X de L y C, Q de la trampa
+G5RV_FACTOR, G5RV_ESCALERILLA_Z, G5RV_ESCALERILLA_VF = 31.1, 450.0, 0.88  # m del dipolo en 80 m; línea abierta de 450 Ω
+
+
+def banda_hf(f_MHz: float) -> tuple[str, float, float]:
+    """La banda de HF que contiene a `f_MHz`, o una banda de ±1 % alrededor si no cae en ninguna."""
+    for b in BANDAS_HF:
+        if b[1] <= f_MHz <= b[2]:
+            return b
+    return (f"{f_MHz:g} MHz", f_MHz * 0.99, f_MHz * 1.01)
+
+
+def banda_por_nombre(nombre: str) -> tuple[str, float, float]:
+    for b in BANDAS_HF:
+        if b[0] == nombre:
+            return b
+    raise ValueError(f"banda desconocida: {nombre} (hay: {', '.join(b[0] for b in BANDAS_HF)})")
+
+
+def _paso_hf(f_MHz: float, factor: float = 2.2) -> float:
+    return 299.792458 / min(factor * f_MHz, 30.0) / SEGMENTOS_POR_LAMBDA
+
+
+def _comprobar_hf(f_MHz: float, diametro_mm: float, altura_mm: float, suelo: str) -> None:
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    if suelo not in SUELOS:
+        raise ValueError(f"suelo desconocido: {suelo} (hay: {', '.join(SUELOS)})")
+    if altura_mm <= 1000:
+        raise ValueError("la altura debe ser de más de 1 m")
+
+
+def dipolo_hf_por_defecto(f_MHz: float, altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    return {"largo_mm": DIPOLO_HF_LARGO * 299792.458 / f_MHz, "altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def dipolo_hf(f_MHz: float, diametro_mm: float, largo_mm: float | None = None, altura_mm: float = 10000.0, suelo: str = "normal",
+              barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Dipolo horizontal de media onda a `altura_mm` sobre suelo real; la fuente en el segmento central."""
+    _comprobar_hf(f_MHz, diametro_mm, altura_mm, suelo)
+    largo = (largo_mm or dipolo_hf_por_defecto(f_MHz)["largo_mm"]) / 1000
+    h = altura_mm / 1000
+    n = max(3, round(largo / (_paso_hf(f_MHz) / densidad)))
+    n += 1 - n % 2
+    return Modelo("Dipolo de HF", f_MHz, (Hilo((-largo / 2, 0, h), (largo / 2, 0, h), diametro_mm / 2000, n),), Puerto(1, n // 2 + 1),
+                  barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"Dipolo de HF a {f_MHz:g} MHz, hilo de {diametro_mm:g} mm a {h:g} m sobre suelo {suelo}", f"Largo total {largo:.2f} m"))
+
+
+def vinv_hf_por_defecto(f_MHz: float, altura_m: float = 12.0, suelo: str = "normal") -> dict:
+    return {"brazo_mm": VINV_HF_BRAZO * 299792.458 / f_MHz, "apertura": VINV_HF_APERTURA, "altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def vinv_hf(f_MHz: float, diametro_mm: float, brazo_mm: float | None = None, apertura: float = VINV_HF_APERTURA,
+            altura_mm: float = 12000.0, suelo: str = "normal", barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """V invertida con el vértice a `altura_mm` sobre suelo real y los brazos caídos `apertura` grados entre sí."""
+    _comprobar_hf(f_MHz, diametro_mm, altura_mm, suelo)
+    if not 30 <= apertura <= 180:
+        raise ValueError("la apertura debe estar entre 30° y 180°")
+    brazo = (brazo_mm or vinv_hf_por_defecto(f_MHz)["brazo_mm"]) / 1000
+    h, m = altura_mm / 1000, math.radians(apertura / 2)
+    if h - brazo * math.cos(m) < 1.0:
+        raise ValueError("los extremos de la V quedan a menos de 1 m del suelo: sube el vértice o cierra la apertura")
+    n = max(2, round(brazo / (_paso_hf(f_MHz) / densidad)))
+    r = diametro_mm / 2000
+    hilos = (Hilo((0, 0, h), (brazo * math.sin(m), 0, h - brazo * math.cos(m)), r, n),
+             Hilo((0, 0, h), (-brazo * math.sin(m), 0, h - brazo * math.cos(m)), r, n))
+    return Modelo("V invertida de HF", f_MHz, hilos, Puerto(1, 1), barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"V invertida de HF a {f_MHz:g} MHz, hilo de {diametro_mm:g} mm, vértice a {h:g} m sobre suelo {suelo}",
+                               f"Brazos de {brazo:.2f} m, apertura {apertura:g} grados"))
+
+
+def abanico_por_defecto(bandas: list[str], altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """Un hilo por banda, cada uno de 0,47 λ de la frecuencia central de su banda (la ROE ajusta el resto)."""
+    largos = [0.47 * 299792.458 / ((banda_por_nombre(b)[1] + banda_por_nombre(b)[2]) / 2) for b in bandas]
+    return {"bandas": list(bandas), "largos_mm": largos, "altura_mm": altura_m * 1000, "suelo": suelo, "sep_mm": ABANICO_SEP_MM}
+
+
+def abanico(f_MHz: float, diametro_mm: float, largos_mm: list[float], altura_mm: float = 10000.0, suelo: str = "normal",
+            sep_mm: float = ABANICO_SEP_MM, barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Dipolo en abanico: un par de hilos por banda desde un mismo centro, repartidos en vertical `sep_mm` unos de otros."""
+    _comprobar_hf(f_MHz, diametro_mm, altura_mm, suelo)
+    if not largos_mm:
+        raise ValueError("hace falta al menos una banda")
+    h, r, g = altura_mm / 1000, diametro_mm / 2000, 0.1
+    paso = _paso_hf(f_MHz) / densidad
+    hilos = [Hilo((-g / 2, 0, h), (g / 2, 0, h), r, 1)]
+    n = len(largos_mm)
+    for k, largo in enumerate(largos_mm):
+        dz = (k - (n - 1) / 2) * sep_mm / 1000
+        for lado in (1, -1):
+            fin = (lado * largo / 2000, 0, h + dz)
+            hilos.append(Hilo((lado * g / 2, 0, h), fin, r, max(2, round(math.dist((lado * g / 2, 0, h), fin) / paso))))
+    return Modelo("Dipolo en abanico", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"Dipolo en abanico de {n} bandas, hilo de {diametro_mm:g} mm a {h:g} m sobre suelo {suelo}",
+                               "Largos totales: " + ", ".join(f"{x / 1000:.2f}" for x in largos_mm) + " m"))
+
+
+def trampas_por_defecto(f_baja: float, f_alta: float, altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """Cotas de partida del dipolo con trampas: la parte interior resuena en la banda alta y la trampa en esa misma banda."""
+    w = 2 * math.pi * f_alta * 1e6
+    l_uh = TRAMPA_Z_OHM / w * 1e6
+    c_pf = 1 / (w * TRAMPA_Z_OHM) * 1e12
+    interior = 0.475 / 2 * 299792.458 / f_alta
+    exterior = max(0.2 * interior, (0.475 / 2 * 299792.458 / f_baja - interior) * 0.85)
+    return {"f_alta_MHz": f_alta, "interior_mm": interior, "exterior_mm": exterior, "trampa_L_uH": l_uh, "trampa_C_pF": c_pf,
+            "trampa_largo_mm": TRAMPA_LARGO_MM, "altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def trampas(f_baja: float, diametro_mm: float, f_alta: float, interior_mm: float, exterior_mm: float, l_uh: float, c_pf: float,
+            trampa_largo_mm: float = TRAMPA_LARGO_MM, altura_mm: float = 10000.0, suelo: str = "normal",
+            barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Dipolo de dos bandas con una trampa (circuito paralelo L-C resonante en la banda alta) a cada lado.
+
+    Del centro salen `interior_mm` de hilo, la trampa (`trampa_largo_mm` de largo con `l_uh` y `c_pf` en paralelo y una
+    pérdida de Q = 100) y `exterior_mm` más. En la banda alta la trampa corta el exterior; en la baja lo deja conectado
+    y el conjunto resuena como dipolo largo (la trampa lo alarga un poco)."""
+    _comprobar_hf(f_baja, diametro_mm, altura_mm, suelo)
+    h, r, g = altura_mm / 1000, diametro_mm / 2000, 0.1
+    ai, ae, tl = interior_mm / 1000, exterior_mm / 1000, trampa_largo_mm / 1000
+    paso = _paso_hf(f_alta, 1.0) / densidad
+    w = 2 * math.pi * f_alta * 1e6
+    rp = TRAMPA_Q * w * l_uh * 1e-6                      # resistencia en paralelo para una Q propia de 100
+    hilos = [Hilo((-g / 2, 0, h), (g / 2, 0, h), r, 1)]
+    cargas = []
+    for lado in (1, -1):
+        x0 = lado * g / 2
+        tramos = [(x0, lado * ai, max(2, round(abs(ai - g / 2) / paso))), (lado * ai, lado * (ai + tl), 1),
+                  (lado * (ai + tl), lado * (ai + tl + ae), max(2, round(ae / paso)))]
+        for a, b, n in tramos:
+            hilos.append(Hilo((a, 0, h), (b, 0, h), r, n))
+        cargas.append(Carga(len(hilos) - 1, 1, 1, r=rp, l=l_uh * 1e-6, c=c_pf * 1e-12, paralela=True))
+    return Modelo("Dipolo con trampas", f_baja, tuple(hilos), Puerto(1, 1), cargas=tuple(cargas), barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"Dipolo de dos bandas ({f_baja:g} y {f_alta:g} MHz) con trampas, hilo de {diametro_mm:g} mm a {h:g} m sobre suelo {suelo}",
+                               f"Interior {ai:.2f} m, exterior {ae:.2f} m por lado; trampa {l_uh:.2f} uH y {c_pf:.1f} pF"))
+
+
+def g5rv_por_defecto(f_MHz: float, altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """G5RV a la escala de `f_MHz`: 31,1 m de dipolo y 10,4 m de línea abierta a 3,65 MHz; a 7,1 MHz la «media» G5RV."""
+    k = 3.65 / f_MHz
+    return {"largo_mm": G5RV_FACTOR * k * 1000, "escalerilla_mm": 10360.0 * k, "escalerilla_z0": G5RV_ESCALERILLA_Z,
+            "escalerilla_vf": G5RV_ESCALERILLA_VF, "altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def g5rv(f_MHz: float, diametro_mm: float, largo_mm: float | None = None, escalerilla_mm: float | None = None,
+         escalerilla_z0: float = G5RV_ESCALERILLA_Z, escalerilla_vf: float = G5RV_ESCALERILLA_VF, altura_mm: float = 10000.0,
+         suelo: str = "normal", barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """G5RV: dipolo largo alimentado por una línea abierta de 450 Ω (`escalerilla_mm`, con su VF) y, al pie de ella, el coaxial.
+
+    La impedancia que sale es la del pie de la escalerilla (donde se conecta el coaxial con su choke 1:1). La línea es
+    una TL ideal, sin pérdidas, y no cuenta el coaxial: la ROE que se calcula es la que ve el coaxial."""
+    _comprobar_hf(f_MHz, diametro_mm, altura_mm, suelo)
+    p = g5rv_por_defecto(f_MHz)
+    largo, esc = (largo_mm or p["largo_mm"]) / 1000, (escalerilla_mm or p["escalerilla_mm"]) / 1000
+    h, r = altura_mm / 1000, diametro_mm / 2000
+    n = max(3, round(largo / (_paso_hf(f_MHz, 8.0) / densidad)))
+    n += 1 - n % 2
+    hilos = (Hilo((-largo / 2, 0, h), (largo / 2, 0, h), r, n), Hilo((0, 0, h - 1.2), (0, 0, h - 1.0), r, 1))
+    return Modelo("G5RV", f_MHz, hilos, Puerto(2, 1), lineas=(Linea(1, n // 2 + 1, 2, 1, escalerilla_z0, esc, escalerilla_vf),),
+                  barrido=barrido, suelo=SUELOS[suelo],
+                  comentarios=(f"G5RV a la escala de {f_MHz:g} MHz, hilo de {diametro_mm:g} mm a {h:g} m sobre suelo {suelo}",
+                               f"Dipolo de {largo:.2f} m, escalerilla de {esc:.2f} m ({escalerilla_z0:g} ohm, VF {escalerilla_vf:g})"))
 
 
 # ---------------------------------------------------------------- torniquete y batwing

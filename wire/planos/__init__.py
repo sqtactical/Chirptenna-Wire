@@ -12,7 +12,7 @@ from datetime import date
 
 from ..diseno import Diseno
 from ..i18n import tr, usar
-from . import coaxial, comun, discone, dipolo, hf, hilos, jpole, koch
+from . import coaxial, comun, discone, dipolo, hf, hf_dipolos, hilos, jpole, koch
 from .hoja import Hoja, Plano
 from .paginacion import decidir_papel
 from .pdf import a_pdf
@@ -22,7 +22,8 @@ GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.ho
                "jpole_koch": koch.hojas, "discone": discone.hojas, "gp": hilos.hojas_gp,
                "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "biconica": hilos.hojas_biconica,
                "torniquete": hilos.hojas_torniquete, "batwing": hilos.hojas_batwing,
-               "efhw": hf.hojas}
+               "efhw": hf.hojas, "dipolo_hf": hf_dipolos.hojas_hilo, "vinv_hf": hf_dipolos.hojas_hilo, "abanico": hf_dipolos.hojas_hilo,
+               "trampas": hf_dipolos.hojas_hilo, "g5rv": hf_dipolos.hojas_hilo}
 
 
 def generar(diseno: Diseno, fecha: str | None = None) -> Plano:

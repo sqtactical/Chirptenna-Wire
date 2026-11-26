@@ -54,6 +54,11 @@ DISENOS = {
     "torniquete": lambda i: disenar("torniquete", 137.5, 3.0, ajustar=False, idioma=i),
     "batwing": lambda i: disenar("batwing", 145.0, 3.0, ajustar=False, idioma=i),
     "efhw": lambda i: disenar("efhw", 7.1, 2.0, ajustar=False, idioma=i),
+    "dipolo_hf": lambda i: disenar("dipolo_hf", 7.1, 2.0, ajustar=False, idioma=i),
+    "vinv_hf": lambda i: disenar("vinv_hf", 7.1, 2.0, ajustar=False, idioma=i),
+    "abanico": lambda i: disenar("abanico", 7.1, 2.0, ajustar=False, idioma=i, bandas=["40 m", "20 m"]),
+    "trampas": lambda i: disenar("trampas", 7.1, 2.0, ajustar=False, idioma=i, bandas=["40 m", "20 m"]),
+    "g5rv": lambda i: disenar("g5rv", 3.65, 2.0, ajustar=False, idioma=i),
 }
 
 

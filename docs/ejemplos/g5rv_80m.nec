@@ -1,0 +1,14 @@
+CM G5RV
+CM G5RV a la escala de 3.65 MHz, hilo de 2 mm a 10 m sobre suelo normal
+CM Dipolo de 31.10 m, escalerilla de 10.36 m (450 ohm, VF 0.88)
+CM Generado por Chirptenna Wire
+CE
+GW 1 151 -15.55 0 10 15.55 0 10 0.001
+GW 2 1 0 0 8.8 0 0 9 0.001
+GE -1
+GN 2 0 0 0 13 0.005 0 0 0 0
+EX 0 2 1 0 1 0 0 0 0 0
+TL 1 76 2 1 450 11.7727273 0 0 0 0
+FR 0 1 0 0 3.65 0
+RP 0 19 72 1000 0 0 5 5 0 0
+EN

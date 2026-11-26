@@ -31,13 +31,15 @@ def test_cada_tipo_esta_en_una_sola_categoria_de_la_galeria():
     c = json.loads(web_api.catalogo())
     en_categorias = [t for cat in c["categorias"] for t in cat["tipos"]]
     assert sorted(en_categorias) == sorted(t["clave"] for t in c["tipos"])
-    assert c["categorias"][0]["clave"] == "hf" and c["categorias"][0]["tipos"] == ["efhw"]
+    assert c["categorias"][0]["clave"] == "hf" and "efhw" in c["categorias"][0]["tipos"]
+    assert sorted(c["tipos_hf"]) == sorted(c["categorias"][0]["tipos"])
 
 
 def test_catalogo_y_plano():
     c = json.loads(web_api.catalogo())
     assert {t["clave"] for t in c["tipos"]} == {"dipolo", "jpole", "manga", "coco", "jpole_koch", "discone", "gp", "vinv", "yagi", "biconica",
-                                                       "torniquete", "batwing", "efhw"}
+                                                       "torniquete", "batwing", "efhw",
+                                                       "dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv"}
     assert c["coaxial"]["tipos"] == ["manga", "coco"] and any(k["nombre"] == "RG-58" for k in c["coaxial"]["cables"])
     r = json.loads(web_api.plano_svg(json.dumps({"tipo": "jpole", "f_MHz": 435, "diametro_mm": 2})))
     assert r["estado"] == "Sin validar" and len(r["hojas"]) == 2 and r["hojas"][0].startswith("<svg")

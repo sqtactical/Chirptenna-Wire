@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Más tipos de HF sobre suelo real: dipolo, V invertida, dipolo en abanico multibanda, dipolo con trampas y G5RV, con hoja del balun o choke 1:1 (y de las trampas), sin medir.
 - Primer tipo de HF: EFHW con transformador 49:1, 64:1 o 9:1 sobre suelo real, con hojas de montaje y ajuste del transformador (valores de aficionados, sin verificar). El motor admite suelo real.
 - La galería de la web se agrupa en categorías (HF, VHF y UHF, coaxial, banda ancha).
 - Yagi de 3 a 15 elementos y eje metálico o no (corrección de corte de DL6WU, sin comprobar con medidas); hoja de elementos y eje cuando hay más de 3 o eje metálico.

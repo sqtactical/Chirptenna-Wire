@@ -1,0 +1,64 @@
+{
+  "tipo": "trampas",
+  "f_MHz": 7.1,
+  "diametro_mm": 2.0,
+  "geometria": {
+    "f_alta_MHz": 14.175,
+    "interior_mm": 5126.767963328813,
+    "exterior_mm": 3646.36638689518,
+    "trampa_L_uH": 3.7051944423510026,
+    "trampa_C_pF": 34.02382408035815,
+    "trampa_largo_mm": 100.0,
+    "altura_mm": 10000.0,
+    "suelo": "normal",
+    "bandas": [
+      "40 m",
+      "20 m"
+    ],
+    "f_baja_MHz": 7.1
+  },
+  "nombre": "trampas_7.1",
+  "material": "varilla de latón o aluminio",
+  "resultados": {
+    "motor": "PyNEC",
+    "z0_ohm": 50.0,
+    "f_MHz": 7.1,
+    "r_ohm": 61.6548330463422,
+    "x_ohm": -1.2372191389189844,
+    "roe": 1.2345438652149718,
+    "ganancia_dBi": 6.421464983834257,
+    "bandas": [
+      {
+        "banda": "40 m",
+        "f_MHz": 7.1,
+        "r_ohm": 61.6548330463422,
+        "x_ohm": -1.2372191389189844,
+        "roe": 1.2345438652149718,
+        "roe_max": 1.7166361142425202,
+        "ganancia_dBi": 6.421464983834257
+      },
+      {
+        "banda": "20 m",
+        "f_MHz": 14.175,
+        "r_ohm": 74.74310911160205,
+        "x_ohm": -3.301356653712694,
+        "roe": 1.5001257800152918,
+        "roe_max": 2.2245357179481235,
+        "ganancia_dBi": 7.108530700827696
+      }
+    ]
+  },
+  "estado": "Simulado",
+  "plano": {
+    "papel": "A4",
+    "grandes": "mosaico",
+    "orientacion": "auto",
+    "solape_mm": 10.0,
+    "unidades": "mm",
+    "idioma": "es",
+    "sobrante_mm": null
+  },
+  "version": 1,
+  "cable": null,
+  "medida": null
+}

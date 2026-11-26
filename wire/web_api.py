@@ -12,6 +12,7 @@ from . import nec, planos
 from .i18n import IDIOMAS, tr, usar
 from .cables import CABLES
 from .diseno import BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
+from .generadores import TIPOS_HF
 from .impresion3d import TIPOS_3D
 from .miniaturas import MINIATURAS
 
@@ -33,6 +34,7 @@ def _catalogo() -> str:
         "bandas": [{"nombre": tr(n), "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},
         "plantilla3d": list(TIPOS_3D),
+        "tipos_hf": list(TIPOS_HF),
         "conectores": list(CONECTORES), "coaxial": {"tipos": list(TIPOS_COAXIAL), "cables": [{"nombre": c.nombre, "vf": c.vf} for c in CABLES.values()]},
     }, ensure_ascii=False)
 
@@ -50,7 +52,7 @@ def _diseno(entrada: str) -> Diseno:
                    cable=datos.get("cable"), vf_medido=datos.get("vf_medido"), conector=datos.get("conector"),
                    elementos=datos.get("elementos"), eje=datos.get("eje"), eje_mm=datos.get("eje_mm"), relacion=datos.get("relacion"),
                    altura_m=datos.get("altura_m"), suelo=datos.get("suelo"), potencia_w=datos.get("potencia_w"),
-                   largo_max_m=datos.get("largo_max_m"), **plano)
+                   largo_max_m=datos.get("largo_max_m"), bandas=datos.get("bandas"), **plano)
 
 
 def disenar_json(entrada: str) -> str:

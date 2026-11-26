@@ -14,6 +14,7 @@ import pytest
 
 from wire import planos
 from wire.diseno import TIPOS, TIPOS_COAXIAL, disenar
+from wire.generadores import TIPOS_HF
 
 playwright_sync = pytest.importorskip("playwright.sync_api")
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -61,8 +62,9 @@ def test_cada_tipo_sale_igual_que_en_escritorio(web, pagina_nueva, idioma):
             timeout=60_000)
         pagina.wait_for_timeout(500)
         hojas = pagina.evaluate("actual.plano.hojas")
-        esperado = planos.generar(disenar(tipo, 7.1 if tipo == "efhw" else 145.0, 2.0, ajustar=False, idioma=idioma,
-                                          cable="RG-58" if tipo in TIPOS_COAXIAL else None))
+        extra = {"abanico": {"bandas": ["40 m", "20 m", "15 m"]}, "trampas": {"bandas": ["40 m", "20 m"]}}.get(tipo, {})
+        esperado = planos.generar(disenar(tipo, 7.1 if tipo in TIPOS_HF else 145.0, 2.0, ajustar=False, idioma=idioma,
+                                          cable="RG-58" if tipo in TIPOS_COAXIAL else None, **extra))
         assert hojas == [planos.a_svg(h) for h in esperado.hojas], f"{tipo} ({idioma}) no coincide con el escritorio"
     assert not errores, errores
     pagina.close()

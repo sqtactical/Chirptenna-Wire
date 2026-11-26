@@ -9,7 +9,8 @@ from __future__ import annotations
 import math
 
 from . import motor
-from .generadores import bandas_de, efhw, efhw_por_defecto
+from .generadores import (BANDAS_HF, abanico, abanico_por_defecto, banda_hf, banda_por_nombre, bandas_de, dipolo_hf, dipolo_hf_por_defecto,
+                          efhw, efhw_por_defecto, g5rv, g5rv_por_defecto, trampas, trampas_por_defecto, vinv_hf, vinv_hf_por_defecto)
 from .generadores import (BAT_ANCHO, BAT_RADIOS, batwing, batwing_por_defecto, torniquete, torniquete_por_defecto)
 from .generadores import biconica, biconica_por_defecto, gp, gp_por_defecto, vinv, vinv_por_defecto, yagi, yagi_por_defecto, discone, discone_por_defecto, dipolo, jpole, jpole_koch, jpole_koch_por_defecto, jpole_por_defecto
 from .modelo import Barrido, Modelo
@@ -434,6 +435,106 @@ def ajustar_efhw(f_MHz: float, diametro_mm: float, relacion: int = 49, altura_m:
                   "ganancia_dBi": propia["ganancia_dBi"], "bandas": tabla}
     geometria = {"largo_mm": x[0], "contrapeso_mm": x[1], "altura_mm": altura_m * 1000, "relacion": float(relacion), "suelo": suelo}
     return {"geometria": geometria, "resultados": resultados}
+
+
+def _resultado_hf(modelo: Modelo, bandas, geometria: dict, z0: float = Z0) -> dict:
+    tabla = _bandas_efhw(modelo, bandas, z0)
+    propia = tabla[0]
+    resultados = {"motor": "PyNEC", "z0_ohm": z0, "f_MHz": propia["f_MHz"], "r_ohm": propia["r_ohm"], "x_ohm": propia["x_ohm"],
+                  "roe": propia["roe"], "ganancia_dBi": propia["ganancia_dBi"], "bandas": tabla}
+    return {"geometria": geometria, "resultados": resultados}
+
+
+def _gamma_en(modelo: Modelo, f: float, z0: float = Z0) -> float:
+    """|S11| a `f` contra `z0`; 2 (peor que un reflejo total) si NEC rechaza la geometría (hilos que se pisan)."""
+    try:
+        z = motor.simular(modelo, Barrido(f, f, 1), diagrama=False, z0=z0).z[0]
+    except RuntimeError:
+        return 2.0
+    return abs((z - z0) / (z + z0))
+
+
+def ajustar_dipolo_hf(f_MHz: float, diametro_mm: float, altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """Dipolo de HF sobre suelo real: ajusta el largo para la mejor ROE a 50 Ω en el centro de la banda."""
+    p = dipolo_hf_por_defecto(f_MHz, altura_m, suelo)
+    construir = lambda x: dipolo_hf(f_MHz, diametro_mm, largo_mm=x[0], altura_mm=altura_m * 1000, suelo=suelo)  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["largo_mm"]], [0.01 * p["largo_mm"]], valido=lambda x: 0.3 * p["largo_mm"] < x[0] < 1.3 * p["largo_mm"])
+    return _resultado_hf(construir(x), [banda_hf(f_MHz)], {"largo_mm": x[0], "altura_mm": altura_m * 1000, "suelo": suelo})
+
+
+def ajustar_vinv_hf(f_MHz: float, diametro_mm: float, altura_m: float = 12.0, suelo: str = "normal", apertura: float = 110.0) -> dict:
+    """V invertida de HF: ajusta el largo de los brazos (la apertura queda fija)."""
+    p = vinv_hf_por_defecto(f_MHz, altura_m, suelo)
+    construir = lambda x: vinv_hf(f_MHz, diametro_mm, brazo_mm=x[0], apertura=apertura, altura_mm=altura_m * 1000, suelo=suelo)  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["brazo_mm"]], [0.01 * p["brazo_mm"]], valido=lambda x: 0.3 * p["brazo_mm"] < x[0] < 1.3 * p["brazo_mm"])
+    return _resultado_hf(construir(x), [banda_hf(f_MHz)],
+                         {"brazo_mm": x[0], "apertura": apertura, "altura_mm": altura_m * 1000, "suelo": suelo})
+
+
+def ajustar_abanico(f_MHz: float, diametro_mm: float, bandas: list[str], altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """Dipolo en abanico: ajusta el largo de cada hilo para la mejor ROE en el centro de su banda (los hilos se acoplan entre sí)."""
+    p = abanico_por_defecto(bandas, altura_m, suelo)
+    centros = [(banda_por_nombre(b)[1] + banda_por_nombre(b)[2]) / 2 for b in bandas]
+
+    def construir(x):
+        return abanico(f_MHz, diametro_mm, list(x), altura_mm=altura_m * 1000, suelo=suelo, sep_mm=p["sep_mm"])
+
+    def coste(x):
+        if any(not 0.3 * l0 < v < 1.3 * l0 for v, l0 in zip(x, p["largos_mm"])):
+            return 10.0
+        m = construir(x)
+        return sum(_gamma_en(m, f) ** 2 for f in centros) / len(centros)
+
+    # primero un hilo cada vez, de la banda más alta a la más baja (los hilos cortos apenas notan a los largos), y luego todos juntos
+    x = list(p["largos_mm"])
+    orden = sorted(range(len(bandas)), key=lambda k: -centros[k])
+    for _ in range(2):
+        for k in orden:
+            def un_hilo(v, k=k):
+                y = list(x)
+                y[k] = v[0]
+                return coste(y) if False else (10.0 if not 0.3 * p["largos_mm"][k] < v[0] < 1.3 * p["largos_mm"][k]
+                                               else _gamma_en(construir(y), centros[k]))
+            l0 = p["largos_mm"][k]
+            mejor = min((0.7 + 0.02 * i for i in range(26)), key=lambda c: un_hilo([c * l0]))   # barrido grueso: la resonancia puede estar lejos
+            v, _ = nelder_mead(un_hilo, [mejor * l0], [0.01 * l0], tolerancia=1e-6, iteraciones=60)
+            x[k] = v[0]
+    x, _ = nelder_mead(coste, x, [0.01 * l for l in p["largos_mm"]], tolerancia=1e-5, iteraciones=250)
+    x, _ = nelder_mead(coste, x, [0.003 * l for l in p["largos_mm"]], tolerancia=1e-7, iteraciones=250)
+    geometria = {"bandas": list(bandas), "largos_mm": list(x), "altura_mm": altura_m * 1000, "suelo": suelo, "sep_mm": p["sep_mm"]}
+    return _resultado_hf(construir(x), [banda_por_nombre(b) for b in bandas], geometria)
+
+
+def ajustar_trampas(f_MHz: float, diametro_mm: float, bandas: list[str], altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """Dipolo de dos bandas con trampas: ajusta el tramo interior y el exterior (la trampa queda en la banda alta)."""
+    if len(bandas) != 2:
+        raise ValueError("el dipolo con trampas es de dos bandas")
+    baja, alta = sorted((banda_por_nombre(b) for b in bandas), key=lambda b: b[1])
+    f_baja, f_alta = (baja[1] + baja[2]) / 2, (alta[1] + alta[2]) / 2
+    p = trampas_por_defecto(f_baja, f_alta, altura_m, suelo)
+
+    def construir(x):
+        return trampas(f_baja, diametro_mm, f_alta, x[0], x[1], p["trampa_L_uH"], p["trampa_C_pF"], altura_mm=altura_m * 1000, suelo=suelo)
+
+    def coste(x):
+        if not (0.4 * p["interior_mm"] < x[0] < 1.5 * p["interior_mm"] and 0.1 * p["exterior_mm"] < x[1] < 2.5 * p["exterior_mm"]):
+            return 10.0
+        m = construir(x)
+        return _gamma_en(m, f_baja) + _gamma_en(m, f_alta)
+
+    x, _ = nelder_mead(coste, [p["interior_mm"], p["exterior_mm"]], [0.02 * p["interior_mm"], 0.05 * p["exterior_mm"]], tolerancia=1e-5, iteraciones=250)
+    x, _ = nelder_mead(coste, x, [0.004 * p["interior_mm"], 0.01 * p["exterior_mm"]], tolerancia=1e-7, iteraciones=250)
+    geometria = {**p, "interior_mm": x[0], "exterior_mm": x[1], "bandas": [baja[0], alta[0]], "f_baja_MHz": f_baja}
+    return _resultado_hf(construir(x), [baja, alta], geometria)
+
+
+def ajustar_g5rv(f_MHz: float, diametro_mm: float, altura_m: float = 10.0, suelo: str = "normal") -> dict:
+    """G5RV a la escala de `f_MHz`: no se ajusta (es un diseño fijo); se da la ROE al pie de la escalerilla en cada banda de HF
+    desde la suya hasta 10 m, que es lo que ve el coaxial: se usa con acoplador."""
+    p = g5rv_por_defecto(f_MHz, altura_m, suelo)
+    bandas = [b for b in BANDAS_HF if (b[1] + b[2]) / 2 >= 0.9 * f_MHz and b[0] != "60 m"]
+    return _resultado_hf(g5rv(f_MHz, diametro_mm, largo_mm=p["largo_mm"], escalerilla_mm=p["escalerilla_mm"], altura_mm=altura_m * 1000, suelo=suelo),
+                         bandas, p)
 
 
 def ajustar_manga(f_MHz: float, cable) -> dict:

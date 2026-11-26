@@ -11,6 +11,7 @@ let tiposCatalogo = [];
 let coaxial = { tipos: [], cables: [] };
 let plantilla3d = [];
 let categorias = [];
+let tiposHF = [];
 let TEXTOS = {};
 let IDIOMA = 'es';
 
@@ -82,8 +83,9 @@ function entrada() {
                           cable: $('cable').value || null, conector: $('tipo').value === 'gp' ? $('conector').value : null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null,
                           elementos: $('tipo').value === 'yagi' ? parseInt($('elementos').value, 10) : null,
                           relacion: $('tipo').value === 'efhw' ? parseInt($('relacion').value, 10) : null,
-                          altura_m: $('tipo').value === 'efhw' ? parseFloat($('altura').value) : null,
-                          suelo: $('tipo').value === 'efhw' ? $('suelo').value : null,
+                          altura_m: tiposHF.includes($('tipo').value) ? parseFloat($('altura').value) : null,
+                          suelo: tiposHF.includes($('tipo').value) ? $('suelo').value : null,
+                          bandas: ['abanico', 'trampas'].includes($('tipo').value) ? $('bandas').value.split(',').map((s) => s.trim()).filter(Boolean) : null,
                           potencia_w: $('tipo').value === 'efhw' ? parseFloat($('potencia').value) : null,
                           largo_max_m: $('tipo').value === 'efhw' && $('largo-max').value ? parseFloat($('largo-max').value) : null,
                           eje: $('tipo').value === 'yagi' ? $('eje').value : null,
@@ -109,6 +111,7 @@ async function iniciar() {
   const tipoActual = $('tipo').value;
   tiposCatalogo = c.tipos;
   categorias = c.categorias || [];
+  tiposHF = c.tipos_hf || [];
   $('tipo').innerHTML = c.tipos.map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
   $('banda').innerHTML = '<option value="" data-t>— otra —</option>' + c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
   coaxial = c.coaxial;
@@ -164,8 +167,15 @@ $('galeria').onclick = (ev) => {
 $('tipo').onchange = () => {
   // al pasar de VHF/UHF a HF (o al revés) la frecuencia de antes no sirve: se propone la de 40 m o la de 2 m
   const f = parseFloat($('f').value);
-  if ($('tipo').value === 'efhw' && !(f >= 1.8 && f <= 30)) { $('f').value = 7.1; $('banda').value = ''; }
-  else if ($('tipo').value !== 'efhw' && f < 30) { $('f').value = 145; $('banda').value = ''; }
+  const hf = tiposHF.includes($('tipo').value);
+  if (hf && !(f >= 1.8 && f <= 30)) { $('f').value = 7.1; $('banda').value = ''; }
+  else if (!hf && f < 30) { $('f').value = 145; $('banda').value = ''; }
+  $('hf').classList.toggle('oculto', !hf);
+  $('hf-bandas').classList.toggle('oculto', !['abanico', 'trampas'].includes($('tipo').value));
+  if ($('tipo').value === 'vinv_hf' && parseFloat($('altura').value) === 10) $('altura').value = 12;        // el vértice va más alto
+  else if ($('tipo').value !== 'vinv_hf' && parseFloat($('altura').value) === 12) $('altura').value = 10;
+  if ($('tipo').value === 'trampas') $('bandas').value = '40 m, 20 m';          // las trampas son de dos bandas
+  else if ($('tipo').value === 'abanico') $('bandas').value = '40 m, 20 m, 15 m';
   pintarGaleria(); $('gp').classList.toggle('oculto', $('tipo').value !== 'gp'); $('yagi').classList.toggle('oculto', $('tipo').value !== 'yagi'); $('efhw').classList.toggle('oculto', $('tipo').value !== 'efhw'); $('coaxial').classList.toggle('oculto', !coaxial.tipos.includes($('tipo').value)); };
 $('generar').onclick = () => { hojaActual = 0; generar(); };
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
@@ -195,7 +205,8 @@ $('archivo').onchange = async () => {
     const d = actual.plano.diseno;
     $('tipo').value = d.tipo; $('tipo').onchange(); if (d.geometria && d.geometria.conector) $('conector').value = d.geometria.conector; if (d.cable) { $('cable').value = d.cable.nombre; $('vf').value = d.cable.vf_origen === 'medido' ? d.cable.vf : ''; }
     $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
-    if (d.tipo === 'efhw') { $('relacion').value = Math.round(d.geometria.relacion); $('altura').value = d.geometria.altura_mm / 1000; $('suelo').value = d.geometria.suelo; $('potencia').value = d.geometria.potencia_w || 100; }
+    if (tiposHF.includes(d.tipo)) { $('altura').value = d.geometria.altura_mm / 1000; $('suelo').value = d.geometria.suelo; if (d.geometria.bandas) $('bandas').value = d.geometria.bandas.join(', '); }
+    if (d.tipo === 'efhw') { $('relacion').value = Math.round(d.geometria.relacion); $('potencia').value = d.geometria.potencia_w || 100; }
     if (d.tipo === 'yagi') { $('elementos').value = d.geometria.n_elementos || 3; $('eje').value = d.geometria.boom || 'ninguno'; $('eje-mm').value = d.geometria.boom && d.geometria.boom !== 'ninguno' ? d.geometria.boom_mm : ''; }
     $('papel').value = d.plano.papel; $('unidades').value = d.plano.unidades;
   } catch (err) {

@@ -63,6 +63,28 @@ MINIATURAS = {
 <line x1="22" y1="20" x2="106" y2="20" stroke="{COBRE}" stroke-width="3"/><line x1="22" y1="20" x2="12" y2="20" stroke="{COBRE}" stroke-width="2"/>
 <rect x="16" y="22" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
 <path d="M22 30 V48" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2"/></svg>''',
+    "dipolo_hf": f'''<svg {_CAB}>
+<line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="60" y1="54" x2="60" y2="26" stroke="currentColor" stroke-width="1.6"/>
+<line x1="10" y1="22" x2="110" y2="22" stroke="{COBRE}" stroke-width="3"/><rect x="55" y="18" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>''',
+    "vinv_hf": f'''<svg {_CAB}>
+<line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="60" y1="54" x2="60" y2="10" stroke="currentColor" stroke-width="1.6"/>
+<path d="M60 12 L16 40 M60 12 L104 40" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "abanico": f'''<svg {_CAB}>
+<line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="60" y1="54" x2="60" y2="26" stroke="currentColor" stroke-width="1.6"/>
+<line x1="8" y1="18" x2="112" y2="18" stroke="{COBRE}" stroke-width="2.6"/><line x1="26" y1="24" x2="94" y2="24" stroke="{COBRE}" stroke-width="2.6"/>
+<line x1="40" y1="30" x2="80" y2="30" stroke="{COBRE}" stroke-width="2.6"/></svg>''',
+    "trampas": f'''<svg {_CAB}>
+<line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="60" y1="54" x2="60" y2="28" stroke="currentColor" stroke-width="1.6"/>
+<line x1="10" y1="22" x2="110" y2="22" stroke="{COBRE}" stroke-width="3"/>
+<rect x="30" y="17" width="8" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="82" y="17" width="8" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>''',
+    "g5rv": f'''<svg {_CAB}>
+<line x1="6" y1="54" x2="114" y2="54" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="8" y1="14" x2="112" y2="14" stroke="{COBRE}" stroke-width="3"/>
+<path d="M59 15 V46 M61 15 V46" stroke="{COBRE}" stroke-width="1.4"/><rect x="54" y="46" width="12" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>''',
     "biconica": f'''<svg {_CAB}>
 <path d="M60 30 L36 6 M60 30 L84 6 M60 30 L48 6 M60 30 L72 6" stroke="{COBRE}" stroke-width="2.4"/>
 <path d="M60 30 L36 54 M60 30 L84 54 M60 30 L48 54 M60 30 L72 54" stroke="{COBRE}" stroke-width="2.4"/>

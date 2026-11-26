@@ -1,0 +1,45 @@
+{
+  "tipo": "dipolo_hf",
+  "f_MHz": 7.1,
+  "diametro_mm": 2.0,
+  "geometria": {
+    "largo_mm": 20281.86034863215,
+    "altura_mm": 10000.0,
+    "suelo": "normal"
+  },
+  "nombre": "dipolo_hf_7.1",
+  "material": "varilla de latón o aluminio",
+  "resultados": {
+    "motor": "PyNEC",
+    "z0_ohm": 50.0,
+    "f_MHz": 7.1,
+    "r_ohm": 78.99228086421772,
+    "x_ohm": -3.527281654458284,
+    "roe": 1.5850899392695068,
+    "ganancia_dBi": 6.016351280703265,
+    "bandas": [
+      {
+        "banda": "40 m",
+        "f_MHz": 7.1,
+        "r_ohm": 78.99228086421772,
+        "x_ohm": -3.527281654458284,
+        "roe": 1.5850899392695068,
+        "roe_max": 1.7905134214177727,
+        "ganancia_dBi": 6.016351280703265
+      }
+    ]
+  },
+  "estado": "Simulado",
+  "plano": {
+    "papel": "A4",
+    "grandes": "mosaico",
+    "orientacion": "auto",
+    "solape_mm": 10.0,
+    "unidades": "mm",
+    "idioma": "es",
+    "sobrante_mm": null
+  },
+  "version": 1,
+  "cable": null,
+  "medida": null
+}

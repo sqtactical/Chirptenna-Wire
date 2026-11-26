@@ -1,0 +1,13 @@
+CM V invertida de HF
+CM V invertida de HF a 3.65 MHz, hilo de 2 mm, vertice a 15 m sobre suelo normal
+CM Brazos de 19.78 m, apertura 110 grados
+CM Generado por Chirptenna Wire
+CE
+GW 1 26 0 0 15 16.2018919 0 3.65531314 0.001
+GW 2 26 0 0 15 -16.2018919 0 3.65531314 0.001
+GE -1
+GN 2 0 0 0 13 0.005 0 0 0 0
+EX 0 1 1 0 1 0 0 0 0 0
+FR 0 1 0 0 3.65 0
+RP 0 19 72 1000 0 0 5 5 0 0
+EN

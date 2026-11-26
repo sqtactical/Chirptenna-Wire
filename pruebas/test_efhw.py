@@ -35,8 +35,10 @@ def test_los_parametros_se_validan():
         disenar("efhw", 7.1, 2.0, ajustar=False, relacion=5)
     with pytest.raises(ValueError, match="suelo"):
         disenar("efhw", 7.1, 2.0, ajustar=False, suelo="roca")
-    with pytest.raises(ValueError, match="solo valen para la EFHW"):
+    with pytest.raises(ValueError, match="solo valen para los tipos de HF"):
         disenar("dipolo", 7.1, 2.0, ajustar=False, relacion=49)
+    with pytest.raises(ValueError, match="solo valen para la EFHW"):
+        disenar("dipolo_hf", 7.1, 2.0, ajustar=False, relacion=49)
     with pytest.raises(ValueError, match="altura"):
         disenar("efhw", 7.1, 2.0, ajustar=False, altura_m=0.5)
 

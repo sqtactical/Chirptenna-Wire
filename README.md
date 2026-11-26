@@ -28,6 +28,11 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Yagi de 3 a 15 elementos (dipolo plegado, eje de plástico o metal) | **Simulado**, sin medir ni validar frente a un caso publicado; la corrección del eje metálico sale de la bibliografía, no del modelo | 1 hoja A4 (más una de elementos y eje si hay más de 3 o eje metálico): elementos y separaciones, lista de corte, ROE y el centro del plegado a 1:1 |
 | Bicónica | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: cotas, lista de corte, ROE y pieza central a 1:1 |
 | Torniquete en X (dipolos cruzados) | **Simulado** (razón axial 0 dB en el cénit, en espacio libre), sin medir | 1 hoja A4: vista, lista de corte (brazos y línea de 75 Ω), ROE y centro del cruce a 1:1 |
+| Dipolo de HF | **Simulado** sobre suelo real (εr y σ típicos, sin medir en tu terreno), sin medir | 2 hojas A4: la antena con ROE por banda y el balun o choke 1:1 con su comprobación con el NanoVNA |
+| V invertida de HF | **Simulado** sobre suelo real, sin medir | igual que el dipolo de HF |
+| Dipolo en abanico multibanda (2 a 5 bandas) | **Simulado** sobre suelo real, sin medir; los hilos se acoplan, hay que ajustar en la antena | 2 hojas A4 |
+| Dipolo de dos bandas con trampas | **Simulado** con trampas ideales (Q = 100), sin medir; la trampa real hay que ajustarla | 3 hojas A4: antena, balun y bobina y condensador de la trampa |
+| G5RV con escalerilla | **Simulado**, sin medir; con línea ideal; no adapta sola en todas las bandas (se usa con acoplador) | 2 hojas A4 |
 | EFHW de HF con transformador 49:1, 64:1 o 9:1 | **Simulado** sobre suelo real con transformador ideal, sin medir; los datos del transformador real son de montajes de aficionados, sin verificar | 3 hojas A4: la antena con la ROE por banda, el transformador (núcleo, vueltas, condensador y dibujo a 1:1) y su ajuste con carga de prueba y NanoVNA |
 | Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |
 
