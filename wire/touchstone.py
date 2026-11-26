@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import unicodedata
 
-from . import motor
 from .diseno import Diseno
 from .modelo import Barrido
 
@@ -26,6 +25,7 @@ def rango_MHz(diseno: Diseno) -> tuple[float, float]:
 
 def s1p(diseno: Diseno, f_ini_MHz: float | None = None, f_fin_MHz: float | None = None, puntos: int = PUNTOS) -> str:
     """Texto .s1p (RI, 50 Ω, MHz) del S11 simulado del diseño entre `f_ini_MHz` y `f_fin_MHz`."""
+    from . import motor                      # perezoso: motor.py (PyNEC) no va en el núcleo de la web
     if not motor.disponible():
         raise RuntimeError("PyNEC no está instalado: no se puede simular el S11")
     a, b = rango_MHz(diseno)
