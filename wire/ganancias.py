@@ -70,5 +70,7 @@ def rango_tipo(tipo: str, fmt) -> str | None:
         return None
     if isinstance(t, dict):
         vs = [x for v in t.values() for x in (v if isinstance(v, list) else [v])]
+        if min(vs) == max(vs):
+            return tr("{0} dBi", fmt(vs[0], 1))
         return tr("{0}–{1} dBi", fmt(min(vs), 1), fmt(max(vs), 1))
     return tr("{0} dBi", fmt(t, 1))

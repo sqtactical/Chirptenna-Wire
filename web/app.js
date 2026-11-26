@@ -152,6 +152,11 @@ function mostrar(plano) {
   $('d3d').classList.toggle('oculto', !plantilla3d.includes(plano.diseno.tipo));
 }
 
+// Python devuelve el traceback entero: al usuario solo le sirve la última línea, sin el nombre de la excepción.
+function mensajeError(err) {
+  const lineas = String((err && err.message) || err).trim().split('\n').filter(Boolean);
+  return (lineas[lineas.length - 1] || '').replace(/^\w+(\.\w+)*(Error|Exception):\s*/, '');
+}
 let generando = false, repetir = false, temporizador = null;
 async function generar(textoEntrada) {
   if (generando) { repetir = true; return; }       // cambió algo mientras se calculaba: se repite al acabar
@@ -165,7 +170,7 @@ async function generar(textoEntrada) {
     mostrar(plano);
   } catch (err) {
     // el plano de antes ya no corresponde a lo pedido: se quita y se dice por qué
-    $('error').textContent = T('Error: {0}', err.message);
+    $('error').textContent = T('Error: {0}', mensajeError(err));
     $('error').classList.remove('oculto');
     $('vista').innerHTML = ''; $('hojas').classList.add('oculto'); $('descargas').classList.add('oculto'); $('d3d').classList.add('oculto');
     $('cabecera').classList.add('oculto');
@@ -279,7 +284,7 @@ $('d-3d').onclick = async () => {
     const entrada = JSON.stringify({ ...JSON.parse(actual.entrada), cama_mm: parseFloat($('cama').value), holgura_mm: parseFloat($('holgura').value),
       radio_mm: $('radio').value ? parseFloat($('radio').value) : null });
     guardar(actual.plano.nombre + '_plantilla3d.zip', await llamar('plantilla3d_zip', entrada), 'application/zip');
-  } catch (err) { $('error').textContent = String(err.message || err); $('error').classList.remove('oculto'); }
+  } catch (err) { $('error').textContent = mensajeError(err); $('error').classList.remove('oculto'); }
 };
 $('d-nec').onclick = async () => guardar(actual.plano.nombre + '.nec', await llamar('nec_texto', actual.entrada), 'text/plain');
 $('d-json').onclick = () => guardar(actual.plano.nombre + '.json', JSON.stringify(actual.plano.diseno, null, 2), 'application/json');
