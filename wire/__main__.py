@@ -58,9 +58,10 @@ def main(argv: list[str] | None = None) -> int:
                                 description="Chirptenna Wire: planos de antenas de alambre")
     _en_castellano(p)
     p.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
-    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d}")
+    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d,s1p}")
     for nombre, ayuda in (("plano", "plano en PDF o SVG"), ("nec", "modelo .nec para 4nec2, xnec2c o nec2c"),
-                          ("plantilla3d", "plantilla de doblado para imprimir en 3D (zip con los STL)")):
+                          ("plantilla3d", "plantilla de doblado para imprimir en 3D (zip con los STL)"),
+                          ("s1p", "S11 simulado en Touchstone (.s1p) para compararlo con la medida en Chirptenna VNA")):
         s = sub.add_parser(nombre, help=ayuda, description=ayuda, add_help=False, formatter_class=_Ayuda)
         _en_castellano(s)
         s.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
@@ -92,6 +93,10 @@ def main(argv: list[str] | None = None) -> int:
             s.add_argument("--idioma", choices=("es", "en", "fr", "de"), help="idioma del plano (es por defecto)")
         else:
             s.set_defaults(papel="A4", unidades="mm", idioma=None)
+        if nombre == "s1p":
+            s.add_argument("--f-ini", type=float, help="frecuencia inicial en MHz (el rango de la gráfica de ROE del diseño)")
+            s.add_argument("--f-fin", type=float, help="frecuencia final en MHz")
+            s.add_argument("--puntos", type=int, default=201, help="puntos del barrido (201)")
         if nombre == "plantilla3d":
             s.add_argument("--cama", type=float, default=200.0, help="lado de la cama de la impresora en mm, cuadrada (200)")
             s.add_argument("--holgura", type=float, default=0.3, help="holgura de los encajes en mm (0,3)")
@@ -109,6 +114,10 @@ def main(argv: list[str] | None = None) -> int:
         for aviso in resultado.avisos:
             print("AVISO:", aviso)
         print(f"{len(resultado.piezas)} STL ({resultado.columnas} × {resultado.filas} baldosas)")
+    elif args.orden == "s1p":
+        from . import touchstone
+        with open(args.salida, "w", encoding="utf-8", newline="\n") as f:
+            f.write(touchstone.s1p(diseno, args.f_ini, args.f_fin, args.puntos))
     elif args.orden == "nec":
         nec.guardar(diseno.modelo(), args.salida)
     else:

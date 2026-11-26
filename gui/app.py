@@ -344,6 +344,15 @@ def pagina(idioma: str | None = None) -> None:
             return
         ui.download.content(datos, f"{d.nombre}_plantilla3d.zip", "application/zip")
 
+    async def descargar_s1p() -> None:
+        d = s["diseno"]
+        try:
+            texto = await run.cpu_bound(escritorio.s1p, d.a_json())
+        except Exception as error:  # noqa: BLE001
+            ui.notify(mensaje(error), type="negative")
+            return
+        ui.download.content(texto.encode("utf-8"), f"{d.nombre}_simulado.s1p", "text/plain")
+
     # ------------------------------------------------------------------ Simulación
     with paneles:
         with ui.tab_panel(t_sim):
@@ -380,6 +389,7 @@ def pagina(idioma: str | None = None) -> None:
                     escena_diagrama(th, ph, gd, d.modelo())
                 except Exception as error:  # noqa: BLE001
                     ui.label(tr("Sin diagrama: {0}", mensaje(error))).classes("text-xs opacity-70")
+                ui.button(tr("Descargar S11 simulado (.s1p) para Chirptenna VNA"), on_click=descargar_s1p).props("outline")
                 ui.label(tr("Espacio libre, sin mástil ni cable de bajada")).classes("text-xs opacity-70")
 
             simulacion()

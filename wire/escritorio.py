@@ -15,6 +15,13 @@ def calcular(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool, cable: 
                    unidades=unidades, idioma=idioma, conector=conector, **especificos).a_json()
 
 
+def s1p(diseno_json: str) -> str:
+    """S11 simulado del diseño en Touchstone (.s1p), para superponerlo a la medida en Chirptenna VNA."""
+    from . import touchstone
+    from .diseno import Diseno
+    return touchstone.s1p(Diseno.desde_json(diseno_json))
+
+
 def plantilla3d(diseno_json: str, cama_mm: float = 200.0, holgura_mm: float = 0.3, radio_mm: float | None = None) -> bytes:
     """Zip con la plantilla de doblado 3D de un diseño (`wire.impresion3d`)."""
     from . import impresion3d

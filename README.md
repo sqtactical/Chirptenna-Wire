@@ -60,7 +60,11 @@ Ejemplos generados con el motor en [`docs/ejemplos/`](docs/ejemplos/) (PDF, `dis
 python -m wire plano jpole 145 --diametro 2 --salida jpole_145.pdf --guardar jpole_145.json
 python -m wire plano --desde jpole_145.json --salida jpole_145.svg
 python -m wire nec jpole 145 --diametro 2 --salida jpole_145.nec
+python -m wire s1p jpole 145 --diametro 2 --salida jpole_145_simulado.s1p
 ```
+
+El último saca el S11 simulado en Touchstone (`.s1p`, 50 Ω): cárgalo como referencia en Chirptenna VNA y se superpone a tu medida
+con la desviación de la resonancia (también hay un botón en la pestaña Simulación del escritorio).
 
 - `wire/modelo.py`, `wire/generadores.py`, `wire/nec.py`, `wire/diseno.py` y `wire/planos/`: **Python puro**, corren
   igual en escritorio y en la web lite (Pyodide). `diseno.json` guarda cotas, resultados y el bloque `plano`.

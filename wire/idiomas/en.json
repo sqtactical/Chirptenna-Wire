@@ -213,6 +213,7 @@
   "DATOS": "DATA",
   "DETALLE DEL CENTRO": "CENTRE DETAIL",
   "DETALLE DEL PELADO": "STRIPPING DETAIL",
+  "Descargar S11 simulado (.s1p) para Chirptenna VNA": "Download simulated S11 (.s1p) for Chirptenna VNA",
   "Detalle del adaptador y la toma": "Detail of the matching section and the feed point",
   "Diagrama 3D (arrastra para girar; máx {0:.1f} dBi, color rojo = máximo)": "3D pattern (drag to rotate; peak {0:.1f} dBi, red = peak)",
   "Diagrama de radiación (NEC2) a {0} MHz": "Radiation pattern (NEC2) at {0} MHz",
