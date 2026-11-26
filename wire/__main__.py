@@ -58,9 +58,10 @@ def main(argv: list[str] | None = None) -> int:
                                 description="Chirptenna Wire: planos de antenas de alambre")
     _en_castellano(p)
     p.add_argument("-h", "--help", action="help", help="muestra esta ayuda y sale")
-    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d,s1p}")
+    sub = p.add_subparsers(dest="orden", required=True, title="órdenes", metavar="{plano,nec,plantilla3d,aisladores,s1p}")
     for nombre, ayuda in (("plano", "plano en PDF o SVG"), ("nec", "modelo .nec para 4nec2, xnec2c o nec2c"),
                           ("plantilla3d", "plantilla de doblado para imprimir en 3D (zip con los STL)"),
+                          ("aisladores", "aisladores (central y de extremo) para imprimir en 3D, zip con los STL"),
                           ("s1p", "S11 simulado en Touchstone (.s1p) para compararlo con la medida en Chirptenna VNA")):
         s = sub.add_parser(nombre, help=ayuda, description=ayuda, add_help=False, formatter_class=_Ayuda)
         _en_castellano(s)
@@ -114,6 +115,10 @@ def main(argv: list[str] | None = None) -> int:
         for aviso in resultado.avisos:
             print("AVISO:", aviso)
         print(f"{len(resultado.piezas)} STL ({resultado.columnas} × {resultado.filas} baldosas)")
+    elif args.orden == "aisladores":
+        from . import aisladores
+        with open(args.salida, "wb") as f:
+            f.write(aisladores.a_zip(diseno))
     elif args.orden == "s1p":
         from . import touchstone
         with open(args.salida, "w", encoding="utf-8", newline="\n") as f:

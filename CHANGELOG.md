@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Aisladores 3D (`wire/aisladores.py`, `python -m wire aisladores …`, botón en la pestaña Plano del escritorio): aislador central (con un agujero por hilo y lado, el del abanico lleva más, cuerda arriba y ranuras para bridas del coaxial) y de extremo, en un zip con los STL y un LÉEME. Para los dipolos de HF, el de V invertida, el abanico, las trampas, la G5RV, el dipolo y la V de VHF y la EFHW (solo extremo). Agujeros cuadrados del lado del alambre más una holgura; **sin probar en una impresora**. Aún no está en la web.
+
 - Colineal (con bobinas y bibanda) **sobre suelo real**: casilla «Sobre suelo real» en la web y el escritorio (o `altura_m` y `suelo` en `disenar`); el ajuste sigue siendo en espacio libre y los resultados y la hoja son los del diseño ya sobre ese suelo. A 145 MHz con 3 secciones y la base a 5 m sobre suelo normal la ROE sigue en 1,0 pero la ganancia máxima baja de 4,8 a 2,6 dBi (a 10 m sobre suelo bueno, 3,7). Sin mástil ni cable de bajada.
 - Vertical de HF (`vertical_hf`): radiador de λ/4 con 8 radiales horizontales elevados sobre suelo real, ajustada con PyNEC (7,1 MHz, 2 m de altura de radiales, suelo normal: R ≈ 45 Ω, ROE 1,1, ≈ 0 dBi por las pérdidas del suelo). Hoja con vista, lista de corte, tabla simulada y montaje con choke; en la galería de HF de la web y del escritorio. **Sin medir**; los radiales reales y el suelo del terreno cambian la impedancia. Sin bobina de carga todavía.
 - Guía de cómo llevar y traer una antena entre Wire y Chirptenna VNA (README en castellano e inglés, y desplegable en la pestaña Medir del escritorio) y botón «Abrir cable medido» en Diseño para cargar el JSON del VF que descarga Chirptenna VNA. Los cuatro README de Chirptenna VNA llevan la sección equivalente.

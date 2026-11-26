@@ -25,6 +25,7 @@ from wire import ganancias  # noqa: E402
 from wire.diseno import (BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno,  # noqa: E402
                          banda_de)
 from wire.generadores import BOOMS, RELACIONES, SUELOS, TIPOS_HF  # noqa: E402
+from wire.aisladores import TIPOS_AISLADORES  # noqa: E402
 from wire.impresion3d import TIPOS_3D  # noqa: E402
 from wire.planos.comun import fmt  # noqa: E402
 from wire.graficas import puntos_diagrama, svg_diagrama, svg_roe  # noqa: E402
@@ -365,6 +366,15 @@ def pagina(idioma: str | None = None) -> None:
             return
         ui.download.content(datos, f"{d.nombre}_plantilla3d.zip", "application/zip")
 
+    async def descargar_aisladores() -> None:
+        d = s["diseno"]
+        try:
+            datos = await run.cpu_bound(escritorio.aisladores, d.a_json())
+        except Exception as error:  # noqa: BLE001
+            ui.notify(mensaje(error), type="negative")
+            return
+        ui.download.content(datos, f"{d.nombre}_aisladores.zip", "application/zip")
+
     async def descargar_s1p() -> None:
         d = s["diseno"]
         try:
@@ -448,6 +458,8 @@ def pagina(idioma: str | None = None) -> None:
                         ui.number(tr("Cama de la impresora (mm)"), min=80, step=10).classes("w-48").bind_value(s, "cama")
                         ui.number(tr("Radio de doblado (mm)"), min=1, step=0.5, placeholder=tr("2 × Ø")).classes("w-40").bind_value(s, "radio")
                         ui.button(tr("Plantilla de doblado 3D (STL)"), on_click=descargar_3d).props("outline")
+                if d.tipo in TIPOS_AISLADORES:
+                    ui.button(tr("Aisladores 3D (STL)"), on_click=descargar_aisladores).props("outline")
 
                 @ui.refreshable
                 def contenido() -> None:

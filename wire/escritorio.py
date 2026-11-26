@@ -22,6 +22,16 @@ def s1p(diseno_json: str) -> str:
     return touchstone.s1p(Diseno.desde_json(diseno_json))
 
 
+def aisladores(diseno_json: str) -> bytes:
+    """Zip con los aisladores 3D (central y de extremo) de un diseño de hilo (`wire.aisladores`)."""
+    from . import aisladores as modulo
+    from .diseno import Diseno
+    from .i18n import usar
+    diseno = Diseno.desde_json(diseno_json)
+    with usar(diseno.plano.idioma):
+        return modulo.a_zip(diseno)
+
+
 def plantilla3d(diseno_json: str, cama_mm: float = 200.0, holgura_mm: float = 0.3, radio_mm: float | None = None) -> bytes:
     """Zip con la plantilla de doblado 3D de un diseño (`wire.impresion3d`)."""
     from . import impresion3d
