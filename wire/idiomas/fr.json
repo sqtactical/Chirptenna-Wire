@@ -12,6 +12,7 @@
   " · {0} ({1}–{2})": " · {0} ({1}–{2})",
   "(Ø interior ≈ 2 × el del cable) sellado arriba. Cuidado: el agua entra por el coaxial.": "(Ø intérieur ≈ 2 × celui du câble) scellé en haut. Attention : l'eau entre par le coaxial.",
   ".\nSi la ROE mínima no baja de 1,5, sube o baja la toma unos mm.": ".\nSi le ROS minimal ne descend pas sous 1,5, monte ou descends le point d'alimentation de quelques mm.",
+  "1 % de λ": "1 % de λ",
   "1. Carga de prueba: {0}, con resistencias sin inductancia (película de carbón o metal) y patillas lo más cortas posible,": "1. Charge de test : {0}, avec des résistances non inductives (film carbone ou métal) et des pattes les plus courtes possible,",
   "1. Comprueba la escala con la regla de abajo antes de nada.": "1. Vérifie l'échelle avec la règle ci-dessous avant tout.",
   "1. Comprueba la escala con la regla de abajo.": "1. Vérifie l'échelle avec la règle ci-dessous.",

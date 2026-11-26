@@ -2,6 +2,7 @@
 
 ## Sin publicar
 
+- Interfaz de escritorio al día: galería por categorías con la ganancia teórica, campos propios de cada tipo (Yagi, colineal, bibanda, HF, EFHW) y botón de la plantilla de doblado 3D.
 - Ganancia teórica de cada diseño (`wire/ganancias.json`): en el cajetín de los planos, en la galería y en la cabecera de la web, y tabla en el README.
 - La colineal con bobinas de fase llega a 6 secciones (5 y 6: 6,2 y 6,7 dBi, para 433 MHz dentro de un tubo de PVC de 1,6 a 2,2 m).
 - Colineal bibanda 145 / 433 MHz: bobinas con un condensador en serie (resonante en 145 MHz: no hacen nada) que en 433 MHz apilan 2 o 4 medias ondas (3,9 y 4,7 dBi en espacio libre; en 145 es un ¼ o 5/8 de onda). 50 Ω en las dos bandas. Sin medir.

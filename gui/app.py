@@ -21,7 +21,12 @@ from nicegui import app, run, ui  # noqa: E402
 
 from wire import escritorio, i18n, medidas, motor, nec, planos  # noqa: E402
 from wire.cables import CABLES  # noqa: E402
-from wire.diseno import BANDAS, CONECTORES, ESTADO_TIPO, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, banda_de  # noqa: E402
+from wire import ganancias  # noqa: E402
+from wire.diseno import (BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno,  # noqa: E402
+                         banda_de)
+from wire.generadores import BOOMS, RELACIONES, SUELOS, TIPOS_HF  # noqa: E402
+from wire.impresion3d import TIPOS_3D  # noqa: E402
+from wire.planos.comun import fmt  # noqa: E402
 from wire.graficas import svg_roe  # noqa: E402
 from wire.i18n import tr  # noqa: E402
 from wire.miniaturas import MINIATURAS  # noqa: E402
@@ -46,6 +51,12 @@ body.body--dark .aviso-caja{background:#33290f;color:#f1c97a}
 """
 
 
+def mensaje(error: Exception) -> str:
+    """Última línea de un error de Python, sin el nombre de la excepción (lo que sirve al usuario)."""
+    lineas = [x for x in str(error).strip().splitlines() if x.strip()]
+    return (lineas[-1] if lineas else "").split("Error: ", 1)[-1]
+
+
 def estado_texto(estado: str) -> str:
     return {"Sin validar": tr("Sin validar"), "Simulado": tr("Simulado"), "Medido": tr("Medido")}.get(estado, estado)
 
@@ -58,7 +69,10 @@ def pagina(idioma: str | None = None) -> None:
     ui.colors(primary="#c8892b")
     oscuro = ui.dark_mode()
     s = {"tipo": "dipolo", "f": 145.0, "diametro": 2.0, "cable": "RG-58", "vf": None, "conector": "SO-239", "papel": "A4", "unidades": "mm",
-         "diseno": None, "plano": None, "hoja": 0, "medida": None}
+         "diseno": None, "plano": None, "hoja": 0, "medida": None,
+         # lo propio de cada tipo
+         "elementos": 3, "secciones": 3, "eje": "ninguno", "eje_mm": None, "relacion": 49, "altura": 10.0, "suelo": "normal",
+         "bandas": "40 m, 20 m, 15 m", "potencia": 100.0, "largo_max": None, "f_alta": 433.0, "cama": 200.0, "radio": None}
 
     # ------------------------------------------------------------------ cabecera
     with ui.header().classes("items-center gap-4 bg-transparent text-inherit border-b").style("border-color:#8884"):
@@ -91,24 +105,49 @@ def pagina(idioma: str | None = None) -> None:
                 .classes("opacity-70")
             cartas: dict[str, ui.card] = {}
 
+            def valores_por_tipo(clave: str) -> None:
+                """Al pasar de VHF/UHF a HF (o al revés) la frecuencia y los valores de antes no sirven."""
+                hf = clave in TIPOS_HF
+                if hf and not 1.8 <= s["f"] <= 30:
+                    s["f"] = 7.1
+                elif not hf and s["f"] < 30:
+                    s["f"] = 145.0
+                s["altura"] = 12.0 if clave == "vinv_hf" else 10.0
+                if clave == "trampas":
+                    s["bandas"] = "40 m, 20 m"
+                elif clave == "abanico":
+                    s["bandas"] = "40 m, 20 m, 15 m"
+                if clave == "colineal_bibanda" and s["secciones"] not in (2, 4):
+                    s["secciones"] = 4
+
             def elegir(clave: str) -> None:
                 s["tipo"], s["diseno"], s["plano"] = clave, None, None
                 for k, c in cartas.items():
                     c.classes(add="activa" if k == clave else "", remove="" if k == clave else "activa")
-                campos_coaxial.set_visibility(clave in TIPOS_COAXIAL)
-                campos_gp.set_visibility(clave == "gp")
+                valores_por_tipo(clave)
+                campos_visibles()
                 refrescar()
                 pestanas.set_value(t_diseno)
 
-            with ui.row().classes("gap-4 mt-2"):
-                for clave in TIPOS:
-                    with ui.card().classes("carta-tipo items-center") as carta:
-                        ui.html(MINIATURAS[clave], sanitize=False)
-                        ui.label(tr(TIPOS[clave])).classes("font-bold text-center")
-                        ui.label(tr(ESTADO_TIPO[clave])).classes("text-xs opacity-70 text-center")
-                        ui.label(tr(RESUMEN[clave])).classes("text-xs text-center")
-                    carta.on("click", lambda _e, k=clave: elegir(k))
-                    cartas[clave] = carta
+            en_categoria = {t for _c, _n, ts in CATEGORIAS for t in ts}
+            grupos = [(tr(n), list(ts)) for _c, n, ts in CATEGORIAS] + [("", [t for t in TIPOS if t not in en_categoria])]
+            for titulo, claves in grupos:
+                if not claves:
+                    continue
+                if titulo:
+                    ui.label(titulo.upper()).classes("text-sm font-bold opacity-70 mt-4")
+                with ui.row().classes("gap-4 mt-2"):
+                    for clave in claves:
+                        with ui.card().classes("carta-tipo items-center") as carta:
+                            ui.html(MINIATURAS[clave], sanitize=False)
+                            ui.label(tr(TIPOS[clave])).classes("font-bold text-center")
+                            g = ganancias.rango_tipo(clave, fmt)
+                            if g:
+                                ui.label(g).classes("text-sm font-bold text-primary")
+                            ui.label(tr(ESTADO_TIPO[clave])).classes("text-xs opacity-70 text-center")
+                            ui.label(tr(RESUMEN[clave])).classes("text-xs text-center")
+                        carta.on("click", lambda _e, k=clave: elegir(k))
+                        cartas[clave] = carta
             cartas[s["tipo"]].classes(add="activa")
 
         # -------------------------------------------------------------- Diseño
@@ -132,10 +171,44 @@ def pagina(idioma: str | None = None) -> None:
                             .classes("w-full").bind_value(s, "cable")
                         ui.number(tr("VF medido (opcional)"), min=0.5, max=1, step=0.01, placeholder=tr("el de catálogo")) \
                             .classes("w-full").bind_value(s, "vf")
-                    campos_coaxial.set_visibility(s["tipo"] in TIPOS_COAXIAL)
                     with ui.column().classes("w-full") as campos_gp:
                         ui.select(list(CONECTORES), value=s["conector"], label=tr("Conector")).classes("w-full").bind_value(s, "conector")
-                    campos_gp.set_visibility(s["tipo"] == "gp")
+                    with ui.column().classes("w-full") as campos_yagi:
+                        ui.number(tr("Elementos"), min=3, max=15, step=1, precision=0).classes("w-full").bind_value(s, "elementos")
+                        ui.select({"ninguno": tr("No metálico"), "aislado": tr("Metálico, elementos aislados"),
+                                   "unido": tr("Metálico, elementos unidos")}, label=tr("Eje (boom)")).classes("w-full").bind_value(s, "eje")
+                        ui.number(tr("Ø del eje metálico (mm)"), min=4, max=60, step=1, placeholder=tr("1 % de λ")) \
+                            .classes("w-full").bind_value(s, "eje_mm").bind_visibility_from(s, "eje", backward=lambda v: v != "ninguno")
+                    with ui.column().classes("w-full") as campos_colineal:
+                        ui.number(tr("Secciones"), min=2, max=6, step=1, precision=0).classes("w-full").bind_value(s, "secciones")
+                        with ui.column().classes("w-full") as campos_bibanda:
+                            ui.number(tr("Frecuencia de la banda alta (MHz)"), min=100, max=3000, step=0.001).classes("w-full") \
+                                .bind_value(s, "f_alta")
+                            ui.label(tr("Banda baja = la frecuencia de arriba. Secciones: 2 o 4.")).classes("text-xs opacity-70")
+                    with ui.column().classes("w-full") as campos_hf:
+                        ui.number(tr("Altura del hilo (m)"), min=1.5, max=60, step=0.5).classes("w-full").bind_value(s, "altura")
+                        ui.select({"pobre": tr("pobre"), "normal": tr("normal"), "bueno": tr("bueno"), "mar": tr("de mar")},
+                                  label=tr("Suelo")).classes("w-full").bind_value(s, "suelo")
+                        with ui.column().classes("w-full") as campos_bandas:
+                            ui.input(tr("Bandas (separadas por comas)")).classes("w-full").bind_value(s, "bandas")
+                    with ui.column().classes("w-full") as campos_efhw:
+                        ui.select({r: f"{r}:1" for r in RELACIONES}, label=tr("Transformador")).classes("w-full").bind_value(s, "relacion")
+                        ui.number(tr("Potencia (W)"), min=5, max=1500, step=5).classes("w-full").bind_value(s, "potencia")
+                        ui.number(tr("Largo máximo del hilo (m, opcional)"), min=3, max=100, step=0.5, placeholder=tr("sin límite")) \
+                            .classes("w-full").bind_value(s, "largo_max")
+
+                    def campos_visibles() -> None:
+                        t = s["tipo"]
+                        campos_coaxial.set_visibility(t in TIPOS_COAXIAL)
+                        campos_gp.set_visibility(t == "gp")
+                        campos_yagi.set_visibility(t == "yagi")
+                        campos_colineal.set_visibility(t in ("colineal", "colineal_bibanda"))
+                        campos_bibanda.set_visibility(t == "colineal_bibanda")
+                        campos_hf.set_visibility(t in TIPOS_HF)
+                        campos_bandas.set_visibility(t in ("abanico", "trampas"))
+                        campos_efhw.set_visibility(t == "efhw")
+
+                    campos_visibles()
                     ui.select(list(ConfigPlano.VALORES["papel"]), value=s["papel"], label=tr("Papel")).classes("w-full") \
                         .bind_value(s, "papel")
                     ui.select({"mm": "mm", "pulgadas": tr("pulgadas")}, value=s["unidades"], label=tr("Unidades")) \
@@ -156,14 +229,36 @@ def pagina(idioma: str | None = None) -> None:
                             texto = await run.cpu_bound(
                                 escritorio.calcular, s["tipo"], float(s["f"]), float(s["diametro"]), ajustar,
                                 s["cable"] if es_coax else None, s["vf"] if es_coax and s["vf"] else None, s["papel"],
-                                s["unidades"], i18n.idioma(), s["conector"] if s["tipo"] == "gp" else None)
+                                s["unidades"], i18n.idioma(), s["conector"] if s["tipo"] == "gp" else None, **especificos())
                             s["diseno"] = Diseno.desde_json(texto)
                             nuevo_plano()
                             estado_calculo.set_text("")
                             refrescar()
                             pestanas.set_value(t_sim if ajustar else t_plano)
                         except Exception as error:  # noqa: BLE001 - se muestra al usuario
-                            estado_calculo.set_text(tr("Error: {0}", error))
+                            estado_calculo.set_text(tr("Error: {0}", mensaje(error)))
+
+                    def especificos() -> dict:
+                        """Lo propio del tipo elegido, como argumentos de `disenar` (nada de lo que no le vale)."""
+                        t = s["tipo"]
+                        e: dict = {}
+                        if t == "yagi":
+                            e.update(elementos=int(s["elementos"] or 3), eje=s["eje"])
+                            if s["eje"] != "ninguno" and s["eje_mm"]:
+                                e["eje_mm"] = float(s["eje_mm"])
+                        elif t in ("colineal", "colineal_bibanda"):
+                            e["elementos"] = int(s["secciones"] or 3)
+                            if t == "colineal_bibanda":
+                                e["f_alta_MHz"] = float(s["f_alta"])
+                        if t in TIPOS_HF:
+                            e.update(altura_m=float(s["altura"]), suelo=s["suelo"])
+                        if t in ("abanico", "trampas"):
+                            e["bandas"] = [b.strip() for b in str(s["bandas"]).split(",") if b.strip()]
+                        if t == "efhw":
+                            e.update(relacion=int(s["relacion"]), potencia_w=float(s["potencia"]))
+                            if s["largo_max"]:
+                                e["largo_max_m"] = float(s["largo_max"])
+                        return e
 
                 @ui.refreshable
                 def resumen_diseno() -> None:
@@ -174,6 +269,9 @@ def pagina(idioma: str | None = None) -> None:
                             return
                         ui.label(f"{tr(TIPOS[d.tipo])} · {d.f_MHz:g} MHz").classes("text-lg font-bold")
                         ui.badge(estado_texto(d.estado))
+                        g = ganancias.texto(d, fmt)
+                        if g:
+                            ui.label(f"{tr('Ganancia')}: {g}").classes("text-sm font-bold")
                         with ui.grid(columns=2).classes("gap-x-6 gap-y-1"):
                             for k, v in d.geometria.items():
                                 ui.label(k.replace("_", " "))
@@ -196,14 +294,38 @@ def pagina(idioma: str | None = None) -> None:
         try:
             d = Diseno.desde_json((await e.file.read()).decode("utf-8-sig"))
         except Exception as error:  # noqa: BLE001
-            ui.notify(tr("No se pudo abrir el diseño: {0}", error), type="negative")
+            ui.notify(tr("No se pudo abrir el diseño: {0}", mensaje(error)), type="negative")
             return
         s["diseno"], s["tipo"], s["f"], s["diametro"] = d, d.tipo, d.f_MHz, d.diametro_mm
+        g = d.geometria
+        if d.tipo == "yagi":
+            s["elementos"], s["eje"] = int(g.get("n_elementos", 3)), g.get("boom", "ninguno")
+            s["eje_mm"] = g.get("boom_mm") if s["eje"] != "ninguno" else None
+        elif d.tipo in ("colineal", "colineal_bibanda"):
+            s["secciones"] = int(g.get("n_secciones", 3))
+            s["f_alta"] = g.get("f_alta_MHz", 433.0)
+        if d.tipo in TIPOS_HF:
+            s["altura"], s["suelo"] = g["altura_mm"] / 1000, g["suelo"]
+            if g.get("bandas"):
+                s["bandas"] = ", ".join(g["bandas"])
+        if d.tipo == "efhw":
+            s["relacion"], s["potencia"] = int(g["relacion"]), g.get("potencia_w") or 100.0
+        campos_visibles()
         if d.cable:
             s["cable"], s["vf"] = d.cable["nombre"], d.cable["vf"] if d.cable["vf_origen"] == "medido" else None
         nuevo_plano()
         refrescar()
         pestanas.set_value(t_plano)
+
+    async def descargar_3d() -> None:
+        d = s["diseno"]
+        try:
+            datos = await run.cpu_bound(escritorio.plantilla3d, d.a_json(), float(s["cama"] or 200.0), 0.3,
+                                        float(s["radio"]) if s["radio"] else None)
+        except Exception as error:  # noqa: BLE001
+            ui.notify(mensaje(error), type="negative")
+            return
+        ui.download.content(datos, f"{d.nombre}_plantilla3d.zip", "application/zip")
 
     # ------------------------------------------------------------------ Simulación
     with paneles:
@@ -250,6 +372,9 @@ def pagina(idioma: str | None = None) -> None:
                 with ui.row().classes("items-center gap-3"):
                     ui.label(f"{tr(TIPOS[d.tipo])} · {d.f_MHz:g} MHz").classes("text-lg font-bold")
                     ui.badge(estado_texto(d.estado))
+                    g = ganancias.texto(d, fmt)
+                    if g:
+                        ui.badge(f"{tr('Ganancia')}: {g}").props("outline")
                 ui.label(tr("Esta vista es la que se descarga. Imprime al 100 % («tamaño real») y comprueba la regla de 80 mm "
                             "antes de usar los detalles 1:1.")).classes("aviso-caja")
                 hojas = {i: tr("Hoja {0}", i + 1) for i in range(len(p.hojas))}
@@ -263,6 +388,11 @@ def pagina(idioma: str | None = None) -> None:
                     ui.button(".nec", on_click=lambda: ui.download.content(nec.exportar(d.modelo()).encode("utf-8"),
                                                                            f"{d.nombre}.nec"))
                     ui.button("diseno.json", on_click=lambda: ui.download.content(d.a_json().encode("utf-8"), f"{d.nombre}.json"))
+                if d.tipo in TIPOS_3D:
+                    with ui.row().classes("items-end gap-3"):
+                        ui.number(tr("Cama de la impresora (mm)"), min=80, step=10).classes("w-48").bind_value(s, "cama")
+                        ui.number(tr("Radio de doblado (mm)"), min=1, step=0.5, placeholder=tr("2 × Ø")).classes("w-40").bind_value(s, "radio")
+                        ui.button(tr("Plantilla de doblado 3D (STL)"), on_click=descargar_3d).props("outline")
 
                 @ui.refreshable
                 def contenido() -> None:

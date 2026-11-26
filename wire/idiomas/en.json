@@ -12,6 +12,7 @@
   " · {0} ({1}–{2})": " · {0} ({1}–{2})",
   "(Ø interior ≈ 2 × el del cable) sellado arriba. Cuidado: el agua entra por el coaxial.": "(inner Ø ≈ 2 × the cable's) sealed at the top. Careful: water gets in through the coax.",
   ".\nSi la ROE mínima no baja de 1,5, sube o baja la toma unos mm.": ".\nIf the minimum SWR does not drop below 1.5, move the feed point up or down a few mm.",
+  "1 % de λ": "1 % of λ",
   "1. Carga de prueba: {0}, con resistencias sin inductancia (película de carbón o metal) y patillas lo más cortas posible,": "1. Test load: {0}, with non-inductive resistors (carbon or metal film) and the shortest possible leads,",
   "1. Comprueba la escala con la regla de abajo antes de nada.": "1. Check the scale with the ruler below before anything else.",
   "1. Comprueba la escala con la regla de abajo.": "1. Check the scale with the ruler below.",
