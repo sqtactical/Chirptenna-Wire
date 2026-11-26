@@ -76,3 +76,23 @@ def test_bibanda_adapta_en_las_dos_bandas():
     r = d.resultados
     assert d.estado == "Simulado" and r["roe"] < 1.2 and r["alta"]["roe"] < 1.2
     assert r["alta"]["ganancia_dBi"] > r["ganancia_dBi"] + 1.0        # en la alta apila medias ondas
+
+
+def test_colineal_sobre_suelo_real():
+    from wire import generadores as G
+    libre = G.colineal(145.0, 3.0)
+    assert libre.suelo is None and libre.hilos[0].inicio == (0, 0, 0)
+    m = G.colineal(145.0, 3.0, altura_mm=5000.0, suelo="normal")
+    assert m.suelo is not None and m.hilos[0].inicio == (0, 0, 5.0)
+    assert all(h.fin[2] > 0.3 for h in m.hilos)                              # nada cerca del suelo
+    with pytest.raises(ValueError):
+        G.colineal(145.0, 3.0, altura_mm=5000.0)                             # altura sin suelo
+    with pytest.raises(ValueError):
+        G.colineal(145.0, 3.0, altura_mm=300.0, suelo="normal")              # radiales a ras de suelo
+    d = disenar("colineal", 145.0, 3.0, ajustar=False, elementos=3, altura_m=6.0, suelo="bueno")
+    assert d.geometria["altura_mm"] == 6000.0 and d.modelo().suelo is not None
+    assert disenar("colineal", 145.0, 3.0, ajustar=False, elementos=3).modelo().suelo is None
+    with pytest.raises(ValueError):
+        disenar("colineal", 145.0, 3.0, ajustar=False, elementos=3, altura_m=6.0, relacion=49)
+    b = disenar("colineal_bibanda", 145.0, 3.0, ajustar=False, elementos=4, suelo="normal")   # el suelo solo: altura por defecto
+    assert b.geometria["altura_mm"] == 5000.0

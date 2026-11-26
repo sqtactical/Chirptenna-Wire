@@ -553,15 +553,22 @@ def colineal_por_defecto(f_MHz: float, secciones: int = 3) -> dict:
 def colineal(f_MHz: float, diametro_mm: float, secciones_mm: list[float] | None = None, bobina_uH: float | None = None,
              radial_mm: float | None = None, angulo: float = GP_ANGULO, radiales: int = GP_RADIALES,
              barrido: Barrido | None = None, densidad: float = 1.0, condensador_pF: float | None = None,
-             f_alta_MHz: float | None = None) -> Modelo:
+             f_alta_MHz: float | None = None, altura_mm: float | None = None, suelo: str | None = None) -> Modelo:
     """Colineal vertical de `n` secciones con una bobina de fase (inductancia en serie) entre cada dos, sobre `radiales`
     radiales como un ground plane. La bobina hace que la corriente de la sección de arriba vaya en fase con la de abajo
     (sin ella, media onda sobre media onda se anularían en el horizonte). La fuente va en la base. Espacio libre.
 
     Con `condensador_pF` cada bobina lleva un condensador **en serie**: resonante a `f_MHz` (la banda baja) el enlace no hace
-    nada, y en `f_alta_MHz` queda una reactancia inductiva que sí invierte la fase (colineal bibanda)."""
+    nada, y en `f_alta_MHz` queda una reactancia inductiva que sí invierte la fase (colineal bibanda).
+
+    Con `altura_mm` y `suelo` la base de la antena (la unión con los radiales) va a esa altura sobre suelo real; sin ellos,
+    espacio libre."""
     if f_MHz <= 0 or diametro_mm <= 0 or radiales < 2:
         raise ValueError("frecuencia y diámetro positivos y al menos 2 radiales")
+    if (altura_mm is None) != (suelo is None):
+        raise ValueError("la altura y el suelo van juntos: o los dos o ninguno (espacio libre)")
+    if suelo is not None and suelo not in SUELOS:
+        raise ValueError(f"suelo desconocido: {suelo} (hay: {', '.join(SUELOS)})")
     p = colineal_por_defecto(f_MHz, len(secciones_mm) if secciones_mm else 3)
     largos = [v / 1000 for v in (secciones_mm or p["secciones_mm"])]
     if not 2 <= len(largos) <= 6 or min(largos) <= 0:
@@ -572,7 +579,10 @@ def colineal(f_MHz: float, diametro_mm: float, secciones_mm: list[float] | None 
     paso = longitud_onda_m(max(f_MHz, f_alta_MHz or 0.0)) / SEGMENTOS_POR_LAMBDA / densidad
     hilos: list[Hilo] = []
     cargas: list[Carga] = []
-    z = 0.0
+    z0 = (altura_mm or 0.0) / 1000                      # la base sobre el suelo (0 en espacio libre: el origen)
+    if suelo is not None and z0 - rl * math.sin(math.radians(angulo)) < 0.3:
+        raise ValueError("los radiales quedan a menos de 0,3 m del suelo: sube la base de la antena")
+    z = z0
     for i, largo in enumerate(largos):
         hilos.append(Hilo((0, 0, z), (0, 0, z + largo), r, _segmentos(largo, paso)))
         z += largo
@@ -583,9 +593,11 @@ def colineal(f_MHz: float, diametro_mm: float, secciones_mm: list[float] | None 
     c, s = math.cos(math.radians(angulo)), math.sin(math.radians(angulo))
     for i in range(radiales):
         a = 2 * math.pi * i / radiales
-        hilos.append(Hilo((0, 0, 0), (rl * c * math.cos(a), rl * c * math.sin(a), -rl * s), r, _segmentos(rl, paso)))
+        hilos.append(Hilo((0, 0, z0), (rl * c * math.cos(a), rl * c * math.sin(a), z0 - rl * s), r, _segmentos(rl, paso)))
+    donde = f", base a {z0:g} m sobre suelo {suelo}" if suelo is not None else ""
     return Modelo("Colineal con bobinas de fase", f_MHz, tuple(hilos), Puerto(1, 1), cargas=tuple(cargas), barrido=barrido,
-                  comentarios=(f"Colineal de {len(largos)} secciones a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                  suelo=SUELOS[suelo] if suelo is not None else None,
+                  comentarios=(f"Colineal de {len(largos)} secciones a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm{donde}",
                                "Secciones " + ", ".join(f"{v * 1000:.1f}" for v in largos) + f" mm; bobinas de {lb * 1e6:.2f} uH",
                                f"{radiales} radiales de {rl * 1000:.1f} mm a {angulo:g} grados"))
 
@@ -614,13 +626,14 @@ def colineal_bibanda_por_defecto(f_baja: float, f_alta: float, secciones: int = 
 def colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, secciones_mm: list[float] | None = None,
                      bobina_uH: float | None = None, condensador_pF: float | None = None, radial_mm: float | None = None,
                      angulo: float = GP_ANGULO, radiales: int = GP_RADIALES, barrido: Barrido | None = None,
-                     densidad: float = 1.0) -> Modelo:
+                     densidad: float = 1.0, altura_mm: float | None = None, suelo: str | None = None) -> Modelo:
     """Colineal de `n` secciones con enlaces L-C en serie: resonantes a `f_baja` (no hacen nada: la antena es un ¼ o 5/8 de
     onda) e inductivos a `f_alta` (invierten la fase y apilan las medias ondas). Espacio libre, componentes ideales."""
     p = colineal_bibanda_por_defecto(f_baja, f_alta, len(secciones_mm) if secciones_mm else 4)
     return colineal(f_baja, diametro_mm, secciones_mm or p["secciones_mm"], bobina_uH if bobina_uH is not None else p["bobina_uH"],
                     radial_mm or p["radial_mm"], angulo, radiales, barrido, densidad,
-                    condensador_pF=condensador_pF if condensador_pF is not None else p["condensador_pF"], f_alta_MHz=f_alta)
+                    condensador_pF=condensador_pF if condensador_pF is not None else p["condensador_pF"], f_alta_MHz=f_alta,
+                    altura_mm=altura_mm, suelo=suelo)
 
 
 # ---------------------------------------------------------------- HF: dipolos sobre suelo real

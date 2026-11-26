@@ -78,14 +78,18 @@ function guardar(nombre, contenido, tipo) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+// ¿lleva altura y suelo el diseño? Los tipos de HF siempre; las colineales solo si se marca «Sobre suelo real»
+const esColineal = () => ['colineal', 'colineal_bibanda'].includes($('tipo').value);
+const conSuelo = () => tiposHF.includes($('tipo').value) || (esColineal() && $('col-suelo').checked);
+
 function entrada() {
   return JSON.stringify({ tipo: $('tipo').value, f_MHz: parseFloat($('f').value), diametro_mm: parseFloat($('diametro').value),
                           papel: $('papel').value, unidades: $('unidades').value, idioma: IDIOMA,
                           cable: $('cable').value || null, conector: $('tipo').value === 'gp' ? $('conector').value : null, vf_medido: $('vf').value ? parseFloat($('vf').value) : null,
                           elementos: $('tipo').value === 'yagi' ? parseInt($('elementos').value, 10) : (['colineal', 'colineal_bibanda'].includes($('tipo').value) ? parseInt($('secciones').value, 10) : null),
                           relacion: $('tipo').value === 'efhw' ? parseInt($('relacion').value, 10) : null,
-                          altura_m: tiposHF.includes($('tipo').value) ? parseFloat($('altura').value) : null,
-                          suelo: tiposHF.includes($('tipo').value) ? $('suelo').value : null,
+                          altura_m: conSuelo() ? parseFloat($('altura').value) : null,
+                          suelo: conSuelo() ? $('suelo').value : null,
                           bandas: ['abanico', 'trampas'].includes($('tipo').value) ? $('bandas').value.split(',').map((s) => s.trim()).filter(Boolean) : null,
                           potencia_w: $('tipo').value === 'efhw' ? parseFloat($('potencia').value) : null,
                           largo_max_m: $('tipo').value === 'efhw' && $('largo-max').value ? parseFloat($('largo-max').value) : null,
@@ -217,7 +221,7 @@ $('tipo').onchange = () => {
   const hf = tiposHF.includes($('tipo').value);
   if (hf && !(f >= 1.8 && f <= 30)) { $('f').value = 7.1; $('banda').value = ''; }
   else if (!hf && f < 30) { $('f').value = 145; $('banda').value = ''; }
-  $('hf').classList.toggle('oculto', !hf);
+  $('hf').classList.toggle('oculto', !conSuelo());
   $('hf-bandas').classList.toggle('oculto', !['abanico', 'trampas'].includes($('tipo').value));
   { const porDefecto = { vinv_hf: 12, vertical_hf: 2 }, h = parseFloat($('altura').value);      // el vértice va más alto; los radiales de la vertical, bajos
     if ([10, 12, 2].includes(h)) $('altura').value = porDefecto[$('tipo').value] ?? 10; }
@@ -236,7 +240,11 @@ $('elementos').addEventListener('change', () => {          // entero entre 3 y 1
   const n = Math.round(parseFloat($('elementos').value));
   $('elementos').value = Number.isFinite(n) ? Math.min(15, Math.max(3, n)) : 3;
 });
-['banda', 'f', 'diametro', 'conector', 'elementos', 'secciones', 'f-alta', 'eje', 'eje-mm', 'altura', 'suelo', 'bandas', 'relacion', 'potencia', 'largo-max',
+$('col-suelo').addEventListener('change', () => {
+  $('hf').classList.toggle('oculto', !conSuelo());
+  if ($('col-suelo').checked && parseFloat($('altura').value) === 10) $('altura').value = 5;            // la base de una colineal de VHF/UHF, en un mástil bajo
+});
+['banda', 'f', 'diametro', 'conector', 'elementos', 'secciones', 'col-suelo', 'f-alta', 'eje', 'eje-mm', 'altura', 'suelo', 'bandas', 'relacion', 'potencia', 'largo-max',
   'cable', 'vf', 'papel', 'unidades'].forEach((id) => { $(id).addEventListener('input', programar); $(id).addEventListener('change', programar); });
 $('banda').onchange = () => { if ($('banda').value) $('f').value = parseFloat($('banda').value).toFixed(3); };
 $('hojas').onclick = (ev) => { const i = ev.target.dataset && ev.target.dataset.i; if (i !== undefined) { hojaActual = +i; mostrar(actual.plano); } };
@@ -267,6 +275,11 @@ $('archivo').onchange = async () => {
     $('f').value = d.f_MHz; $('diametro').value = d.diametro_mm;
     if (tiposHF.includes(d.tipo)) { $('altura').value = d.geometria.altura_mm / 1000; $('suelo').value = d.geometria.suelo; if (d.geometria.bandas) $('bandas').value = d.geometria.bandas.join(', '); }
     if (d.tipo === 'efhw') { $('relacion').value = Math.round(d.geometria.relacion); $('potencia').value = d.geometria.potencia_w || 100; }
+    if (['colineal', 'colineal_bibanda'].includes(d.tipo)) {              // sobre suelo real solo si el diseño trae altura y suelo
+      $('col-suelo').checked = !!d.geometria.suelo;
+      if (d.geometria.suelo) { $('altura').value = d.geometria.altura_mm / 1000; $('suelo').value = d.geometria.suelo; }
+      $('hf').classList.toggle('oculto', !conSuelo());
+    }
     if (d.tipo === 'colineal_bibanda') $('f-alta').value = d.geometria.f_alta_MHz;
     if (['colineal', 'colineal_bibanda'].includes(d.tipo)) $('secciones').value = d.geometria.n_elementos || d.geometria.n_secciones || 3;
     if (d.tipo === 'yagi') { $('elementos').value = d.geometria.n_elementos || 3; $('eje').value = d.geometria.boom || 'ninguno'; $('eje-mm').value = d.geometria.boom && d.geometria.boom !== 'ninguno' ? d.geometria.boom_mm : ''; }

@@ -261,9 +261,12 @@ def ajustar_gp(f_MHz: float, diametro_mm: float, angulo: float = 45.0, radiales:
     return _con_resultados(construir(x), f_MHz, {"radiador_mm": x[0], "radial_mm": x[1], "angulo": angulo, "radiales": float(radiales)}, sens)
 
 
-def ajustar_colineal(f_MHz: float, diametro_mm: float, secciones: int = 3) -> dict:
+def ajustar_colineal(f_MHz: float, diametro_mm: float, secciones: int = 3, altura_m: float | None = None, suelo: str | None = None) -> dict:
     """Colineal con bobinas de fase: ajusta el largo de cada sección, la bobina (µH) y los radiales para 50 Ω a f,
-    sin bajar de la ganancia mínima de su número de secciones."""
+    sin bajar de la ganancia mínima de su número de secciones.
+
+    Con `altura_m` y `suelo` el ajuste se hace en espacio libre (más rápido) y los resultados son los del diseño ya sobre ese
+    suelo: el suelo cambia la impedancia, así que la ROE puede salir peor que la del ajuste."""
     p = colineal_por_defecto(f_MHz, secciones)
     lam = 299792.458 / f_MHz
     gmin = COL_GANANCIA_MIN[secciones]
@@ -281,14 +284,26 @@ def ajustar_colineal(f_MHz: float, diametro_mm: float, secciones: int = 3) -> di
                   penalizacion=penalizacion)
 
     def sens(m, f0):
-        corto = colineal(f_MHz, diametro_mm, secciones_mm=list(x[:secciones - 1]) + [x[secciones - 1] - 25], bobina_uH=x[secciones], radial_mm=x[secciones + 1])
+        corto = colineal(f_MHz, diametro_mm, secciones_mm=list(x[:secciones - 1]) + [x[secciones - 1] - 25], bobina_uH=x[secciones], radial_mm=x[secciones + 1],
+                         **_suelo_kw(altura_m, suelo))
         return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz, 151) - f0) / 25, "sensibilidad_pieza": "la sección de arriba"}
 
-    return _con_resultados(construir(x), f_MHz, {"secciones_mm": list(x[:secciones]), "bobina_uH": x[secciones], "radial_mm": x[secciones + 1],
-                                                 "n_secciones": float(secciones), "angulo": 45.0, "radiales": 4.0}, sens)
+    geometria = {"secciones_mm": list(x[:secciones]), "bobina_uH": x[secciones], "radial_mm": x[secciones + 1],
+                 "n_secciones": float(secciones), "angulo": 45.0, "radiales": 4.0, **_geometria_suelo(altura_m, suelo)}
+    final = colineal(f_MHz, diametro_mm, secciones_mm=list(x[:secciones]), bobina_uH=x[secciones], radial_mm=x[secciones + 1], **_suelo_kw(altura_m, suelo))
+    return _con_resultados(final, f_MHz, geometria, sens)
 
 
-def ajustar_colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, secciones: int = 4) -> dict:
+def _suelo_kw(altura_m: float | None, suelo: str | None) -> dict:
+    return {} if suelo is None else {"altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def _geometria_suelo(altura_m: float | None, suelo: str | None) -> dict:
+    return {} if suelo is None else {"altura_mm": altura_m * 1000, "suelo": suelo}
+
+
+def ajustar_colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, secciones: int = 4,
+                             altura_m: float | None = None, suelo: str | None = None) -> dict:
     """Colineal bibanda: ajusta secciones, bobina, condensador en serie y radiales para 50 Ω en las dos bandas, con la
     ganancia mínima en la alta. Los resultados son los de la banda baja; los de la alta van en `resultados["alta"]`."""
     p = colineal_bibanda_por_defecto(f_baja, f_alta, secciones)
@@ -312,14 +327,16 @@ def ajustar_colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, s
     pasos = [0.03 * lam] * n + [0.08, 0.02 * lam, 0.5]
     x, _ = nelder_mead(coste, x0, pasos, tolerancia=1e-5, iteraciones=250)
     x, _ = nelder_mead(coste, x, [e / 5 for e in pasos], tolerancia=1e-7, iteraciones=250)
-    modelo = construir(x)
+    modelo = colineal_bibanda(f_baja, f_alta, diametro_mm, secciones_mm=list(x[:n]), bobina_uH=x[n], condensador_pF=x[n + 2],
+                              radial_mm=x[n + 1], **_suelo_kw(altura_m, suelo))       # con suelo: el ajuste es en espacio libre
     r = _resultados(modelo, f_baja)
     r["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.9 * f_baja, 1.1 * f_baja)
     alta = _resultados(modelo, f_alta)
     alta["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.95 * f_alta, 1.05 * f_alta)
     r["alta"] = alta
     return {"geometria": {"secciones_mm": list(x[:n]), "bobina_uH": x[n], "condensador_pF": x[n + 2], "radial_mm": x[n + 1],
-                          "n_secciones": float(n), "angulo": 45.0, "radiales": 4.0, "f_alta_MHz": f_alta}, "resultados": r}
+                          "n_secciones": float(n), "angulo": 45.0, "radiales": 4.0, "f_alta_MHz": f_alta,
+                          **_geometria_suelo(altura_m, suelo)}, "resultados": r}
 
 
 def ajustar_vinv(f_MHz: float, diametro_mm: float, apertura: float = 120.0) -> dict:

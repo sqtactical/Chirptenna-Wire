@@ -225,11 +225,13 @@ class Diseno:
                                   angulo=g["angulo"], radiales=int(g["radiales"]))
         if self.tipo == "colineal":
             return generadores.colineal(self.f_MHz, self.diametro_mm, secciones_mm=list(g["secciones_mm"]), bobina_uH=g["bobina_uH"],
-                                        radial_mm=g["radial_mm"], angulo=g["angulo"], radiales=int(g["radiales"]))
+                                        radial_mm=g["radial_mm"], angulo=g["angulo"], radiales=int(g["radiales"]),
+                                        altura_mm=g.get("altura_mm"), suelo=g.get("suelo"))
         if self.tipo == "colineal_bibanda":
             return generadores.colineal_bibanda(self.f_MHz, g["f_alta_MHz"], self.diametro_mm, secciones_mm=list(g["secciones_mm"]),
                                                 bobina_uH=g["bobina_uH"], condensador_pF=g["condensador_pF"], radial_mm=g["radial_mm"],
-                                                angulo=g["angulo"], radiales=int(g["radiales"]))
+                                                angulo=g["angulo"], radiales=int(g["radiales"]),
+                                                altura_mm=g.get("altura_mm"), suelo=g.get("suelo"))
         if self.tipo == "vinv":
             return generadores.vinv(self.f_MHz, self.diametro_mm, brazo_mm=g["brazo_mm"], apertura=g["apertura"])
         if self.tipo == "yagi":
@@ -362,6 +364,16 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
             raise ValueError("la relación, la potencia y el largo máximo solo valen para la EFHW")
         if tipo not in ("abanico", "trampas") and bandas is not None:
             raise ValueError("las bandas solo valen para el dipolo en abanico y el de trampas")
+    elif tipo in ("colineal", "colineal_bibanda") and (altura_m is not None or suelo is not None):
+        # la colineal puede ir sobre suelo real (altura de la base de la antena): el suelo solo no basta, y sin ambos es espacio libre
+        altura_m = 5.0 if altura_m is None else float(altura_m)
+        suelo = suelo or "normal"
+        if suelo not in generadores.SUELOS:
+            raise ValueError(f"suelo desconocido: {suelo} (hay: {', '.join(generadores.SUELOS)})")
+        if not 1.5 <= altura_m <= 60:
+            raise ValueError("la altura debe estar entre 1,5 y 60 m")
+        if any(v is not None for v in (relacion, potencia_w, largo_max_m, bandas)):
+            raise ValueError("la relación, la potencia, el largo máximo y las bandas solo valen para los tipos de HF")
     elif any(v is not None for v in (relacion, altura_m, suelo, potencia_w, largo_max_m, bandas)):
         raise ValueError("la relación, la altura, el suelo, la potencia y las bandas solo valen para los tipos de HF")
     if tipo == "efhw":
@@ -395,9 +407,9 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
             if tipo == "yagi":
                 r = funcion(f_MHz, diametro_mm, n_elementos=elementos, boom=eje or "ninguno", boom_mm=eje_mm)
             elif tipo == "colineal":
-                r = funcion(f_MHz, diametro_mm, secciones=elementos)
+                r = funcion(f_MHz, diametro_mm, secciones=elementos, altura_m=altura_m, suelo=suelo)
             elif tipo == "colineal_bibanda":
-                r = funcion(f_MHz, f_alta_MHz, diametro_mm, secciones=elementos)
+                r = funcion(f_MHz, f_alta_MHz, diametro_mm, secciones=elementos, altura_m=altura_m, suelo=suelo)
             elif tipo == "efhw":
                 r = funcion(f_MHz, diametro_mm, relacion=relacion, altura_m=altura_m, suelo=suelo, largo_max_m=largo_max_m)
                 r["geometria"]["potencia_w"] = potencia_w
@@ -422,9 +434,9 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
     elif tipo == "gp":
         geometria = {**generadores.gp_por_defecto(f_MHz), "conector": _conector(conector)}
     elif tipo == "colineal":
-        geometria = generadores.colineal_por_defecto(f_MHz, elementos)
+        geometria = {**generadores.colineal_por_defecto(f_MHz, elementos), **_suelo_geometria(altura_m, suelo)}
     elif tipo == "colineal_bibanda":
-        geometria = generadores.colineal_bibanda_por_defecto(f_MHz, f_alta_MHz, elementos)
+        geometria = {**generadores.colineal_bibanda_por_defecto(f_MHz, f_alta_MHz, elementos), **_suelo_geometria(altura_m, suelo)}
     elif tipo == "vinv":
         geometria = generadores.vinv_por_defecto(f_MHz)
     elif tipo == "yagi":
@@ -455,6 +467,10 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
     else:
         raise ValueError(f"tipo desconocido: {tipo}")
     return Diseno(tipo, f_MHz, diametro_mm, geometria, plano=config)
+
+
+def _suelo_geometria(altura_m: float | None, suelo: str | None) -> dict:
+    return {} if suelo is None else {"altura_mm": altura_m * 1000, "suelo": suelo}
 
 
 def _conector(nombre: str | None) -> str:

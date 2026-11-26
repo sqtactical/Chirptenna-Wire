@@ -89,7 +89,8 @@ def pagina(idioma: str | None = None) -> None:
          "diseno": None, "plano": None, "hoja": 0, "medida": None,
          # lo propio de cada tipo
          "elementos": 3, "secciones": 3, "eje": "ninguno", "eje_mm": None, "relacion": 49, "altura": 10.0, "suelo": "normal",
-         "bandas": "40 m, 20 m, 15 m", "potencia": 100.0, "largo_max": None, "f_alta": 433.0, "cama": 200.0, "radio": None}
+         "bandas": "40 m, 20 m, 15 m", "potencia": 100.0, "largo_max": None, "f_alta": 433.0, "cama": 200.0, "radio": None,
+         "col_suelo": False}
 
     # ------------------------------------------------------------------ cabecera
     with ui.header().classes("items-center gap-4 bg-transparent text-inherit border-b").style("border-color:#8884"):
@@ -129,7 +130,7 @@ def pagina(idioma: str | None = None) -> None:
                     s["f"] = 7.1
                 elif not hf and s["f"] < 30:
                     s["f"] = 145.0
-                s["altura"] = {"vinv_hf": 12.0, "vertical_hf": 2.0}.get(clave, 10.0)
+                s["altura"] = {"vinv_hf": 12.0, "vertical_hf": 2.0, "colineal": 5.0, "colineal_bibanda": 5.0}.get(clave, 10.0)
                 if clave == "trampas":
                     s["bandas"] = "40 m, 20 m"
                 elif clave == "abanico":
@@ -200,6 +201,8 @@ def pagina(idioma: str | None = None) -> None:
                             .classes("w-full").bind_value(s, "eje_mm").bind_visibility_from(s, "eje", backward=lambda v: v != "ninguno")
                     with ui.column().classes("w-full") as campos_colineal:
                         ui.number(tr("Secciones"), min=2, max=6, step=1, precision=0).classes("w-full").bind_value(s, "secciones")
+                        ui.checkbox(tr("Sobre suelo real (si no, espacio libre)"), on_change=lambda: campos_visibles()).bind_value(s, "col_suelo")
+                        ui.label(tr("La altura de abajo es la de la base de la antena (donde se unen los radiales).")).classes("text-xs opacity-70")
                         with ui.column().classes("w-full") as campos_bibanda:
                             ui.number(tr("Frecuencia de la banda alta (MHz)"), min=100, max=3000, step=0.001).classes("w-full") \
                                 .bind_value(s, "f_alta")
@@ -223,7 +226,7 @@ def pagina(idioma: str | None = None) -> None:
                         campos_yagi.set_visibility(t == "yagi")
                         campos_colineal.set_visibility(t in ("colineal", "colineal_bibanda"))
                         campos_bibanda.set_visibility(t == "colineal_bibanda")
-                        campos_hf.set_visibility(t in TIPOS_HF)
+                        campos_hf.set_visibility(t in TIPOS_HF or (t in ("colineal", "colineal_bibanda") and s["col_suelo"]))
                         campos_bandas.set_visibility(t in ("abanico", "trampas"))
                         campos_efhw.set_visibility(t == "efhw")
 
@@ -269,7 +272,7 @@ def pagina(idioma: str | None = None) -> None:
                             e["elementos"] = int(s["secciones"] or 3)
                             if t == "colineal_bibanda":
                                 e["f_alta_MHz"] = float(s["f_alta"])
-                        if t in TIPOS_HF:
+                        if t in TIPOS_HF or (t in ("colineal", "colineal_bibanda") and s["col_suelo"]):
                             e.update(altura_m=float(s["altura"]), suelo=s["suelo"])
                         if t in ("abanico", "trampas"):
                             e["bandas"] = [b.strip() for b in str(s["bandas"]).split(",") if b.strip()]
@@ -336,6 +339,9 @@ def pagina(idioma: str | None = None) -> None:
         elif d.tipo in ("colineal", "colineal_bibanda"):
             s["secciones"] = int(g.get("n_secciones", 3))
             s["f_alta"] = g.get("f_alta_MHz", 433.0)
+            s["col_suelo"] = "suelo" in g
+            if s["col_suelo"]:
+                s["altura"], s["suelo"] = g["altura_mm"] / 1000, g["suelo"]
         if d.tipo in TIPOS_HF:
             s["altura"], s["suelo"] = g["altura_mm"] / 1000, g["suelo"]
             if g.get("bandas"):

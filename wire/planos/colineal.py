@@ -76,7 +76,9 @@ def _hoja_antena(diseno: Diseno) -> Hoja:
     if bib:
         return _cola_bibanda(hoja, diseno)
     texto = [tr("Cada bobina invierte la fase: sin ella, una media onda\nsobre otra se anularía en el horizonte."),
-             tr("Ganancia simulada en espacio libre: con 2 secciones ≈ 3 dBi,\ncon 3 ≈ 5 dBi (lo que anuncian como «2 / 5 dBi»). Sobre un\nmástil o un coche cambia algo.")]
+             (tr("Simulada con la base a {0} m sobre suelo {1}: ajustada en\nespacio libre, el suelo cambia la impedancia y el diagrama\n(la ganancia máxima no es la del horizonte).", fmt(g["altura_mm"] / 1000, 1), g["suelo"])
+              if "suelo" in g else
+              tr("Ganancia simulada en espacio libre: con 2 secciones ≈ 3 dBi,\ncon 3 ≈ 5 dBi (lo que anuncian como «2 / 5 dBi»). Sobre un\nmástil o un coche cambia algo."))]
     hoja.anadir(Texto(124, 168, "\n".join(texto), 6.0))
     if r and "sensibilidad_MHz_por_mm" in r:
         hoja.anadir(Texto(124, 196, tr("Ajuste: recorta la sección de arriba; cada mm de menos sube\nla frecuencia ≈ {0} MHz.", fmt(abs(r["sensibilidad_MHz_por_mm"]), 2)), 6.0, VERDE))
@@ -135,7 +137,8 @@ def _cola_bibanda(hoja: Hoja, diseno: Diseno) -> Hoja:
     r, g = diseno.resultados, diseno.geometria
     if r and "alta" in r:
         a = r["alta"]
-        seccion(hoja, 128, 168, tr("BANDA ALTA {0} MHz", fmt(g["f_alta_MHz"], 0)), tr("ROE {0} · {1} dBi (espacio libre)", fmt(a["roe"], 2), fmt(a["ganancia_dBi"], 1)))
+        seccion(hoja, 128, 168, tr("BANDA ALTA {0} MHz", fmt(g["f_alta_MHz"], 0)), tr("ROE {0} · {1} dBi (suelo {2})", fmt(a["roe"], 2), fmt(a["ganancia_dBi"], 1), g["suelo"]) if "suelo" in g
+                 else tr("ROE {0} · {1} dBi (espacio libre)", fmt(a["roe"], 2), fmt(a["ganancia_dBi"], 1)))
         grafica_roe(hoja, 138, 180, 58, 31, a["barrido"]["f_MHz"], a["barrido"]["roe"], None)
     hoja.anadir(Texto(124, 222, tr("En {0} MHz es un ¼ o 5/8 de onda (los enlaces no hacen nada);\n"
                                    "en {1} MHz cada enlace es una bobina y apila medias ondas.\n"
