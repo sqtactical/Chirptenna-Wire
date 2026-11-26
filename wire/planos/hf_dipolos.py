@@ -161,7 +161,7 @@ def _hoja_balun(diseno: Diseno) -> Hoja:
              tr("4. Si queda corto en las bajas, añade vueltas; si falla en las altas, junta menos las vueltas (menos capacidad)."),
              tr("5. Con la antena puesta, la ROE no debe cambiar al tocar el coaxial o moverlo: si cambia, falta choke.")]
     hoja.anadir(Texto(14, 124, "\n".join(pasos), 6.3))
-    hoja.anadir(Texto(14, 160, tr("Un asistente de Chirptenna VNA hará esta medida paso a paso; todavía no existe."), 6.2, GRIS))
+    hoja.anadir(Texto(14, 160, tr("Chirptenna VNA (modo Avanzado, «Choke o balun 1:1») da el veredicto por banda de esta medida, de 1,5 a 30 MHz."), 6.2, GRIS))
     regla(hoja, 14, 244)
     return hoja
 

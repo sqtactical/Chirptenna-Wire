@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Chirptenna VNA ya tiene la herramienta **«Choke o balun 1:1»** (modo Avanzado → Herramientas de radioaficionado): da el |Z| mínimo y máximo por banda de HF de la medida del coaxial con el choke y un veredicto (bien ≥ 1 kΩ, justo ≥ 500 Ω, corto), con consejo; la hoja del balun de Wire apunta a ella en vez de decir que no existe. Sin probar con un NanoVNA ni un choke reales.
+
 - Aisladores 3D (`wire/aisladores.py`, `python -m wire aisladores …`, botón en la pestaña Plano del escritorio): aislador central (con un agujero por hilo y lado, el del abanico lleva más, cuerda arriba y ranuras para bridas del coaxial) y de extremo, en un zip con los STL y un LÉEME. Para los dipolos de HF, el de V invertida, el abanico, las trampas, la G5RV, el dipolo y la V de VHF y la EFHW (solo extremo). Agujeros cuadrados del lado del alambre más una holgura; **sin probar en una impresora**. Aún no está en la web.
 
 - Colineal (con bobinas y bibanda) **sobre suelo real**: casilla «Sobre suelo real» en la web y el escritorio (o `altura_m` y `suelo` en `disenar`); el ajuste sigue siendo en espacio libre y los resultados y la hoja son los del diseño ya sobre ese suelo. A 145 MHz con 3 secciones y la base a 5 m sobre suelo normal la ROE sigue en 1,0 pero la ganancia máxima baja de 4,8 a 2,6 dBi (a 10 m sobre suelo bueno, 3,7). Sin mástil ni cable de bajada.
