@@ -118,6 +118,22 @@ PDF, SVG, `.nec` y `diseno.json`) y **Medir** (enlace a Chirptenna VNA, importar
 solo pasa a **«Medido»** si la resonancia o el mínimo de ROE medidos caen a ≤ 2 % de los simulados. `CHIRPTENNA_VNA_URL` cambia la
 dirección de Chirptenna VNA (por defecto `http://localhost:8765/`).
 
+## Llevar y traer una antena entre Wire y Chirptenna VNA
+
+Lo simulado y lo medido viajan en archivos normales; no hay que configurar nada.
+
+| Qué | De → a | Cómo |
+|---|---|---|
+| **S11 simulado** (`.s1p`, 50 Ω) | Wire → VNA | En Wire: `python -m wire s1p <tipo> <MHz> --salida sim.s1p` o el botón **Descargar S11 simulado** de la pestaña Simulación. En Chirptenna VNA (modo Avanzado): **Comparar con un archivo Touchstone** → elige el `.s1p`, mide tu antena y sale la simulada en gris con la desviación de la resonancia |
+| **Medida** (`.s1p`) | VNA → Wire | En Chirptenna VNA (modo Avanzado): **Touchstone (.s1p)**. En Wire, pestaña **Medir** → **Abrir .s1p medido**: compara con la simulación y el diseño pasa a «Medido» solo si la desviación es ≤ 2 % |
+| **VF del cable** (`cable_*.json`) | VNA → Wire | En Chirptenna VNA: **Coaxial y stubs** → **Descargar el VF para Chirptenna Wire**. En Wire: **Abrir cable medido** (pestaña Diseño, antenas de coaxial) o `--cable-medido cable.json`; vuelve a simular para que cuadren los largos |
+| **El diseño entero** (`diseno.json`) | Wire ↔ Wire (escritorio y web) | Se guarda con `--guardar` o en la pestaña Plano; se abre en escritorio o en la web lite y da el mismo plano |
+
+Pasos recomendados: 1) diseña y simula en Wire, 2) baja el `.s1p` simulado, 3) construye la antena y mídela con Chirptenna VNA con ese
+`.s1p` cargado como referencia, 4) vuelve a Wire con tu `.s1p` medido, 5) si resuena más baja o más alta de lo simulado, el propio VNA te
+dice cuánto alargar o acortar. El `.s1p` simulado es espacio libre (o el suelo del diseño), **sin cable ni mástil ni entorno**: es una
+referencia, no una medida. La antena construida y su entorno mandan siempre.
+
 ## Idiomas
 
 Los planos y la web salen en castellano, inglés, francés y alemán (`--idioma es|en|fr|de` en la línea de comandos; selector en la web). El castellano es el texto fuente; los catálogos están en `wire/idiomas/` y `python herramientas/i18n.py faltan` comprueba que no falte ninguna traducción (lo pasa la CI). **Las traducciones las hizo Claude y conviene que las revise un hablante nativo.**

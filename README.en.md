@@ -42,6 +42,22 @@ python -m venv .venv
 
 **Print drawings at 100 % ("actual size")** and check the 80 mm ruler before using the 1:1 details.
 
+## Moving an antenna between Wire and Chirptenna VNA
+
+Simulated and measured data travel as ordinary files; nothing to configure.
+
+| What | From → to | How |
+|---|---|---|
+| **Simulated S11** (`.s1p`, 50 Ω) | Wire → VNA | In Wire: `python -m wire s1p <type> <MHz> --salida sim.s1p`, or the **Download simulated S11** button in the Simulation tab. In Chirptenna VNA (Advanced mode): **Compare with a Touchstone file** → pick the `.s1p`, measure your antenna, and the simulation shows in grey with the resonance offset |
+| **Measurement** (`.s1p`) | VNA → Wire | In Chirptenna VNA (Advanced mode): **Touchstone (.s1p)**. In Wire, **Medir** tab → **Abrir .s1p medido**: it compares against the simulation and the design becomes "Measured" only if the deviation is ≤ 2 % |
+| **Cable VF** (`cable_*.json`) | VNA → Wire | In Chirptenna VNA: **Coax and stubs** → **Download the VF for Chirptenna Wire**. In Wire: **Abrir cable medido** (Design tab, coax antennas) or `--cable-medido cable.json`; simulate again so the lengths follow |
+| **The whole design** (`diseno.json`) | Wire ↔ Wire (desktop and web) | Saved with `--guardar` or in the Plan tab; opens in the desktop app or the web lite and gives the same drawing |
+
+Suggested workflow: design and simulate in Wire, download the simulated `.s1p`, build the antenna and measure it in Chirptenna VNA with
+that `.s1p` loaded as a reference, bring your measured `.s1p` back to Wire, and if it resonates lower or higher than simulated, the VNA
+tells you how much to lengthen or shorten. The simulated `.s1p` is free space (or the design's ground), **with no cable, mast or
+surroundings**: it is a reference, not a measurement.
+
 ## Licence
 
 Code: [AGPL-3.0](LICENSE). Published designs and drawings: CC BY-NC 4.0, see

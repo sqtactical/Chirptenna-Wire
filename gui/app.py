@@ -188,6 +188,8 @@ def pagina(idioma: str | None = None) -> None:
                             .classes("w-full").bind_value(s, "cable")
                         ui.number(tr("VF medido (opcional)"), min=0.5, max=1, step=0.01, placeholder=tr("el de catálogo")) \
                             .classes("w-full").bind_value(s, "vf")
+                        ui.upload(label=tr("Abrir cable medido (Chirptenna VNA)"), auto_upload=True,
+                                  on_upload=lambda e: abrir_cable(e)).props("flat dense").classes("w-full")
                     with ui.column().classes("w-full") as campos_gp:
                         ui.select(list(CONECTORES), value=s["conector"], label=tr("Conector")).classes("w-full").bind_value(s, "conector")
                     with ui.column().classes("w-full") as campos_yagi:
@@ -306,6 +308,19 @@ def pagina(idioma: str | None = None) -> None:
         d = s["diseno"]
         d.plano.idioma = i18n.idioma()
         s["plano"], s["hoja"] = planos.generar(d), 0
+
+    async def abrir_cable(e) -> None:
+        """El JSON del cable que descarga Chirptenna VNA («Coaxial y stubs»): rellena el VF medido."""
+        from wire.cables import leer_cable_medido
+        try:
+            medido = leer_cable_medido((await e.file.read()).decode("utf-8-sig"))
+        except Exception as error:  # noqa: BLE001
+            ui.notify(tr("No se pudo leer el cable medido: {0}", mensaje(error)), type="negative")
+            return
+        s["vf"] = round(float(medido["vf"]), 3)
+        if medido.get("cable") in CABLES.keys() or medido.get("cable") in [c.nombre for c in CABLES.values()]:
+            s["cable"] = medido["cable"]
+        ui.notify(tr("VF medido {0} cargado: pulsa Simular y ajustar", f"{s['vf']:.3f}"), type="positive")
 
     async def abrir_diseno(e) -> None:
         try:
@@ -452,6 +467,16 @@ def pagina(idioma: str | None = None) -> None:
                 ui.label(tr("Solo una aplicación puede tener el puerto del NanoVNA: cierra Chirptenna VNA antes de usar otra.")) \
                     .classes("text-xs opacity-70")
                 ui.link(tr("Abrir Chirptenna VNA"), url, new_tab=True).classes("text-primary")
+                with ui.expansion(tr("Cómo llevar y traer la antena entre Wire y Chirptenna VNA")).classes("w-full"):
+                    for paso in (tr("1. Ida: en Simulación descarga el S11 simulado (.s1p)."),
+                                 tr("2. En Chirptenna VNA, modo Avanzado, «Comparar con un archivo Touchstone»: elige ese .s1p y mide tu antena; "
+                                    "verás la simulada en gris y cuánto se desvía la resonancia."),
+                                 tr("3. Vuelta: descarga tu medida con «Touchstone (.s1p)» y ábrela aquí abajo; el diseño pasa a «Medido» "
+                                    "si la desviación es ≤ 2 %."),
+                                 tr("4. Cable: en «Coaxial y stubs» de Chirptenna VNA, «Descargar el VF para Chirptenna Wire»; "
+                                    "ábrelo en Diseño («Abrir cable medido») y vuelve a simular."),
+                                 tr("Para guardar o mover el diseño entero usa el diseno.json (pestaña Plano).")):
+                        ui.label(paso).classes("text-sm")
                 ui.separator()
                 ui.label(tr("Importa el .s1p medido para compararlo con la simulación. Un diseño solo pasa a «Medido» si la "
                             "frecuencia medida cae a ≤ 2 % de la simulada."))
