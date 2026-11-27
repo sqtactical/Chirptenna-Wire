@@ -25,6 +25,7 @@ TIPOS = {
     "colineal_bibanda": N_("Colineal bibanda (2 m y 70 cm)"),
     "vinv": N_("Dipolo en V invertida"),
     "yagi": N_("Yagi de N elementos"),
+    "yagi_bibanda": N_("Yagi bibanda (2 m y 70 cm)"),
     "biconica": N_("Bicónica"),
     "torniquete": N_("Torniquete en X (dipolos cruzados)"),
     "batwing": N_("Batwing (dipolo de alas)"),
@@ -40,7 +41,7 @@ TIPOS = {
 # Categorías de la galería: (clave, nombre, tipos). Cada tipo va en una sola.
 CATEGORIAS = (
     ("hf", N_("HF · hilos sobre suelo real"), ("dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv", "efhw", "vertical_hf")),
-    ("vhf", N_("VHF y UHF · alambre y varilla"), ("dipolo", "jpole", "jpole_koch", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "torniquete", "batwing")),
+    ("vhf", N_("VHF y UHF · alambre y varilla"), ("dipolo", "jpole", "jpole_koch", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "yagi_bibanda", "torniquete", "batwing")),
     ("coaxial", N_("Antenas de coaxial"), ("manga", "coco")),
     ("banda_ancha", N_("Banda ancha"), ("discone", "biconica")),
 )
@@ -62,6 +63,7 @@ RESUMEN = {
     "colineal_bibanda": N_("Una sola antena para 145 y 433 MHz: en 145 es un ¼ o 5/8 de onda y en 433 las bobinas con condensador apilan 2 o 4 medias ondas."),
     "vinv": N_("Dipolo con el vértice en un mástil y los brazos caídos: se tensa con cuerda."),
     "yagi": N_("Reflector, dipolo plegado y de 1 a 13 directores sobre un eje de plástico o metal: ganancia y dirección."),
+    "yagi_bibanda": N_("Una Yagi para 145 y 433 MHz con un solo coaxial: dos dipolos desde el mismo punto y reflectores y directores de cada banda en un eje."),
     "biconica": N_("Dos conos de varillas vértice con vértice: banda ancha (más de 4:1)."),
     "torniquete": N_("Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz)."),
     "batwing": N_("Dipolo con dos alas de abanico: algo más de banda que el dipolo, sin panel ni reflector."),
@@ -85,6 +87,7 @@ ESTADO_TIPO = {
     "colineal_bibanda": N_("Simulado (en espacio libre, componentes ideales), sin medir; los enlaces L-C reales hay que ajustarlos"),
     "vinv": N_("Simulado (en espacio libre), sin medir"),
     "yagi": N_("Simulado, sin medir ni validar frente a un caso publicado"),
+    "yagi_bibanda": N_("Simulado (en espacio libre), sin medir ni validar frente a un caso publicado; los dos dipolos se acoplan: hay que ajustar en la antena"),
     "biconica": N_("Simulado, sin medir ni validar frente a un caso publicado"),
     "torniquete": N_("Simulado (en espacio libre, con razón axial calculada), sin medir"),
     "batwing": N_("Simulado, sin medir ni validar frente a un caso publicado"),
@@ -102,7 +105,7 @@ ESTADOS = ("Simulado", "Medido", "Sin validar")
 
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
 SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0,
-             "gp": 15.0, "colineal": 15.0, "colineal_bibanda": 15.0, "vinv": 15.0, "yagi": 15.0, "biconica": 15.0,
+             "gp": 15.0, "colineal": 15.0, "colineal_bibanda": 15.0, "vinv": 15.0, "yagi": 15.0, "yagi_bibanda": 15.0, "biconica": 15.0,
              "torniquete": 15.0, "batwing": 15.0, "efhw": 150.0,
              "dipolo_hf": 150.0, "vinv_hf": 150.0, "abanico": 150.0, "trampas": 150.0, "g5rv": 150.0,
              "vertical_hf": 150.0}
@@ -239,6 +242,9 @@ class Diseno:
                                     sep_reflector_mm=g["sep_reflector_mm"], sep_plegado_mm=g["sep_plegado_mm"],
                                     directores_mm=g.get("directores_mm") or [g["director_mm"]],
                                     seps_directores_mm=g.get("seps_directores_mm") or [g["sep_director_mm"]])
+        if self.tipo == "yagi_bibanda":
+            return generadores.yagi_bibanda(self.f_MHz, self.diametro_mm, **{k: (list(v) if isinstance(v, list) else v)
+                                                                             for k, v in g.items() if k != "f_alta_MHz"})
         if self.tipo == "biconica":
             return generadores.biconica(self.f_MHz, self.diametro_mm, cono_mm=g["cono_mm"], hueco_mm=g["hueco_mm"],
                                         semiangulo=g["semiangulo"], varillas=int(g["varillas"]))
@@ -343,6 +349,10 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
             raise ValueError("la banda alta debe ser de 2,5 a 3,5 veces la baja (145 y 433 MHz, por ejemplo)")
         if eje is not None or eje_mm is not None:
             raise ValueError("el eje solo vale para la Yagi")
+    elif tipo == "yagi_bibanda":
+        if elementos is not None or eje is not None or eje_mm is not None or f_alta_MHz is not None:
+            raise ValueError("la Yagi bibanda lleva su número de elementos y su banda alta fijos (145 y 433 MHz)")
+        generadores.yagi_bibanda_por_defecto(f_MHz)               # comprueba el rango de la banda baja
     elif tipo == "colineal":
         elementos = 3 if elementos is None else int(elementos)
         if elementos not in generadores.COL_SECCIONES:
@@ -399,7 +409,7 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         if motor.disponible():
             funcion = {"dipolo": ajuste.ajustar_dipolo, "jpole": ajuste.ajustar_jpole,
                        "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone, "gp": ajuste.ajustar_gp, "colineal": ajuste.ajustar_colineal, "colineal_bibanda": ajuste.ajustar_colineal_bibanda,
-                       "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
+                       "yagi_bibanda": ajuste.ajustar_yagi_bibanda, "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
                        "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing,
                        "efhw": ajuste.ajustar_efhw, "dipolo_hf": ajuste.ajustar_dipolo_hf, "vinv_hf": ajuste.ajustar_vinv_hf,
                        "abanico": ajuste.ajustar_abanico, "trampas": ajuste.ajustar_trampas, "g5rv": ajuste.ajustar_g5rv,
@@ -439,6 +449,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = {**generadores.colineal_bibanda_por_defecto(f_MHz, f_alta_MHz, elementos), **_suelo_geometria(altura_m, suelo)}
     elif tipo == "vinv":
         geometria = generadores.vinv_por_defecto(f_MHz)
+    elif tipo == "yagi_bibanda":
+        geometria = generadores.yagi_bibanda_por_defecto(f_MHz)
     elif tipo == "yagi":
         geometria = generadores.yagi_por_defecto(f_MHz, elementos, eje_mm)
         geometria["boom"] = eje or "ninguno"

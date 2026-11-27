@@ -37,7 +37,7 @@ def test_cada_tipo_esta_en_una_sola_categoria_de_la_galeria():
 
 def test_catalogo_y_plano():
     c = json.loads(web_api.catalogo())
-    assert {t["clave"] for t in c["tipos"]} == {"dipolo", "jpole", "manga", "coco", "jpole_koch", "discone", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "biconica",
+    assert {t["clave"] for t in c["tipos"]} == {"dipolo", "jpole", "manga", "coco", "jpole_koch", "discone", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "yagi_bibanda", "biconica",
                                                        "torniquete", "batwing", "efhw",
                                                        "dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv", "vertical_hf"}
     assert c["coaxial"]["tipos"] == ["manga", "coco"] and any(k["nombre"] == "RG-58" for k in c["coaxial"]["cables"])

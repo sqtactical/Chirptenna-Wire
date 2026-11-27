@@ -12,7 +12,7 @@ from ..diseno import Diseno
 from ..generadores import correccion_eje_mm
 from ..i18n import N_, tr
 from .comun import fmt, frecuencia, grafica_roe, hoja_a4, longitud, regla, seccion, tabla, texto_banda, unidad
-from .hoja import BLANCO, COBRE, CUBIERTA, GRIS, PVC, TINTA, VERDE, Circulo, Cota, Hoja, Linea, Rect, Texto
+from .hoja import BLANCO, COBRE, CUBIERTA, GRIS, PVC, ROJO, TINTA, VERDE, Circulo, Cota, Hoja, Linea, Rect, Texto
 from .jpole import _simulacion as _simulacion_roe
 
 X_VISTA, Y_VISTA, ANCHO_VISTA, ALTO_VISTA = 20.0, 38.0, 170.0, 48.0
@@ -261,6 +261,84 @@ def _hoja_elementos_yagi(diseno: Diseno, nombres: list[str], largos: list[float]
     hoja.anadir(Texto(14, y, texto, 6.2, VERDE))
     regla(hoja, 14, 244)
     return hoja
+
+
+# ---------------------------------------------------------------- Yagi de dos bandas
+
+def hojas_yagi_bibanda(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    d, u, hueco = diseno.diametro_mm, unidad(diseno), 20.0           # 20 mm entre los dos brazos de cada dipolo (generadores.yagi_bibanda)
+    f_alta = g["f_alta_MHz"]
+    sob = diseno.sobrante_mm
+    dz = g["sep_dipolos_mm"]
+    y1 = g["y_excitado_mm"]
+    y_dir_b = g["y_director_bajo_mm"]
+    dir_a, ys_a = list(g["directores_altos_mm"]), list(g["ys_directores_altos_mm"])
+    hoja = hoja_a4(diseno, tr("Yagi bibanda · {0} y {1} MHz", frecuencia(diseno.f_MHz), frecuencia(f_alta)),
+                   tr("Dos dipolos desde el mismo punto, reflector y directores de cada banda en un eje · coaxial de 50 Ω · alambre de Ø {0} mm", fmt(d, 1)))
+    # --- vista general: elementos verticales, eje horizontal; la banda alta (rojo) se desplaza para que se vea
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista desde arriba, sin escala; la banda alta se dibuja desplazada"))
+    modelo = diseno.modelo()
+    desplaza = 6.0
+    proy = lambda p: (p[1] + desplaza * p[2], p[0])                    # noqa: E731
+    segs = [(proy(h.inicio), proy(h.fin)) for h in modelo.hilos]
+    us = [p[0] for s in segs for p in s]
+    vs = [p[1] for s in segs for p in s]
+    x0, y0, ancho, alto = 14.0, 50.0, 94.0, 86.0
+    esc = min(ancho / (max(us) - min(us)), alto / (max(vs) - min(vs)))
+    ox = x0 + (ancho - (max(us) - min(us)) * esc) / 2
+    oy = y0 + (alto - (max(vs) - min(vs)) * esc) / 2
+    P = lambda p: (ox + (proy(p)[0] - min(us)) * esc, oy + (max(vs) - proy(p)[1]) * esc)   # noqa: E731
+    for i, h in enumerate(modelo.hilos, start=1):
+        if i == 1:
+            continue                                                   # el tramo del punto de alimentación es de 20 mm
+        a, b = P(h.inicio), P(h.fin)
+        alta = h.inicio[2] > 1e-9 or h.fin[2] > 1e-9
+        hoja.anadir(Linea(a[0], a[1], b[0], b[1], ROJO if alta else COBRE, 0.85))
+    xb = P((0, 0, 0))[0]
+    yb = P((0, 0, 0))[1]
+    hoja.anadir(Linea(P((0, -0.02, 0))[0], yb, P((0, 0.8, 0))[0] + 8, yb, GRIS, 0.5))
+    xs = lambda y, alta=False: P((0, y / 1000, dz / 1000 if alta else 0.0))[0]    # noqa: E731
+    hoja.anadir(Texto(xs(0.0), oy - 3, "R", 5.6, ancla="centro"), Texto(xs(y1), oy - 3, "P", 5.6, ancla="centro"),
+                Texto(xs(y_dir_b), oy - 3, "D", 5.6, ancla="centro"),
+                *[Texto(xs(y, True), oy + (max(vs) - min(vs)) * esc + 5, f"d{k}", 5.6, ROJO, ancla="centro") for k, y in enumerate(ys_a, start=1)])
+    hoja.anadir(Texto(xs(0.0, True), oy + (max(vs) - min(vs)) * esc + 5, "r", 5.6, ROJO, ancla="centro"),
+                Texto(xs(y1, True), oy + (max(vs) - min(vs)) * esc + 5, "p", 5.6, ROJO, ancla="centro"))
+    hoja.anadir(Texto(x0, y0 + alto + 10, tr("Negro: banda {0} MHz (R reflector, P excitado, D director).\nRojo: banda {1} MHz (r, p, d1 y d2).", frecuencia(diseno.f_MHz), frecuencia(f_alta)), 5.6, GRIS))
+    # --- lista de corte
+    seccion(hoja, 112, 33, tr("LISTA DE CORTE"), tr("Corta con el sobrante y ajusta después"), VERDE)
+    def fila(nombre: str, cant: str, largo: float) -> list[str]:
+        return [nombre, cant, f"{longitud(largo, diseno)} {u}", f"{longitud(largo + sob, diseno, 0)} {u}"]
+    filas = [fila(tr("Brazo del dipolo {0}", frecuencia(diseno.f_MHz)), "2", g["dipolo_bajo_mm"] / 2 - hueco / 2),
+             fila(tr("Brazo del dipolo {0}", frecuencia(f_alta)), "2", g["dipolo_alto_mm"] / 2 - hueco / 2),
+             fila(tr("Reflector {0}", frecuencia(diseno.f_MHz)), "1", g["reflector_bajo_mm"]),
+             fila(tr("Reflector {0}", frecuencia(f_alta)), "1", g["reflector_alto_mm"]),
+             fila(tr("Director {0}", frecuencia(diseno.f_MHz)), "1", g["director_bajo_mm"]),
+             fila(tr("Director d1 {0}", frecuencia(f_alta)), "1", dir_a[0]),
+             fila(tr("Director d2 {0}", frecuencia(f_alta)), "1", dir_a[1])]
+    tabla(hoja, 112, 45, [0, 38, 48, 68], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 90)
+    # --- posiciones en el eje
+    seccion(hoja, 112, 108, tr("POSICIONES EN EL EJE"), tr("Desde el reflector, al eje de cada elemento"), VERDE)
+    pos = [(tr("Reflectores R y r"), 0.0), (tr("Excitado P y p"), y1), (tr("Director D"), y_dir_b), (tr("Director d1"), ys_a[0]), (tr("Director d2"), ys_a[1])]
+    tabla(hoja, 112, 120, [0, 52], [tr("Elemento"), tr("Posición")], [[n, f"{longitud(y, diseno, 0)} {u}"] for n, y in pos], 90)
+    hoja.anadir(Texto(112, 150, tr("Eje de {0}, con unos 60 mm de margen en cada extremo.\nEje no metálico (PVC o madera): no hay corrección.", longitud(ys_a[1] + 120, diseno, 0) + " " + u), 6.0))
+    # --- resultados
+    r = diseno.resultados
+    if r and "alta" in r:
+        for x, y, res, f, nombre in ((14, 168, r, diseno.f_MHz, tr("BANDA BAJA {0} MHz", frecuencia(diseno.f_MHz))),
+                                     (112, 168, r["alta"], f_alta, tr("BANDA ALTA {0} MHz", frecuencia(f_alta)))):
+            adelante = res.get("ganancia_frente_dBi")
+            seccion(hoja, x, y, nombre, tr("ROE {0} · {1} dBi (espacio libre)", fmt(res["roe"], 2), fmt(adelante if adelante is not None else res["ganancia_dBi"], 1)))
+            grafica_roe(hoja, x + 8, y + 12, 70, 31, res["barrido"]["f_MHz"], res["barrido"]["roe"], None)
+    else:
+        seccion(hoja, 14, 168, tr("SIN SIMULAR"), tr("Cotas de partida, sin ajustar"))
+        hoja.anadir(Texto(14, 180, tr("Simula el diseño en el escritorio (PyNEC) o\nabre el .nec en 4nec2/xnec2c."), 6.3))
+    hoja.anadir(Texto(14, 225, tr("Los dos dipolos salen del mismo punto: el de la banda alta {0} mm por encima del otro en vertical,\n"
+                                  "con un solo coaxial (vivo a un brazo de cada dipolo, malla al otro). Los 20 mm centrales de cada dipolo quedan\n"
+                                  "sin hilo: ahí va el coaxial. Simulada en espacio libre, sin medir: los dos dipolos se acoplan, así que el largo\n"
+                                  "de cada uno se ajusta con el NanoVNA en su banda (la banda baja es la más sensible: 2 % de largo es ROE 1,3).", fmt(dz, 0)), 6.0, VERDE))
+    regla(hoja, 14, 244)
+    return [hoja]
 
 
 # ---------------------------------------------------------------- bicónica

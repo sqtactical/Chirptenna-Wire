@@ -339,6 +339,41 @@ def ajustar_colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, s
                           **_geometria_suelo(altura_m, suelo)}, "resultados": r}
 
 
+def ajustar_yagi_bibanda(f_baja: float, diametro_mm: float) -> dict:
+    """Yagi de dos bandas: ajusta el largo de los dos dipolos para 50 Ω en las dos bandas (el resto de cotas son las de partida,
+    ya optimizadas con la dirección del haz), con una penalización si el haz de la banda alta no sale hacia delante.
+    Los resultados son los de la banda baja; los de la alta van en `resultados["alta"]`."""
+    from .generadores import YAGIB_GANANCIA_MIN, yagi_bibanda, yagi_bibanda_por_defecto
+    p = yagi_bibanda_por_defecto(f_baja)
+    f_alta = p["f_alta_MHz"]
+    claves = ("dipolo_bajo_mm", "dipolo_alto_mm")
+    construir = lambda x: yagi_bibanda(f_baja, diametro_mm, dipolo_bajo_mm=x[0], dipolo_alto_mm=x[1])  # noqa: E731
+
+    def coste(x):
+        if x[0] < 0.3 * p["dipolo_bajo_mm"] or x[1] < 0.5 * p["dipolo_alto_mm"]:
+            return 10.0
+        m = construir(x)
+        try:
+            gan = motor.ganancias_en(m, f_alta, [(90.0, 90.0)])[0]
+        except RuntimeError:
+            return 10.0
+        return _gamma_en(m, f_baja) + _gamma_en(m, f_alta) + 0.05 * max(0.0, YAGIB_GANANCIA_MIN - gan)
+
+    x0 = [p[k] for k in claves]
+    pasos = [0.01 * x0[0], 0.02 * x0[1]]
+    x, _ = nelder_mead(coste, x0, pasos, tolerancia=1e-5, iteraciones=120)
+    x, _ = nelder_mead(coste, x, [e / 4 for e in pasos], tolerancia=1e-7, iteraciones=120)
+    modelo = construir(x)
+    r = _resultados(modelo, f_baja)
+    r["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.9 * f_baja, 1.1 * f_baja)
+    r["ganancia_frente_dBi"] = motor.ganancias_en(modelo, f_baja, [(90.0, 90.0)])[0]
+    alta = _resultados(modelo, f_alta)
+    alta["f_minimo_roe_MHz"] = minimo_roe(modelo, 0.95 * f_alta, 1.05 * f_alta)
+    alta["ganancia_frente_dBi"] = motor.ganancias_en(modelo, f_alta, [(90.0, 90.0)])[0]
+    r["alta"] = alta
+    return {"geometria": {**p, "dipolo_bajo_mm": x[0], "dipolo_alto_mm": x[1]}, "resultados": r}
+
+
 def ajustar_vinv(f_MHz: float, diametro_mm: float, apertura: float = 120.0) -> dict:
     """Dipolo en V invertida con |S11| mínimo a f: ajusta el largo de los brazos (la apertura queda fija)."""
     p = vinv_por_defecto(f_MHz)

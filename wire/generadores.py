@@ -447,6 +447,74 @@ def yagi(f_MHz: float, diametro_mm: float, reflector_mm: float | None = None, ex
                                + ", ".join(f"{(b - a) * 1000:.1f}" for a, b in zip(ys, ys[1:])) + " mm"))
 
 
+# ---------------------------------------------------------------- Yagi de dos bandas (145 / 433 MHz) con el excitado en abanico
+
+YAGIB_RAZON = 433.0 / 145.0              # banda alta / banda baja (las cotas de partida están optimizadas para 145 y 433 MHz)
+YAGIB_F_RANGO = (100.0, 250.0)           # banda baja (MHz) en la que tiene sentido escalar las cotas
+YAGIB_DZ_MM = 25.0                       # separación entre los dos dipolos (de 15 a 35 mm apenas cambia nada)
+# Cotas optimizadas con PyNEC (espacio libre, alambre de 2 mm; herramientas/yagi_bibanda_abanico.py): largo de los dipolos y
+# reflectores y posiciones de los directores en λ de su banda (la posición del excitado, en λ de la baja).
+YAGIB_X = {"dipolo_bajo": 0.4858, "dipolo_alto": 0.2844, "y_excitado": 0.2385, "director_bajo": 0.4155, "directores_altos": 0.4651,
+           "reflector_bajo": 0.6578, "reflector_alto": 0.6389, "sep_director_bajo": 0.0983, "sep_director_alto": 0.1634}
+YAGIB_GANANCIA_MIN = 5.0
+
+
+def yagi_bibanda_por_defecto(f_baja: float) -> dict:
+    """Cotas de partida (mm) de la Yagi de dos bandas: la banda alta es `f_baja` × 433 / 145 (la razón para la que están
+    optimizadas). Reflectores y directores de las dos bandas en un mismo eje (y = 0 en el reflector de la banda baja)."""
+    if not YAGIB_F_RANGO[0] <= f_baja <= YAGIB_F_RANGO[1]:
+        raise ValueError(f"la Yagi bibanda está calculada para una banda baja de {YAGIB_F_RANGO[0]:g} a {YAGIB_F_RANGO[1]:g} MHz (145 y 433 MHz)")
+    f_alta = f_baja * YAGIB_RAZON
+    lb, la = 299792.458 / f_baja, 299792.458 / f_alta
+    x = YAGIB_X
+    y1 = x["y_excitado"] * lb
+    return {"f_alta_MHz": f_alta, "dipolo_bajo_mm": x["dipolo_bajo"] * lb, "dipolo_alto_mm": x["dipolo_alto"] * la,
+            "sep_dipolos_mm": YAGIB_DZ_MM, "y_excitado_mm": y1,
+            "reflector_bajo_mm": x["reflector_bajo"] * lb, "reflector_alto_mm": x["reflector_alto"] * la,
+            "director_bajo_mm": x["director_bajo"] * lb, "y_director_bajo_mm": y1 + x["sep_director_bajo"] * lb,
+            "directores_altos_mm": [x["directores_altos"] * la, 0.98 * x["directores_altos"] * la],
+            "ys_directores_altos_mm": [y1 + x["sep_director_alto"] * la, y1 + 2 * x["sep_director_alto"] * la]}
+
+
+def yagi_bibanda(f_baja: float, diametro_mm: float, *, dipolo_bajo_mm: float | None = None, dipolo_alto_mm: float | None = None,
+                 sep_dipolos_mm: float | None = None, y_excitado_mm: float | None = None, reflector_bajo_mm: float | None = None,
+                 reflector_alto_mm: float | None = None, director_bajo_mm: float | None = None, y_director_bajo_mm: float | None = None,
+                 directores_altos_mm: list[float] | None = None, ys_directores_altos_mm: list[float] | None = None,
+                 barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Yagi de dos bandas con un solo coaxial: dos dipolos simples desde el mismo punto de alimentación (el de la banda alta
+    `sep_dipolos_mm` más arriba, en z), un reflector y un director de la banda baja y un reflector y dos directores de la alta,
+    todos en el mismo eje (y). Espacio libre. Los elementos van a lo largo de x y el excitado está en y = `y_excitado_mm`."""
+    if diametro_mm <= 0:
+        raise ValueError("el diámetro debe ser positivo")
+    p = yagi_bibanda_por_defecto(f_baja)
+    v = lambda dado, clave: (p[clave] if dado is None else dado)       # noqa: E731
+    lb_mm, la_mm = v(dipolo_bajo_mm, "dipolo_bajo_mm"), v(dipolo_alto_mm, "dipolo_alto_mm")
+    dz = v(sep_dipolos_mm, "sep_dipolos_mm") / 1000
+    y1 = v(y_excitado_mm, "y_excitado_mm") / 1000
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_baja * YAGIB_RAZON) / SEGMENTOS_POR_LAMBDA / densidad     # el de la banda alta, que es la más fina
+    if dz <= 3 * r:
+        raise ValueError("los dos dipolos quedan demasiado juntos para ese diámetro")
+
+    def pasivo(largo_mm: float, y: float, z: float = 0.0) -> Hilo:
+        return Hilo((-largo_mm / 2000, y, z), (largo_mm / 2000, y, z), r, max(5, round(largo_mm / 1000 / paso)))
+
+    hueco = 0.02
+    hilos = [Hilo((-hueco / 2, y1, 0), (hueco / 2, y1, 0), r, 1)]                                  # el punto de alimentación
+    for lado in (1, -1):
+        for largo, z in ((lb_mm, 0.0), (la_mm, dz)):
+            ini, fin = (lado * hueco / 2, y1, 0), (lado * largo / 2000, y1, z)
+            hilos.append(Hilo(ini, fin, r, max(5, round(math.dist(ini, fin) / paso))))
+    hilos.append(pasivo(v(reflector_bajo_mm, "reflector_bajo_mm"), 0.0))
+    hilos.append(pasivo(v(reflector_alto_mm, "reflector_alto_mm"), 0.0, dz))
+    hilos.append(pasivo(v(director_bajo_mm, "director_bajo_mm"), v(y_director_bajo_mm, "y_director_bajo_mm") / 1000))
+    for largo, y in zip(v(directores_altos_mm, "directores_altos_mm"), v(ys_directores_altos_mm, "ys_directores_altos_mm")):
+        hilos.append(pasivo(largo, y / 1000, dz))
+    return Modelo("Yagi de dos bandas", f_baja, tuple(hilos), Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Yagi de dos bandas ({f_baja:g} y {f_baja * YAGIB_RAZON:.0f} MHz) con el excitado en abanico, alambre de {diametro_mm:g} mm",
+                               f"Dipolos {lb_mm:.1f} y {la_mm:.1f} mm separados {dz * 1000:.0f} mm; excitado a {y1 * 1000:.1f} mm del reflector"))
+
+
 def biconica_por_defecto(f_min_MHz: float, k_cono: float = 1.0) -> dict[str, float]:
     lam = longitud_onda_m(f_min_MHz) * 1000
     return {"cono_mm": k_cono * lam / 4, "hueco_mm": max(4.0, round(0.004 * lam)), "semiangulo": 35.0, "varillas": 8.0}

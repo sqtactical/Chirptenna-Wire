@@ -31,6 +31,8 @@ def _clave(diseno) -> str | None:
         return str(int(g.get("n_secciones", len(g.get("secciones_mm", [])) or 3)))
     if diseno.tipo == "efhw":
         return str(int(g.get("relacion", 49)))
+    if diseno.tipo == "yagi_bibanda":
+        return "2"                                          # el número de bandas
     return None
 
 
@@ -39,7 +41,7 @@ def valores(diseno) -> tuple[list[float], bool] | None:
     r = diseno.resultados
     if r and "ganancia_dBi" in r:
         v = [round(r["ganancia_dBi"], 1)]
-        if diseno.tipo == "colineal_bibanda" and "alta" in r:
+        if diseno.tipo in ("colineal_bibanda", "yagi_bibanda") and "alta" in r:
             v.append(round(r["alta"]["ganancia_dBi"], 1))
         return v, True
     t = tabla().get(diseno.tipo)
