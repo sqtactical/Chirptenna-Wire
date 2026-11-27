@@ -2,7 +2,7 @@
 
 ## Sin publicar
 
-- Tipo nuevo **Moxon rectangular** (`moxon`, de 30 MHz a 1,3 GHz): rectángulo de alambre con las puntas enfrentadas, un solo coaxial y sin adaptador. Ajustada con PyNEC a 145 y 433 MHz: ROE 1,0, 6,6 y 6,7 dBi hacia delante, delante/detrás de 15 y 16 dB (el ajuste pide ≥ 15 dB: sin esa condición el optimizador buscaba un nulo hacia atrás de −190 dB a costa de la ROE). Plano de 1 hoja con cotas, lista de corte y ROE. Sin medir ni validar frente a un caso publicado.
+- Tipo nuevo **Moxon rectangular** (`moxon`; ajustada solo a 145 y 433 MHz, las cotas de partida escalan con λ): rectángulo de alambre con las puntas enfrentadas, un solo coaxial y sin adaptador. Ajustada con PyNEC a 145 y 433 MHz: ROE 1,0, 6,6 y 6,7 dBi hacia delante, delante/detrás de 15 y 16 dB (el ajuste pide ≥ 15 dB: sin esa condición el optimizador buscaba un nulo hacia atrás de −190 dB a costa de la ROE). Plano de 1 hoja con cotas, lista de corte y ROE. Sin medir ni validar frente a un caso publicado.
 
 - Tipo nuevo **Yagi bibanda 145 / 433 MHz** (`yagi_bibanda`, en la galería, el escritorio y la web; plano de 1 hoja con lista de corte, posiciones en el eje y la ROE de cada banda; `herramientas/yagi_bibanda_abanico.py` la comprueba): un solo coaxial, dos dipolos desde el mismo punto y reflector y directores de cada banda en un eje. Banda baja de 100 a 250 MHz (la alta es × 433/145), sin elegir elementos. En PyNEC, optimizada con la ROE **y la dirección del haz** (la primera versión adaptaba pero el haz de 433 MHz salía de lado): ROE 1,00 en las dos bandas y 6,3 dBi hacia delante en cada una; con ±2 % en las cotas la ROE llega a 1,81 (lo que más pesa es el largo del dipolo de 145 MHz) y la separación entre dipolos de 15 a 35 mm apenas cambia nada. Sin medir.
 
