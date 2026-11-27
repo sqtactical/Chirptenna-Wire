@@ -50,7 +50,7 @@ def test_el_plano_tiene_tres_hojas_y_el_transformador_depende_de_la_relacion():
     texto = lambda p: " ".join(getattr(e, "texto", "") for h in p.hojas for e in h.elementos)  # noqa: E731
     assert "2 vueltas de primario" in texto(p49) and "14 de secundario" in texto(p49) and "2,4 kΩ" in texto(p49)
     assert "9 vueltas en total" in texto(p9) and "470 Ω" in texto(p9) and "autotransformador" in texto(p9)
-    assert "Más adelante" not in texto(p49) and "MÁS ADELANTE" in texto(p49)         # el asistente del VNA aún no existe
+    assert "MÁS ADELANTE" not in texto(p49) and "Transformador de la EFHW" in texto(p49)     # la hoja apunta a la herramienta de Chirptenna VNA
 
 
 def test_la_potencia_elige_el_nucleo():
