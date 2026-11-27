@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Experimento de **Yagi de dos bandas 145 / 433 MHz** con el excitado en abanico (`herramientas/yagi_bibanda_abanico.py`, aún no es un tipo del catálogo): dos dipolos desde el mismo punto, reflector y director por banda en un solo eje. En PyNEC: ROE 1,06 y 1,05, 6,7 y 6,4 dBi; robusta a ±2 % en las cotas, pero dos cotas quedaron en el límite del optimizador. Sin medir.
+
 - Chirptenna VNA tiene la herramienta **«Transformador de la EFHW»** (9:1, 49:1, 64:1): con una resistencia de relación × 50 Ω en el lado del hilo, da la ROE mínima y máxima por banda de HF y un consejo (vueltas, fugas); la hoja de ajuste del transformador de Wire apunta a ella. Sin probar con un NanoVNA ni un transformador reales. El asistente de las trampas ya existía como «Trampa o circuito resonante (Q)».
 
 - Colineal bibanda **433 / 1296 MHz** (`--f-alta 1296`): ajustada con PyNEC a 50 Ω en las dos bandas (ROE 1,0; 2 secciones: 2,2 y 3,8 dBi; 4 secciones: 3,3 y 4,3 dBi en espacio libre; la relación 3,0 está dentro del rango de 2,5 a 3,5). Sin medir. La Yagi con alambre grueso a 1296 MHz ahora dice el diámetro máximo que admite (< 1,4 mm).
