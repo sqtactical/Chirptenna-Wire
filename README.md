@@ -67,7 +67,8 @@ python -m wire recomendar 145 --ganancia 8 --tamano 2
 ```
 
 `recomendar` ordena los tipos que cumplen una ganancia mínima (dBi) y un tamaño máximo (m, la mayor dimensión de la antena) a esa frecuencia,
-con las ganancias teóricas de referencia: sirve para decidir qué construir antes de abrir un plano.
+con las ganancias teóricas de referencia: sirve para decidir qué construir antes de abrir un plano. También está en la pantalla «Elegir antena» del escritorio y de la web
+(«¿No sabes cuál elegir?»), con un botón «Usar» que abre el diseño elegido.
 
 El último saca el S11 simulado en Touchstone (`.s1p`, 50 Ω): cárgalo como referencia en Chirptenna VNA y se superpone a tu medida
 con la desviación de la resonancia (también hay un botón en la pestaña Simulación del escritorio).

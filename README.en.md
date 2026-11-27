@@ -24,7 +24,11 @@ Examples in [`docs/ejemplos/`](docs/ejemplos/) (PDF, `diseno.json`, `.nec`).
 python -m wire plano jpole 145 --diametro 2 --salida jpole_145.pdf --guardar jpole_145.json
 python -m wire plano --desde jpole_145.json --salida jpole_145.svg
 python -m wire nec jpole 145 --diametro 2 --salida jpole_145.nec
+python -m wire recomendar 145 --ganancia 8 --tamano 2
 ```
+
+`recomendar` ranks the types that meet a minimum gain (dBi) and a maximum size (m) at that frequency, using the theoretical
+reference gains. It is also on the "Choose an antenna" screen of the desktop app and the web ("Not sure which to pick?").
 
 The core (`wire/modelo.py`, `generadores.py`, `nec.py`, `diseno.py`, `planos/`) is pure Python and also runs in
 Pyodide (planned web lite). The simulation engine (`wire/motor.py`, `ajuste.py`) needs

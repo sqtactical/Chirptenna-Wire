@@ -26,6 +26,20 @@ def test_hf_y_rangos():
         R.recomendar(2000.0)
 
 
+def test_web_api():
+    import io
+    import json
+    import zipfile
+    from wire import web_api
+    r = json.loads(web_api.recomendar_json(json.dumps({"f_MHz": 433, "ganancia_dBi": 6, "idioma": "en"})))
+    assert r["error"] is None and r["filas"] and all(f["ganancia_dBi"] >= 6 for f in r["filas"])
+    assert "Yagi" in r["filas"][0]["nombre"]
+    assert json.loads(web_api.recomendar_json(json.dumps({"f_MHz": 5000})))["error"]
+    assert "aisladores" in json.loads(web_api.catalogo())
+    z = web_api.aisladores_zip(json.dumps({"tipo": "dipolo", "f_MHz": 145}))
+    assert any(n.endswith(".stl") for n in zipfile.ZipFile(io.BytesIO(z)).namelist())
+
+
 def test_cli(capsys):
     assert main(["recomendar", "433", "--ganancia", "6"]) == 0
     assert "Yagi" in capsys.readouterr().out

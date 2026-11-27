@@ -10,6 +10,7 @@ let hojaActual = 0;
 let tiposCatalogo = [];
 let coaxial = { tipos: [], cables: [] };
 let plantilla3d = [];
+let aisladores = [];
 let categorias = [];
 let tiposHF = [];
 let TEXTOS = {};
@@ -122,6 +123,7 @@ async function iniciar() {
   $('banda').innerHTML = '<option value="" data-t>— otra —</option>' + c.bandas.map((b) => `<option value="${(b.f_min + b.f_max) / 2}">${b.nombre} (${b.f_min}–${b.f_max} MHz)</option>`).join('');
   coaxial = c.coaxial;
   plantilla3d = c.plantilla3d || [];
+  aisladores = c.aisladores || [];
   $('conector').innerHTML = c.conectores.map((k) => `<option>${k}</option>`).join('');
   $('cable').innerHTML = c.coaxial.cables.map((k) => `<option value="${k.nombre}">${k.nombre} (VF ${k.vf})</option>`).join('');
   $('papel').innerHTML = c.plano.papel.map((p) => `<option>${p}</option>`).join('');
@@ -154,6 +156,7 @@ function mostrar(plano) {
   $('vista').innerHTML = plano.hojas[hojaActual];
   $('descargas').classList.remove('oculto');
   $('d3d').classList.toggle('oculto', !plantilla3d.includes(plano.diseno.tipo));
+  $('d-aisl').classList.toggle('oculto', !aisladores.includes(plano.diseno.tipo));
 }
 
 // Python devuelve el traceback entero: al usuario solo le sirve la última línea, sin el nombre de la excepción.
@@ -298,6 +301,33 @@ $('d-3d').onclick = async () => {
       radio_mm: $('radio').value ? parseFloat($('radio').value) : null });
     guardar(actual.plano.nombre + '_plantilla3d.zip', await llamar('plantilla3d_zip', entrada), 'application/zip');
   } catch (err) { $('error').textContent = mensajeError(err); $('error').classList.remove('oculto'); }
+};
+$('d-aisladores').onclick = async () => {
+  try { guardar(actual.plano.nombre + '_aisladores.zip', await llamar('aisladores_zip', actual.entrada), 'application/zip'); }
+  catch (err) { $('error').textContent = mensajeError(err); $('error').classList.remove('oculto'); }
+};
+$('rec-ir').onclick = async () => {
+  const num = (id) => ($(id).value === '' ? null : parseFloat($(id).value));
+  const f = num('rec-f');
+  if (!(f >= 1.8 && f <= 1300)) { $('rec-res').innerHTML = `<div class="aviso">${T('Hay antenas de alambre de 1,8 a 1300 MHz.')}</div>`; return; }
+  const r = await llamar('recomendar_json', JSON.stringify({ f_MHz: f, ganancia_dBi: num('rec-g'), tamano_m: num('rec-t'), diametro_mm: num('diametro') || 3, idioma: IDIOMA }));
+  if (r.error || !r.filas.length) { $('rec-res').innerHTML = `<div class="aviso">${r.error || T('Ningún tipo cumple: baja la ganancia pedida o sube el tamaño.')}</div>`; return; }
+  $('rec-res').innerHTML = '<table>' + r.filas.map((x, i) => `<tr><td>${x.nombre}</td><td><b>${x.ganancia_dBi.toFixed(1)} dBi</b></td><td>${x.tamano_m.toFixed(2)} m</td>` +
+    `<td><button type="button" data-i="${i}">${T('Usar')}</button></td></tr>`).join('') + '</table>' +
+    `<p class="leyenda">${T('Ganancias teóricas de referencia (espacio libre en VHF/UHF, suelo normal en HF): la de tu instalación cambia.')}</p>`;
+  $('rec-res').onclick = (ev) => {
+    const b = ev.target.closest('button[data-i]');
+    if (!b) return;
+    const x = r.filas[+b.dataset.i];
+    $('tipo').value = x.tipo;
+    $('tipo').onchange();
+    $('f').value = f; $('banda').value = '';
+    if (x.tipo === 'yagi' && x.elementos) $('elementos').value = x.elementos;
+    if (x.tipo === 'colineal' && x.elementos) $('secciones').value = x.elementos;
+    hojaActual = 0;
+    pantalla('diseno');
+    generar();
+  };
 };
 $('d-nec').onclick = async () => guardar(actual.plano.nombre + '.nec', await llamar('nec_texto', actual.entrada), 'text/plain');
 $('d-json').onclick = () => guardar(actual.plano.nombre + '.json', JSON.stringify(actual.plano.diseno, null, 2), 'application/json');

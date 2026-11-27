@@ -37,12 +37,12 @@ onmessage = async (ev) => {
   try {
     await listo;
     const r = fn === 'catalogo' ? api.catalogo(arg) : api[fn](arg);
-    if (fn === 'plano_pdf' || fn === 'plantilla3d_zip') {
+    if (fn === 'plano_pdf' || fn === 'plantilla3d_zip' || fn === 'aisladores_zip') {
       const bytes = r.toJs();
       r.destroy();
       postMessage({ id, ok: true, resultado: bytes }, [bytes.buffer]);
     } else {
-      postMessage({ id, ok: true, resultado: fn === 'catalogo' || fn === 'plano_svg' ? JSON.parse(r) : r });
+      postMessage({ id, ok: true, resultado: ['catalogo', 'plano_svg', 'recomendar_json'].includes(fn) ? JSON.parse(r) : r });
     }
   } catch (e) {
     postMessage({ id, ok: false, error: String(e.message || e).split('\n').slice(-3).join('\n') });

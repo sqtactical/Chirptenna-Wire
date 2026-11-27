@@ -15,6 +15,7 @@ from . import ganancias
 from .planos.comun import fmt
 from .diseno import BANDAS, CATEGORIAS, CONECTORES, ESTADO_TIPO, ESTADOS, RESUMEN, TIPOS, TIPOS_COAXIAL, ConfigPlano, Diseno, disenar
 from .generadores import TIPOS_HF
+from .aisladores import TIPOS_AISLADORES
 from .impresion3d import TIPOS_3D
 from .miniaturas import MINIATURAS
 
@@ -37,6 +38,7 @@ def _catalogo() -> str:
         "bandas": [{"nombre": tr(n), "f_min": a, "f_max": b} for n, a, b in BANDAS],
         "plano": {k: list(v) for k, v in ConfigPlano.VALORES.items()},
         "plantilla3d": list(TIPOS_3D),
+        "aisladores": list(TIPOS_AISLADORES),
         "tipos_hf": list(TIPOS_HF),
         "conectores": list(CONECTORES), "coaxial": {"tipos": list(TIPOS_COAXIAL), "cables": [{"nombre": c.nombre, "vf": c.vf} for c in CABLES.values()]},
     }, ensure_ascii=False)
@@ -85,6 +87,31 @@ def plano_pdf(entrada: str) -> bytes:
 
 def nec_texto(entrada: str) -> str:
     return nec.exportar(_diseno(entrada).modelo())
+
+
+def recomendar_json(entrada: str) -> str:
+    """{f_MHz, ganancia_dBi, tamano_m, diametro_mm, idioma} (los tres últimos opcionales) → {filas: [{tipo, elementos, nombre,
+    ganancia_dBi, tamano_m}], error}. Sin simular: ganancias teóricas y cotas de partida."""
+    from . import recomendar
+    datos = json.loads(entrada)
+    idioma = datos.get("idioma")
+    with usar(idioma if idioma in IDIOMAS else "es"):
+        try:
+            filas = recomendar.recomendar(float(datos["f_MHz"]), datos.get("ganancia_dBi"), datos.get("tamano_m"),
+                                          float(datos.get("diametro_mm") or 3.0))
+        except ValueError as e:
+            return json.dumps({"filas": [], "error": tr(str(e))}, ensure_ascii=False)
+        for f in filas:
+            f["nombre"] = tr(TIPOS[f["tipo"]]) + (f" ({f['elementos']})" if f["elementos"] else "")
+        return json.dumps({"filas": filas, "error": None}, ensure_ascii=False)
+
+
+def aisladores_zip(entrada: str) -> bytes:
+    """Igual entrada que `plano_svg` → zip con los STL de los aisladores y el LÉEME."""
+    from . import aisladores
+    diseno = _diseno(entrada)
+    with usar(diseno.plano.idioma):
+        return aisladores.a_zip(diseno)
 
 
 def plantilla3d_zip(entrada: str) -> bytes:

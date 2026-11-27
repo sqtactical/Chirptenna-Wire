@@ -63,6 +63,16 @@ button:disabled{opacity:.5;cursor:default}
 <section id="elegir">
   <h1 data-t>Elige una antena</h1>
   <p class="sub" data-t>Primero el tipo; después se ajustan frecuencia, cable, papel y demás.</p>
+  <details id="recomendador" class="tarjeta">
+    <summary data-t>¿No sabes cuál elegir? Pide una recomendación</summary>
+    <div class="fila">
+      <label for="rec-f" data-t>Frecuencia (MHz)</label><input id="rec-f" type="number" step="0.001" min="1.8" max="1300" value="145">
+      <label for="rec-g" data-t>Ganancia mínima (dBi)</label><input id="rec-g" type="number" step="0.5" placeholder="cualquiera" data-t-placeholder="cualquiera">
+      <label for="rec-t" data-t>Tamaño máximo (m)</label><input id="rec-t" type="number" step="0.1" min="0.05" placeholder="sin límite" data-t-placeholder="sin límite">
+      <button id="rec-ir" type="button" data-t>Recomendar</button>
+    </div>
+    <div id="rec-res"></div>
+  </details>
   <div id="galeria" class="galeria"></div>
   <div class="fila"><button id="abrir" type="button" data-t>Abrir diseno.json…</button>
     <input id="archivo" type="file" accept=".json,application/json" class="oculto"></div>
@@ -118,6 +128,7 @@ button:disabled{opacity:.5;cursor:default}
     <div id="descargas" class="fila oculto">
       <button id="d-pdf">PDF</button><button id="d-svg" data-t>SVG (hoja)</button><button id="d-nec">.nec</button><button id="d-json">diseno.json</button>
     </div>
+    <div id="d-aisl" class="fila oculto"><button id="d-aisladores" data-t>Aisladores 3D (STL)</button></div>
     <div id="d3d" class="fila oculto">
       <label for="cama" data-t>Cama de la impresora (mm)</label><input id="cama" type="number" value="200" min="80" step="10">
       <label for="holgura" data-t>Holgura de los encajes (mm)</label><input id="holgura" type="number" value="0.3" min="0.1" max="0.8" step="0.05">

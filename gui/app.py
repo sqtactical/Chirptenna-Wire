@@ -122,6 +122,7 @@ def pagina(idioma: str | None = None) -> None:
             ui.label(tr("Elige el tipo de antena")).classes("text-lg font-bold")
             ui.label(tr("Planos de alambre, varilla y coaxial con simulación NEC2. Estado honesto: nada está «Medido» hasta que se mide.")) \
                 .classes("opacity-70")
+            caja_rec = ui.column().classes("w-full")                 # el recomendador se rellena tras definir elegir()
             cartas: dict[str, ui.card] = {}
 
             def valores_por_tipo(clave: str) -> None:
@@ -147,6 +148,47 @@ def pagina(idioma: str | None = None) -> None:
                 campos_visibles()
                 refrescar()
                 pestanas.set_value(t_diseno)
+
+            with caja_rec, ui.expansion(tr("¿No sabes cuál elegir? Pide una recomendación"), icon="lightbulb").classes("w-full"):
+                rec = {"f": 145.0, "ganancia": None, "tamano": None}
+                with ui.row().classes("items-end gap-4"):
+                    ui.number(tr("Frecuencia (MHz)"), min=1.8, max=1300, format="%.3f").bind_value(rec, "f").classes("w-40")
+                    ui.number(tr("Ganancia mínima (dBi)"), format="%.1f").bind_value(rec, "ganancia").classes("w-48")
+                    ui.number(tr("Tamaño máximo (m)"), min=0.05, format="%.2f").bind_value(rec, "tamano").classes("w-44")
+                    boton_rec = ui.button(tr("Recomendar"), icon="search")
+                resultado_rec = ui.column().classes("w-full gap-1")
+
+                def usar(fila: dict) -> None:
+                    s["f"] = float(rec["f"])
+                    if fila["tipo"] == "yagi" and fila["elementos"]:
+                        s["elementos"] = fila["elementos"]
+                    elif fila["tipo"] == "colineal" and fila["elementos"]:
+                        s["secciones"] = fila["elementos"]
+                    elegir(fila["tipo"])
+
+                async def recomendar_ahora() -> None:
+                    from wire import recomendar as _rec
+                    resultado_rec.clear()
+                    try:
+                        filas = await run.io_bound(_rec.recomendar, float(rec["f"] or 0), rec["ganancia"], rec["tamano"], s["diametro"])
+                    except ValueError as e:
+                        with resultado_rec:
+                            ui.label(mensaje(e)).classes("aviso-caja")
+                        return
+                    with resultado_rec:
+                        if not filas:
+                            ui.label(tr("Ningún tipo cumple: baja la ganancia pedida o sube el tamaño.")).classes("aviso-caja")
+                            return
+                        for fila in filas:
+                            with ui.row().classes("items-center gap-4 w-full"):
+                                ui.label(tr(fila["nombre"].split(" (")[0]) + (f" ({fila['elementos']})" if fila["elementos"] else "")).classes("w-72")
+                                ui.label(tr("{0:.1f} dBi", fila["ganancia_dBi"])).classes("w-24 font-bold")
+                                ui.label(tr("{0:.2f} m", fila["tamano_m"])).classes("w-24")
+                                ui.button(tr("Usar"), on_click=lambda _e, f=fila: usar(f)).props("flat dense")
+                        ui.label(tr("Ganancias teóricas de referencia (espacio libre en VHF/UHF, suelo normal en HF): la de tu instalación cambia.")) \
+                            .classes("text-xs opacity-70")
+
+                boton_rec.on_click(recomendar_ahora)
 
             en_categoria = {t for _c, _n, ts in CATEGORIAS for t in ts}
             grupos = [(tr(n), list(ts)) for _c, n, ts in CATEGORIAS] + [("", [t for t in TIPOS if t not in en_categoria])]
