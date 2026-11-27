@@ -29,6 +29,7 @@ TIPOS = {
     "moxon": N_("Moxon rectangular"),
     "quad": N_("Quad cúbica de 2 elementos"),
     "apilados": N_("Cuatro dipolos apilados en fase"),
+    "delta": N_("Delta loop"),
     "biconica": N_("Bicónica"),
     "torniquete": N_("Torniquete en X (dipolos cruzados)"),
     "batwing": N_("Batwing (dipolo de alas)"),
@@ -44,7 +45,7 @@ TIPOS = {
 # Categorías de la galería: (clave, nombre, tipos). Cada tipo va en una sola.
 CATEGORIAS = (
     ("hf", N_("HF · hilos sobre suelo real"), ("dipolo_hf", "vinv_hf", "abanico", "trampas", "g5rv", "efhw", "vertical_hf")),
-    ("vhf", N_("VHF y UHF · alambre y varilla"), ("dipolo", "jpole", "jpole_koch", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "yagi_bibanda", "moxon", "quad", "apilados", "torniquete", "batwing")),
+    ("vhf", N_("VHF y UHF · alambre y varilla"), ("dipolo", "jpole", "jpole_koch", "gp", "colineal", "colineal_bibanda", "vinv", "yagi", "yagi_bibanda", "moxon", "quad", "apilados", "delta", "torniquete", "batwing")),
     ("coaxial", N_("Antenas de coaxial"), ("manga", "coco")),
     ("banda_ancha", N_("Banda ancha"), ("discone", "biconica")),
 )
@@ -70,6 +71,7 @@ RESUMEN = {
     "moxon": N_("Rectángulo de alambre con las puntas enfrentadas: 2 elementos, ~50 Ω sin adaptador, buena relación delante/detrás y compacta."),
     "quad": N_("Dos lazos cuadrados de alambre, uno detrás del otro: ~50 Ω sin adaptador y unos 8 dBi en un cuadrado compacto."),
     "apilados": N_("Cuatro dipolos horizontales uno sobre otro con líneas de fase iguales: unos 10 dBi hacia los lados (estación base, repetidor)."),
+    "delta": N_("Un lazo triangular de alambre de una longitud de onda, con la fuente en el centro de la base: ~50 Ω sin adaptador y unos 4 dBi hacia los dos lados."),
     "biconica": N_("Dos conos de varillas vértice con vértice: banda ancha (más de 4:1)."),
     "torniquete": N_("Dos dipolos en cruz con una línea de λ/4: polarización circular (satélites, 137 MHz)."),
     "batwing": N_("Dipolo con dos alas de abanico: algo más de banda que el dipolo, sin panel ni reflector."),
@@ -97,6 +99,7 @@ ESTADO_TIPO = {
     "moxon": N_("Simulado (en espacio libre), sin medir ni validar frente a un caso publicado"),
     "quad": N_("Simulado (en espacio libre), sin medir ni validar frente a un caso publicado"),
     "apilados": N_("Simulado (en espacio libre, líneas ideales y sin pérdidas), sin medir ni validar frente a un caso publicado"),
+    "delta": N_("Simulado (en espacio libre), sin medir ni validar frente a un caso publicado"),
     "biconica": N_("Simulado, sin medir ni validar frente a un caso publicado"),
     "torniquete": N_("Simulado (en espacio libre, con razón axial calculada), sin medir"),
     "batwing": N_("Simulado, sin medir ni validar frente a un caso publicado"),
@@ -114,7 +117,7 @@ ESTADOS = ("Simulado", "Medido", "Sin validar")
 
 # Sobrante de corte por defecto (mm), según el tipo (`plano.sobrante_mm` lo cambia).
 SOBRANTE = {"dipolo": 15.0, "jpole": 20.0, "manga": 15.0, "coco": 15.0, "jpole_koch": 20.0, "discone": 15.0,
-             "gp": 15.0, "colineal": 15.0, "colineal_bibanda": 15.0, "vinv": 15.0, "yagi": 15.0, "yagi_bibanda": 15.0, "moxon": 15.0, "quad": 15.0, "apilados": 15.0, "biconica": 15.0,
+             "gp": 15.0, "colineal": 15.0, "colineal_bibanda": 15.0, "vinv": 15.0, "yagi": 15.0, "yagi_bibanda": 15.0, "moxon": 15.0, "quad": 15.0, "apilados": 15.0, "delta": 15.0, "biconica": 15.0,
              "torniquete": 15.0, "batwing": 15.0, "efhw": 150.0,
              "dipolo_hf": 150.0, "vinv_hf": 150.0, "abanico": 150.0, "trampas": 150.0, "g5rv": 150.0,
              "vertical_hf": 150.0}
@@ -251,6 +254,8 @@ class Diseno:
                                     sep_reflector_mm=g["sep_reflector_mm"], sep_plegado_mm=g["sep_plegado_mm"],
                                     directores_mm=g.get("directores_mm") or [g["director_mm"]],
                                     seps_directores_mm=g.get("seps_directores_mm") or [g["sep_director_mm"]])
+        if self.tipo == "delta":
+            return generadores.delta(self.f_MHz, self.diametro_mm, **g)
         if self.tipo == "apilados":
             return generadores.apilados(self.f_MHz, self.diametro_mm, **g)
         if self.tipo == "quad":
@@ -424,7 +429,7 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         if motor.disponible():
             funcion = {"dipolo": ajuste.ajustar_dipolo, "jpole": ajuste.ajustar_jpole,
                        "jpole_koch": ajuste.ajustar_jpole_koch, "discone": ajuste.ajustar_discone, "gp": ajuste.ajustar_gp, "colineal": ajuste.ajustar_colineal, "colineal_bibanda": ajuste.ajustar_colineal_bibanda,
-                       "yagi_bibanda": ajuste.ajustar_yagi_bibanda, "moxon": ajuste.ajustar_moxon, "quad": ajuste.ajustar_quad, "apilados": ajuste.ajustar_apilados, "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
+                       "yagi_bibanda": ajuste.ajustar_yagi_bibanda, "moxon": ajuste.ajustar_moxon, "quad": ajuste.ajustar_quad, "apilados": ajuste.ajustar_apilados, "delta": ajuste.ajustar_delta, "vinv": ajuste.ajustar_vinv, "yagi": ajuste.ajustar_yagi, "biconica": ajuste.ajustar_biconica,
                        "torniquete": ajuste.ajustar_torniquete, "batwing": ajuste.ajustar_batwing,
                        "efhw": ajuste.ajustar_efhw, "dipolo_hf": ajuste.ajustar_dipolo_hf, "vinv_hf": ajuste.ajustar_vinv_hf,
                        "abanico": ajuste.ajustar_abanico, "trampas": ajuste.ajustar_trampas, "g5rv": ajuste.ajustar_g5rv,
@@ -472,6 +477,8 @@ def disenar(tipo: str, f_MHz: float, diametro_mm: float, ajustar: bool = True, c
         geometria = generadores.quad_por_defecto(f_MHz)
     elif tipo == "apilados":
         geometria = generadores.apilados_por_defecto(f_MHz)
+    elif tipo == "delta":
+        geometria = generadores.delta_por_defecto(f_MHz)
     elif tipo == "yagi":
         geometria = generadores.yagi_por_defecto(f_MHz, elementos, eje_mm)
         geometria["boom"] = eje or "ninguno"

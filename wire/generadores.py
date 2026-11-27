@@ -539,6 +539,43 @@ def quad(f_MHz: float, diametro_mm: float, lado_excitado_mm: float | None = None
                                f"Lados {le * 1000:.1f} y {lr * 1000:.1f} mm, separacion {s * 1000:.1f} mm"))
 
 
+# ---------------------------------------------------------------- Delta loop
+
+# Cotas de partida en λ (optimizadas con PyNEC a 145 MHz, alambre de 2 mm): base y altura del triángulo (perímetro ≈ 1,1 λ) y
+# hueco central de la fuente, en el centro de la base.
+DELTA_X = {"base": 0.28, "alto": 0.385, "centro": 0.0097}
+
+
+def delta_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"base_mm": DELTA_X["base"] * lam, "alto_mm": DELTA_X["alto"] * lam, "centro_mm": max(6.0, DELTA_X["centro"] * lam)}
+
+
+def delta(f_MHz: float, diametro_mm: float, base_mm: float | None = None, alto_mm: float | None = None,
+          centro_mm: float | None = None, barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Delta loop: lazo triangular de alambre en un plano vertical (x–z), con la base horizontal abajo, el vértice arriba y la
+    fuente en el centro de la base (polarización horizontal). Radia hacia los dos lados del plano del lazo (±y). Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = delta_por_defecto(f_MHz)
+    b = (base_mm or p["base_mm"]) / 1000
+    h = (alto_mm or p["alto_mm"]) / 1000
+    c = (centro_mm or p["centro_mm"]) / 1000
+    if min(b, h) <= 0 or c >= b:
+        raise ValueError("la base y la altura deben ser positivas y el hueco central menor que la base")
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    izq, der, vert = (-b / 2, 0, 0), (b / 2, 0, 0), (0, 0, h)
+
+    def tramo(a, c2) -> Hilo:
+        return Hilo(a, c2, r, _segmentos(math.dist(a, c2), paso))
+
+    hilos = (Hilo((-c / 2, 0, 0), (c / 2, 0, 0), r, 1), tramo((c / 2, 0, 0), der), tramo(der, vert), tramo(vert, izq), tramo(izq, (-c / 2, 0, 0)))
+    return Modelo("Delta loop", f_MHz, hilos, Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Delta loop a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Base {b * 1000:.1f} mm, altura {h * 1000:.1f} mm, perimetro {(b + 2 * math.hypot(b / 2, h)) * 1000:.1f} mm"))
+
+
 # ---------------------------------------------------------------- Cuatro dipolos apilados en fase
 
 APIL_N = 4

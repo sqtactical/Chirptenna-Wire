@@ -386,6 +386,22 @@ def ajustar_quad(f_MHz: float, diametro_mm: float) -> dict:
     return r
 
 
+def ajustar_delta(f_MHz: float, diametro_mm: float) -> dict:
+    """Delta loop: ajusta la base y la altura del triángulo para |S11| mínimo a f (la fuente queda en el centro de la base)."""
+    from .generadores import delta, delta_por_defecto
+    p = delta_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    construir = lambda x: delta(f_MHz, diametro_mm, x[0], x[1], p["centro_mm"])  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["base_mm"], p["alto_mm"]], [0.02 * lam, 0.02 * lam],
+                  valido=lambda x: x[0] > 0.15 * lam and x[1] > 0.15 * lam)
+
+    def sens(m, f0):
+        corto = delta(f_MHz, diametro_mm, x[0] - 5, x[1] - 5, p["centro_mm"])
+        return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz) - f0) / 5, "sensibilidad_pieza": "la base y la altura"}
+
+    return _con_resultados(construir(x), f_MHz, {"base_mm": x[0], "alto_mm": x[1], "centro_mm": p["centro_mm"]}, sens)
+
+
 def ajustar_apilados(f_MHz: float, diametro_mm: float) -> dict:
     """Cuatro dipolos apilados en fase: ajusta el largo de los dipolos, la separación y el largo de las líneas de fase para
     |S11| mínimo a f, con al menos 9 dBi de ganancia."""

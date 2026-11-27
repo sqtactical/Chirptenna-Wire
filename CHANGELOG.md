@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Tipo nuevo **Delta loop** (`delta`): lazo triangular de alambre con el vértice arriba y la fuente en el centro de la base, un solo coaxial y sin adaptador. Ajustado con PyNEC a 145 y 433 MHz: ROE 1,0 y 4,1 / 4,3 dBi hacia los dos lados del plano del lazo (base ≈ 0,28 λ, altura ≈ 0,39 λ, perímetro ≈ 1,1 λ); con la fuente en una esquina también adapta (≈ 4,2 dBi) pero no se ha incluido. Plano de 1 hoja con cotas, lista de corte, ROE y sensibilidad al perímetro. Sin medir ni validar frente a un caso publicado.
+
 - Dos tipos nuevos, solo ajustados a 145 y 433 MHz y sin medir: **quad cúbica de 2 elementos** (`quad`: dos lazos cuadrados, el reflector algo mayor; ROE 1,0 sin adaptador, 8,4 y 8,6 dBi hacia delante, delante/detrás de 10 dB) y **cuatro dipolos apilados en fase** (`apilados`: dipolos horizontales a 0,57 λ con cuatro líneas iguales de 75 Ω; ROE 1,0, 9,6 y 9,5 dBi hacia los dos lados). La de dipolos apilados exige que las líneas lleguen del punto de unión al dipolo más lejano (0,9 λ de largo). Planos de 1 hoja cada uno.
 
 - Tipo nuevo **Moxon rectangular** (`moxon`; ajustada solo a 145 y 433 MHz, las cotas de partida escalan con λ): rectángulo de alambre con las puntas enfrentadas, un solo coaxial y sin adaptador. Ajustada con PyNEC a 145 y 433 MHz: ROE 1,0, 6,6 y 6,7 dBi hacia delante, delante/detrás de 15 y 16 dB (el ajuste pide ≥ 15 dB: sin esa condición el optimizador buscaba un nulo hacia atrás de −190 dB a costa de la ROE). Plano de 1 hoja con cotas, lista de corte y ROE. Sin medir ni validar frente a un caso publicado.

@@ -377,6 +377,49 @@ def hojas_quad(diseno: Diseno, fecha: str) -> list[Hoja]:
     return [hoja]
 
 
+# ---------------------------------------------------------------- Delta loop
+
+def hojas_delta(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    b, h, c = g["base_mm"], g["alto_mm"], g["centro_mm"]
+    lado = math.hypot(b / 2, h)
+    perimetro = b + 2 * lado
+    d, u, sob = diseno.diametro_mm, unidad(diseno), diseno.sobrante_mm
+    hoja = hoja_a4(diseno, _titulo(N_("Delta loop · {0} MHz ({1})"), diseno),
+                   tr("Lazo triangular de alambre de Ø {0} mm, vértice arriba · alimentado con coaxial de 50 Ω en el centro de la base, sin adaptador", fmt(d, 1)))
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista de frente, sin escala · medidas en {0} al eje del alambre", u))
+    esc = min(34.0 / h, 90.0 / b)
+    cx, y_base = 70.0, 52.0 + h * esc
+    izq, der, cima = (cx - b * esc / 2, y_base), (cx + b * esc / 2, y_base), (cx, y_base - h * esc)
+    hoja.anadir(Linea(izq[0], izq[1], cima[0], cima[1], COBRE, 0.85), Linea(cima[0], cima[1], der[0], der[1], COBRE, 0.85),
+                Linea(izq[0], izq[1], cx - c * esc / 2, y_base, COBRE, 0.85), Linea(cx + c * esc / 2, y_base, der[0], der[1], COBRE, 0.85),
+                Cota(izq[0], y_base + 4, der[0], y_base + 4, longitud(b, diseno, 0), tam=5.0),
+                Cota(izq[0] - 8, cima[1], izq[0] - 8, y_base, longitud(h, diseno, 0), tam=5.0),
+                Texto(cx, y_base - 3, tr("fuente"), 5.0, GRIS, ancla="centro"),
+                Texto(cx + 4, cima[1] + 8, tr("lado {0}", longitud(lado, diseno, 0)), 5.6))
+    seccion(hoja, 14, 101, tr("LISTA DE CORTE"), tr("Corta con el sobrante, dobla y ajusta después"), VERDE)
+    lazo = perimetro - c
+    filas = [
+        [tr("Alambre Ø {0} mm, lazo completo abierto en la fuente", fmt(d, 1)), "1", f"{longitud(lazo, diseno)} {u}", f"{longitud(lazo + sob, diseno, 0)} {u}"],
+        [tr("Mástil o varilla vertical no metálica"), "1", f"{longitud(h + 300, diseno, 0)} {u}", "—"],
+        [tr("Cruceta horizontal no metálica"), "1", f"{longitud(b + 100, diseno, 0)} {u}", "—"],
+        [tr("Aislador central de PVC, 60 × 25 × 5 mm"), "1", "—", "—"],
+        [tr("Coaxial RG-58, bajada + choke"), "1", tr("a medida"), "—"],
+    ]
+    tabla(hoja, 14, 113, [0, 56, 66, 88], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 108)
+    hoja.anadir(Texto(14, 152, tr("Un solo alambre en lazo cerrado salvo el hueco de {0} de la\nfuente, con las dos esquinas de la base y el vértice doblados.\nAjuste: acorta o alarga la base y la altura por igual; la\nfrecuencia es muy sensible al perímetro.",
+                                  longitud(c, diseno, 0) + " " + u), 6.0, VERDE))
+    _simulacion_roe(hoja, diseno)
+    r = diseno.resultados
+    if r and "sensibilidad_MHz_por_mm" in r:
+        hoja.anadir(Texto(128, 176, tr("Cada mm menos de base y de altura sube la frecuencia\n≈ {0} MHz.", fmt(abs(r["sensibilidad_MHz_por_mm"]), 2)), 6.0, VERDE))
+    hoja.anadir(Texto(14, 190, tr("Con la fuente abajo la polarización es horizontal; para polarización vertical pon la fuente en el centro de un\n"
+                                  "lado inclinado (el diseño cambia: simúlalo antes). Radia hacia los dos lados del plano del lazo y casi nada por el\n"
+                                  "borde. Simulada sin mástil ni cable de bajada: el coaxial sale perpendicular al lazo y lleva un choke."), 6.0, ROJO))
+    regla(hoja, 14, 244)
+    return [hoja]
+
+
 # ---------------------------------------------------------------- Dipolos apilados en fase
 
 def hojas_apilados(diseno: Diseno, fecha: str) -> list[Hoja]:

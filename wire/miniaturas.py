@@ -60,6 +60,9 @@ MINIATURAS = {
 <line x1="26" y1="8" x2="26" y2="52" stroke="{COBRE}" stroke-width="3"/>
 <line x1="58" y1="14" x2="58" y2="46" stroke="{COBRE}" stroke-width="3"/><line x1="64" y1="14" x2="64" y2="46" stroke="{COBRE}" stroke-width="3"/>
 <line x1="94" y1="18" x2="94" y2="42" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "delta": f'''<svg {_CAB}>
+<path d="M28 50 H54 M66 50 H92 M28 50 L60 8 L92 50" stroke="{COBRE}" stroke-width="3" fill="none"/>
+<path d="M54 50 H66" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>''',
     "apilados": f'''<svg {_CAB}>
 <path d="M30 8 H62 M30 22 H62 M30 38 H62 M30 52 H62" stroke="{COBRE}" stroke-width="3"/>
 <path d="M46 8 H82 M46 22 H82 M46 38 H82 M46 52 H82 M82 8 V52" stroke="#b44a3a" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
