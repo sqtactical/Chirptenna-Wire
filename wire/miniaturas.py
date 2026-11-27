@@ -60,6 +60,14 @@ MINIATURAS = {
 <line x1="26" y1="8" x2="26" y2="52" stroke="{COBRE}" stroke-width="3"/>
 <line x1="58" y1="14" x2="58" y2="46" stroke="{COBRE}" stroke-width="3"/><line x1="64" y1="14" x2="64" y2="46" stroke="{COBRE}" stroke-width="3"/>
 <line x1="94" y1="18" x2="94" y2="42" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "apilados": f'''<svg {_CAB}>
+<path d="M30 8 H62 M30 22 H62 M30 38 H62 M30 52 H62" stroke="{COBRE}" stroke-width="3"/>
+<path d="M46 8 H82 M46 22 H82 M46 38 H82 M46 52 H82 M82 8 V52" stroke="#b44a3a" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
+<circle cx="82" cy="30" r="2.4" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>''',
+    "quad": f'''<svg {_CAB}>
+<rect x="38" y="12" width="36" height="36" stroke="{COBRE}" stroke-width="3" fill="none"/>
+<rect x="46" y="8" width="38" height="38" stroke="#b44a3a" stroke-width="2.4" fill="none" opacity=".8"/>
+<path d="M50 48 H62" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>''',
     "moxon": f'''<svg {_CAB}>
 <path d="M30 10 H90 V20 M30 10 V20 M30 50 H90 M30 50 V40 M90 50 V40" stroke="{COBRE}" stroke-width="3"/>
 <path d="M54 10 H66" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>''',

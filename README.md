@@ -39,6 +39,8 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Colineal bibanda 145 / 433 MHz (2 o 4 secciones) | **Simulado** en espacio libre con componentes ideales, sin medir; banda estrecha en 145 MHz | 2 hojas A4: antena con la ROE de las dos bandas, y el enlace bobina + condensador en serie a 1:1 con su medida y ajuste con el NanoVNA |
 | Yagi bibanda 145 / 433 MHz | **Simulado** en espacio libre (dos dipolos desde el mismo punto, un solo coaxial; ROE ≈ 1,0 y 6,3 dBi hacia delante en las dos bandas), sin medir; los dos dipolos se acoplan y la banda baja es sensible al largo (2 % = ROE 1,3) | 1 hoja A4: vista, lista de corte, posiciones en el eje y la ROE de cada banda |
 | Moxon rectangular | **Simulado** en espacio libre (ROE ≈ 1,0 sin adaptador, 6,6 dBi hacia delante, delante/detrás ≈ 15 dB), sin medir ni validar frente a un caso publicado | 1 hoja A4: vista con cotas, lista de corte (con las puntas dobladas), ROE y ganancia |
+| Quad cúbica de 2 elementos | **Simulado** en espacio libre (ROE ≈ 1,0 sin adaptador, 8,4 dBi hacia delante, delante/detrás ≈ 10 dB), sin medir ni validar frente a un caso publicado | 1 hoja A4: vistas frontal y lateral con cotas, lista de corte, ROE y ganancia |
+| Cuatro dipolos apilados en fase | **Simulado** en espacio libre con líneas ideales (75 Ω iguales; ROE ≈ 1,0, 9,6 dBi hacia los dos lados), sin medir; las pérdidas reales del coaxial restan ganancia | 1 hoja A4: vista de frente con las líneas de fase, lista de corte, ROE y ganancia |
 | Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |
 
 ### Ganancia teórica
@@ -55,6 +57,8 @@ propia simulación, el cajetín da esa.
 | Colineal bibanda (145 / 433 MHz), 2 y 4 secciones | 2,2 / 3,9 y 3,2 / 4,7 |
 | Yagi bibanda (145 / 433 MHz) | 6,2 / 6,3 |
 | Moxon rectangular | 6,6 |
+| Quad cúbica de 2 elementos | 8,4 |
+| Cuatro dipolos apilados en fase | 9,6 |
 | CoCo de coaxial (4 tramos) | 6,2 |
 | Yagi, 3 / 5 / 7 / 10 / 15 elementos | 8,7 / 10,2 / 11,7 / 12,2 / 13,2 |
 | HF sobre suelo (dipolo, EFHW, G5RV, trampas, V invertida) | 5,2 a 6,4 |

@@ -362,6 +362,50 @@ def ajustar_moxon(f_MHz: float, diametro_mm: float) -> dict:
     return r
 
 
+def ajustar_quad(f_MHz: float, diametro_mm: float) -> dict:
+    """Quad de dos elementos: ajusta los dos lados y la separación para |S11| mínimo a f, con el haz hacia delante (+y) y al
+    menos 10 dB de relación delante/detrás."""
+    from .generadores import quad, quad_por_defecto
+    p = quad_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    claves = ("lado_excitado_mm", "lado_reflector_mm", "separacion_mm")
+    construir = lambda x: quad(f_MHz, diametro_mm, x[0], x[1], x[2], p["centro_mm"])  # noqa: E731
+
+    def penal(m):
+        frente, atras = motor.ganancias_en(m, f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+        maxima = motor.simular(m, Barrido(f_MHz, f_MHz, 1)).ganancia_max[0]
+        return 0.01 * max(0.0, maxima - frente) + 0.004 * max(0.0, 10.0 - (frente - atras))
+
+    x = _nm_gamma(f_MHz, construir, [p[k] for k in claves], [0.01 * lam] * 3,
+                  valido=lambda x: min(x) > 0.05 * lam and x[2] < 0.35 * lam, penalizacion=penal)
+    geometria = dict(zip(claves, x))
+    geometria["centro_mm"] = p["centro_mm"]
+    r = _con_resultados(construir(x), f_MHz, geometria)
+    frente, atras = motor.ganancias_en(construir(x), f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+    r["resultados"].update({"ganancia_frente_dBi": frente, "relacion_delante_detras_dB": frente - atras})
+    return r
+
+
+def ajustar_apilados(f_MHz: float, diametro_mm: float) -> dict:
+    """Cuatro dipolos apilados en fase: ajusta el largo de los dipolos, la separación y el largo de las líneas de fase para
+    |S11| mínimo a f, con al menos 9 dBi de ganancia."""
+    from .generadores import apilados, apilados_por_defecto
+    p = apilados_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    claves = ("dipolo_mm", "separacion_mm", "linea_mm")
+    construir = lambda x: apilados(f_MHz, diametro_mm, x[0], x[1], x[2])  # noqa: E731
+    n = p["n_dipolos"]
+
+    def penal(m):
+        return 0.01 * max(0.0, 9.0 - motor.simular(m, Barrido(f_MHz, f_MHz, 1)).ganancia_max[0])
+
+    x = _nm_gamma(f_MHz, construir, [p[k] for k in claves], [0.01 * lam, 0.03 * lam, 0.03 * lam],
+                  valido=lambda x: x[0] > 0.3 * lam and x[1] > 0.3 * lam and x[2] >= (n - 1) / 2 * x[1] + 20.0, penalizacion=penal)
+    geometria = dict(zip(claves, x))
+    geometria.update({"n_dipolos": n, "z0_linea": p["z0_linea"], "vf_linea": p["vf_linea"]})
+    return _con_resultados(construir(x), f_MHz, geometria)
+
+
 def ajustar_yagi_bibanda(f_baja: float, diametro_mm: float) -> dict:
     """Yagi de dos bandas: ajusta el largo de los dos dipolos para 50 Ω en las dos bandas (el resto de cotas son las de partida,
     ya optimizadas con la dirección del haz), con una penalización si el haz de la banda alta no sale hacia delante.

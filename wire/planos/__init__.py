@@ -20,7 +20,7 @@ from .svg import a_svg
 
 GENERADORES = {"dipolo": dipolo.hojas, "jpole": jpole.hojas, "manga": coaxial.hojas_manga, "coco": coaxial.hojas_coco,
                "jpole_koch": koch.hojas, "discone": discone.hojas, "gp": hilos.hojas_gp, "colineal": colineal.hojas, "colineal_bibanda": colineal.hojas,
-               "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "yagi_bibanda": hilos.hojas_yagi_bibanda, "moxon": hilos.hojas_moxon, "biconica": hilos.hojas_biconica,
+               "vinv": hilos.hojas_vinv, "yagi": hilos.hojas_yagi, "yagi_bibanda": hilos.hojas_yagi_bibanda, "moxon": hilos.hojas_moxon, "quad": hilos.hojas_quad, "apilados": hilos.hojas_apilados, "biconica": hilos.hojas_biconica,
                "torniquete": hilos.hojas_torniquete, "batwing": hilos.hojas_batwing,
                "efhw": hf.hojas, "dipolo_hf": hf_dipolos.hojas_hilo, "vinv_hf": hf_dipolos.hojas_hilo, "abanico": hf_dipolos.hojas_hilo,
                "trampas": hf_dipolos.hojas_hilo, "g5rv": hf_dipolos.hojas_hilo, "vertical_hf": hf_vertical.hojas}

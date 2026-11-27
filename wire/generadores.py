@@ -493,6 +493,96 @@ def moxon(f_MHz: float, diametro_mm: float, ancho_mm: float | None = None, punta
                                f"Ancho {a * 1000:.1f}, puntas {td * 1000:.1f} y {tr_ * 1000:.1f}, hueco {g * 1000:.1f} mm"))
 
 
+# ---------------------------------------------------------------- Quad cúbica de dos elementos
+
+# Cotas de partida en λ (optimizadas con PyNEC a 145 MHz, alambre de 2 mm, hacia delante = +y): lado del lazo excitado, lado del
+# reflector, separación entre lazos y hueco central de la fuente (en el lado de abajo del excitado).
+QUAD_X = {"lado_excitado": 0.2546, "lado_reflector": 0.2641, "separacion": 0.148, "centro": 0.0097}
+
+
+def quad_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"lado_excitado_mm": QUAD_X["lado_excitado"] * lam, "lado_reflector_mm": QUAD_X["lado_reflector"] * lam,
+            "separacion_mm": QUAD_X["separacion"] * lam, "centro_mm": max(6.0, QUAD_X["centro"] * lam)}
+
+
+def quad(f_MHz: float, diametro_mm: float, lado_excitado_mm: float | None = None, lado_reflector_mm: float | None = None,
+         separacion_mm: float | None = None, centro_mm: float | None = None, barrido: Barrido | None = None,
+         densidad: float = 1.0) -> Modelo:
+    """Quad cúbica de dos elementos: dos lazos cuadrados de alambre en planos verticales (x–z) paralelos, el excitado en y = 0
+    con la fuente en el centro del lado de abajo (polarización horizontal) y el reflector (algo mayor) a `separacion_mm` por detrás.
+    El haz sale hacia +y. Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = quad_por_defecto(f_MHz)
+    le = (lado_excitado_mm or p["lado_excitado_mm"]) / 1000
+    lr = (lado_reflector_mm or p["lado_reflector_mm"]) / 1000
+    s = (separacion_mm or p["separacion_mm"]) / 1000
+    c = (centro_mm or p["centro_mm"]) / 1000
+    if min(le, lr, s) <= 0 or c >= le:
+        raise ValueError("las cotas de la quad deben ser positivas y el hueco central menor que el lado")
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+
+    def tramo(a, b) -> Hilo:
+        return Hilo(a, b, r, _segmentos(math.dist(a, b), paso))
+
+    a, b = le / 2, lr / 2
+    z0 = (le - lr) / 2                                            # el reflector queda centrado sobre el excitado
+    hilos = [Hilo((-c / 2, 0, 0), (c / 2, 0, 0), r, 1),          # el punto de alimentación
+             tramo((c / 2, 0, 0), (a, 0, 0)), tramo((a, 0, 0), (a, 0, le)), tramo((a, 0, le), (-a, 0, le)),
+             tramo((-a, 0, le), (-a, 0, 0)), tramo((-a, 0, 0), (-c / 2, 0, 0)),
+             tramo((-b, -s, z0), (b, -s, z0)), tramo((b, -s, z0), (b, -s, z0 + lr)),
+             tramo((b, -s, z0 + lr), (-b, -s, z0 + lr)), tramo((-b, -s, z0 + lr), (-b, -s, z0))]
+    return Modelo("Quad", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Quad cubica de 2 elementos a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Lados {le * 1000:.1f} y {lr * 1000:.1f} mm, separacion {s * 1000:.1f} mm"))
+
+
+# ---------------------------------------------------------------- Cuatro dipolos apilados en fase
+
+APIL_N = 4
+APIL_Z0, APIL_VF = 75.0, 0.66            # las líneas de fase: coaxial de 75 Ω con aislante de PE
+# Cotas de partida en λ (optimizadas con PyNEC a 145 MHz, alambre de 2 mm): largo de cada dipolo, separación vertical entre
+# dipolos y largo físico de cada línea de fase (iguales: del punto de unión al centro de cada dipolo).
+APIL_X = {"dipolo": 0.464, "separacion": 0.57, "linea": 0.901}
+
+
+def apilados_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"dipolo_mm": APIL_X["dipolo"] * lam, "separacion_mm": APIL_X["separacion"] * lam, "linea_mm": APIL_X["linea"] * lam,
+            "n_dipolos": float(APIL_N), "z0_linea": APIL_Z0, "vf_linea": APIL_VF}
+
+
+def apilados(f_MHz: float, diametro_mm: float, dipolo_mm: float | None = None, separacion_mm: float | None = None,
+             linea_mm: float | None = None, n_dipolos: float = APIL_N, z0_linea: float = APIL_Z0, vf_linea: float = APIL_VF,
+             barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """`n_dipolos` dipolos horizontales (eje x) apilados en vertical (z) y alimentados en fase desde un punto común, cada uno por
+    una línea de `linea_mm` (todas iguales, Z0 `z0_linea`). Radia en el plano perpendicular a los dipolos (±y), con ≈ 4 dB más que un
+    dipolo por cada duplicación. Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = apilados_por_defecto(f_MHz)
+    largo = (dipolo_mm or p["dipolo_mm"]) / 1000
+    sep = (separacion_mm or p["separacion_mm"]) / 1000
+    lin = (linea_mm or p["linea_mm"]) / 1000
+    n = int(n_dipolos)
+    if n < 2:
+        raise ValueError("hacen falta al menos dos dipolos")
+    if lin < (n - 1) / 2 * sep:
+        raise ValueError("las líneas de fase no llegan del punto de unión al dipolo más lejano: alárgalas o acerca los dipolos")
+    r = diametro_mm / 2000
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    seg = _segmentos(largo, paso)
+    seg += 1 - seg % 2                                              # impar: la línea llega al segmento central
+    hilos = [Hilo((-largo / 2, 0, (k - (n - 1) / 2) * sep), (largo / 2, 0, (k - (n - 1) / 2) * sep), r, seg) for k in range(n)]
+    hilos.append(Hilo((0, 0, -0.01), (0, 0, 0.01), r, 1))          # el punto de alimentación, en el centro del apilado
+    lineas = tuple(Linea(n + 1, 1, k + 1, seg // 2 + 1, z0_linea, lin, vf_linea) for k in range(n))
+    return Modelo("Dipolos apilados", f_MHz, tuple(hilos), Puerto(n + 1, 1), lineas=lineas, barrido=barrido,
+                  comentarios=(f"{n} dipolos apilados en fase a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Dipolos de {largo * 1000:.1f} mm separados {sep * 1000:.1f} mm, lineas de {lin * 1000:.1f} mm ({z0_linea:g} ohm, VF {vf_linea:g})"))
+
+
 # ---------------------------------------------------------------- Yagi de dos bandas (145 / 433 MHz) con el excitado en abanico
 
 YAGIB_RAZON = 433.0 / 145.0              # banda alta / banda baja (las cotas de partida están optimizadas para 145 y 433 MHz)

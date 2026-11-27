@@ -322,6 +322,106 @@ def hojas_moxon(diseno: Diseno, fecha: str) -> list[Hoja]:
     return [hoja]
 
 
+# ---------------------------------------------------------------- Quad cúbica de dos elementos
+
+def hojas_quad(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    le, lr, s, c = g["lado_excitado_mm"], g["lado_reflector_mm"], g["separacion_mm"], g["centro_mm"]
+    d, u, sob = diseno.diametro_mm, unidad(diseno), diseno.sobrante_mm
+    hoja = hoja_a4(diseno, _titulo(N_("Quad cúbica de 2 elementos · {0} MHz ({1})"), diseno),
+                   tr("Dos lazos cuadrados de alambre de Ø {0} mm, el reflector algo mayor y detrás · alimentado con coaxial de 50 Ω, sin adaptador", fmt(d, 1)))
+    seccion(hoja, 14, 33, tr("VISTAS"), tr("Sin escala · el haz sale hacia la derecha en la vista lateral · medidas en {0} al eje del alambre", u))
+    esc = 33.0 / lr
+    # vista frontal: los dos lazos concéntricos
+    fx, fy = 52.0, 48.0 + 33.0                                         # centro en x, base del reflector en y
+    z0 = (le - lr) / 2
+    def cuadrado(x0, y0, lado, color, grosor=0.85):
+        a = lado * esc
+        for p, q in (((x0 - a / 2, y0), (x0 + a / 2, y0)), ((x0 + a / 2, y0), (x0 + a / 2, y0 - a)),
+                     ((x0 + a / 2, y0 - a), (x0 - a / 2, y0 - a)), ((x0 - a / 2, y0 - a), (x0 - a / 2, y0))):
+            hoja.anadir(Linea(p[0], p[1], q[0], q[1], color, grosor))
+    cuadrado(fx, fy, lr, ROJO)
+    cuadrado(fx, fy - z0 * esc, le, COBRE)
+    hoja.anadir(Cota(fx - lr * esc / 2, fy + 3.5, fx + lr * esc / 2, fy + 3.5, longitud(lr, diseno, 0), tam=5.0),
+                Texto(fx, fy + 10, tr("vista frontal: excitado {0} (cobre), reflector (rojo)", longitud(le, diseno, 0)), 5.6, ancla="centro"))
+    # vista lateral: dos líneas verticales separadas
+    sx = 140.0
+    hoja.anadir(Linea(sx, fy - z0 * esc, sx, fy - z0 * esc - le * esc, COBRE, 0.85),
+                Linea(sx - s * esc, fy, sx - s * esc, fy - lr * esc, ROJO, 0.85),
+                Linea(sx - s * esc - 6, fy - lr * esc / 2, sx + 6, fy - lr * esc / 2, GRIS, 0.5),
+                Cota(sx - s * esc, fy + 3.5, sx, fy + 3.5, longitud(s, diseno, 0), tam=5.0),
+                Texto(sx - s * esc / 2, fy + 10, tr("vista lateral y travesaño"), 5.6, ancla="centro"))
+    seccion(hoja, 14, 101, tr("LISTA DE CORTE"), tr("Corta con el sobrante, forma el lazo y ajusta después"), VERDE)
+    lazo_e = 4 * le - c
+    lazo_r = 4 * lr
+    filas = [
+        [tr("Lazo excitado, Ø {0} mm (abierto en la fuente)", fmt(d, 1)), "1", f"{longitud(lazo_e, diseno)} {u}", f"{longitud(lazo_e + sob, diseno, 0)} {u}"],
+        [tr("Lazo reflector, Ø {0} mm (cerrado)", fmt(d, 1)), "1", f"{longitud(lazo_r, diseno)} {u}", f"{longitud(lazo_r + sob, diseno, 0)} {u}"],
+        [tr("Varillas de fibra o PVC para el marco"), "4", f"≈ {longitud(math.hypot(lr, lr) / 2 + s, diseno, 0)} {u}", "—"],
+        [tr("Travesaño central de PVC"), "1", f"{longitud(s + 60, diseno, 0)} {u}", "—"],
+        [tr("Coaxial RG-58, bajada + choke"), "1", tr("a medida"), "—"],
+    ]
+    tabla(hoja, 14, 113, [0, 52, 62, 84], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 108)
+    hoja.anadir(Texto(14, 152, tr("Los dos lazos son de una sola pieza con las esquinas dobladas a 90°; el del reflector se cierra\n"
+                                  "soldando los extremos. La fuente va en el centro del lado de abajo del excitado (hueco de {0}).\n"
+                                  "Ajuste: acorta o alarga el excitado por igual en los cuatro lados.", longitud(c, diseno, 0) + " " + u), 6.0, VERDE))
+    _simulacion_roe(hoja, diseno)
+    r = diseno.resultados
+    if r and "ganancia_frente_dBi" in r:
+        hoja.anadir(Texto(128, 176, tr("Hacia delante {0} dBi, delante/detrás {1} dB\n(simulado, en espacio libre).", fmt(r["ganancia_frente_dBi"], 1),
+                                       fmt(r["relacion_delante_detras_dB"], 0)), 6.0))
+    hoja.anadir(Texto(14, 200, tr("Con la fuente abajo la polarización es horizontal; para polarización vertical pon la fuente en el centro de un\n"
+                                  "lado (el mismo diseño girado 90°: en espacio libre la ROE no cambia). Simulada sin mástil ni cable de bajada:\n"
+                                  "el coaxial sale por detrás y lleva un choke."), 6.0, ROJO))
+    regla(hoja, 14, 244)
+    return [hoja]
+
+
+# ---------------------------------------------------------------- Dipolos apilados en fase
+
+def hojas_apilados(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    n = int(g["n_dipolos"])
+    largo, sep, lin = g["dipolo_mm"], g["separacion_mm"], g["linea_mm"]
+    z0, vf = g["z0_linea"], g["vf_linea"]
+    d, u, sob = diseno.diametro_mm, unidad(diseno), diseno.sobrante_mm
+    hoja = hoja_a4(diseno, _titulo(N_("Dipolos apilados en fase · {0} MHz ({1})"), diseno),
+                   tr("Dipolos de media onda horizontales, uno sobre otro, alimentados en fase con líneas iguales de {0} Ω · coaxial de 50 Ω", fmt(z0, 0)))
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista de frente, sin escala · medidas en {0} al eje del alambre", u))
+    alto = (n - 1) * sep
+    esc = min(84.0 / alto, 60.0 / largo)
+    cx, y0 = 50.0, 50.0                                                 # eje vertical de los dipolos y arriba del apilado
+    ys = [y0 + k * sep * esc for k in range(n)]
+    bus = cx + 30.0
+    ym = y0 + alto * esc / 2
+    for y in ys:
+        hoja.anadir(Linea(cx - largo * esc / 2, y, cx + largo * esc / 2, y, COBRE, 0.85),
+                    Linea(cx, y, bus, y, ROJO, 0.5, (1.5, 1.0)))
+    hoja.anadir(Linea(bus, ys[0], bus, ys[-1], ROJO, 0.5, (1.5, 1.0)),
+                Circulo(bus, ym, 1.4, TINTA, 0.2, BLANCO),
+                Texto(bus + 3, ym + 1.5, tr("unión: coaxial de 50 Ω a la estación"), 5.6),
+                Texto(bus + 3, ys[0] + 1.5, tr("línea de {0} Ω, {1}, igual en todos", fmt(z0, 0), longitud(lin, diseno, 0)), 5.6, ROJO),
+                Cota(cx - largo * esc / 2, ys[0] - 3.5, cx + largo * esc / 2, ys[0] - 3.5, longitud(largo, diseno, 0), tam=5.0),
+                Cota(cx - largo * esc / 2 - 6, ys[0], cx - largo * esc / 2 - 6, ys[1], longitud(sep, diseno, 0), tam=5.0))
+    seccion(hoja, 14, 142, tr("LISTA DE CORTE"), tr("Corta con el sobrante y ajusta después"), VERDE)
+    brazo = largo / 2
+    filas = [
+        [tr("Brazo de dipolo, alambre Ø {0} mm", fmt(d, 1)), str(2 * n), f"{longitud(brazo, diseno)} {u}", f"{longitud(brazo + sob, diseno, 0)} {u}"],
+        [tr("Línea de fase, coaxial de {0} Ω (VF {1})", fmt(z0, 0), fmt(vf, 2)), str(n), f"{longitud(lin, diseno, 0)} {u}", tr("todas iguales")],
+        [tr("Balun 1:1 en el centro de cada dipolo"), str(n), "—", "—"],
+        [tr("Mástil no metálico"), "1", f"{longitud(alto + 400, diseno, 0)} {u}", "—"],
+        [tr("Conector en el punto de unión"), "1", "—", "—"],
+    ]
+    tabla(hoja, 14, 154, [0, 60, 72, 94], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 108)
+    _simulacion_roe(hoja, diseno)
+    hoja.anadir(Texto(14, 196, tr("Ajuste: las cuatro líneas deben ser idénticas (largo y tipo de coaxial); acorta los brazos por igual.\n"
+                                  "Las líneas hacen de transformador (75 Ω) y ponen en fase los dipolos: no las acortes ni las dejes de distinto largo.\n"
+                                  "Radia hacia los dos lados (perpendicular a los dipolos) y casi nada por los extremos. Simulada con líneas ideales y\n"
+                                  "sin mástil: las pérdidas reales del coaxial restan algo de ganancia."), 6.0, ROJO))
+    regla(hoja, 14, 244)
+    return [hoja]
+
+
 # ---------------------------------------------------------------- Yagi de dos bandas
 
 def hojas_yagi_bibanda(diseno: Diseno, fecha: str) -> list[Hoja]:
