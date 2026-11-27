@@ -263,6 +263,65 @@ def _hoja_elementos_yagi(diseno: Diseno, nombres: list[str], largos: list[float]
     return hoja
 
 
+# ---------------------------------------------------------------- Moxon
+
+def hojas_moxon(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    a, td, tr_, hu, c = g["ancho_mm"], g["punta_excitado_mm"], g["punta_reflector_mm"], g["hueco_mm"], g["centro_mm"]
+    d, u, sob = diseno.diametro_mm, unidad(diseno), diseno.sobrante_mm
+    fondo = td + hu + tr_
+    hoja = hoja_a4(diseno, _titulo(N_("Moxon rectangular · {0} MHz ({1})"), diseno),
+                   tr("Dos elementos de alambre de Ø {0} mm con las puntas enfrentadas · alimentado con coaxial de 50 Ω, sin adaptador", fmt(d, 1)))
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista desde arriba, sin escala · el haz sale hacia arriba · medidas en {0} al eje del alambre", u))
+    modelo = diseno.modelo()
+    us = [p[0] for h in modelo.hilos for p in (h.inicio, h.fin)]
+    vs = [p[1] for h in modelo.hilos for p in (h.inicio, h.fin)]
+    x0, y0, ancho, alto = 44.0, 54.0, 140.0, 36.0
+    esc = min(ancho / (max(us) - min(us)), alto / (max(vs) - min(vs)))
+    ox = x0 + (ancho - (max(us) - min(us)) * esc) / 2
+    oy = y0 + (alto - (max(vs) - min(vs)) * esc) / 2
+    P = lambda p3: (ox + (p3[0] - min(us)) * esc, oy + (max(vs) - p3[1]) * esc)      # noqa: E731
+    for i, h in enumerate(modelo.hilos, start=1):
+        if i > 1:                                                         # el primero es el tramo del punto de alimentación
+            p, q = P(h.inicio), P(h.fin)
+            hoja.anadir(Linea(p[0], p[1], q[0], q[1], COBRE, 0.85))
+    xi, yf = P((-a / 2000, 0, 0))
+    xd, _ = P((a / 2000, 0, 0))
+    _, y_td = P((0, -td / 1000, 0))
+    _, y_pr = P((0, -(td + hu) / 1000, 0))
+    _, y_r = P((0, -fondo / 1000, 0))
+    hoja.anadir(Cota(xi, yf - 3, xd, yf - 3, longitud(a, diseno, 0), tam=5.6),
+                Cota(xi - 8, yf, xi - 8, y_td, longitud(td, diseno, 0), tam=5.0),
+                Cota(xi - 8, y_td, xi - 8, y_pr, longitud(hu, diseno, 0), tam=5.0),
+                Cota(xi - 8, y_pr, xi - 8, y_r, longitud(tr_, diseno, 0), tam=5.0),
+                Texto((xi + xd) / 2, yf + 5, tr("excitado: coaxial en el centro (vivo a un lado, malla al otro)"), 5.6, ancla="centro"),
+                Texto((xi + xd) / 2, y_r + 5, tr("reflector, de una sola pieza"), 5.6, ancla="centro"))
+    seccion(hoja, 14, 101, tr("LISTA DE CORTE"), tr("Corta con el sobrante, dobla y ajusta después"), VERDE)
+    brazo = a / 2 - c / 2 + td
+    refl = a + 2 * tr_
+    filas = [
+        [tr("Excitado (mitad con su punta), Ø {0} mm", fmt(d, 1)), "2", f"{longitud(brazo, diseno)} {u}", f"{longitud(brazo + sob, diseno, 0)} {u}"],
+        [tr("Reflector con sus dos puntas, Ø {0} mm", fmt(d, 1)), "1", f"{longitud(refl, diseno)} {u}", f"{longitud(refl + sob, diseno, 0)} {u}"],
+        [tr("Marco de PVC o varilla no metálica"), "1", f"{longitud(a, diseno, 0)} × {longitud(fondo, diseno, 0)} {u}", "—"],
+        [tr("Aislador central de PVC, 60 × 25 × 5 mm"), "1", "—", "—"],
+        [tr("Coaxial RG-58, bajada + choke"), "1", tr("a medida"), "—"],
+    ]
+    tabla(hoja, 14, 113, [0, 52, 62, 84], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 108)
+    hoja.anadir(Texto(14, 152, tr("Dobla cada punta a 90° justo en la esquina: los extremos de\nlas puntas quedan enfrentados a {0} y no se tocan.\n"
+                                  "Ajuste: acorta o alarga las dos puntas del excitado por\nigual; el hueco entre puntas es lo más sensible.",
+                                  longitud(hu, diseno, 0) + " " + u), 6.0, VERDE))
+    _simulacion_roe(hoja, diseno)
+    r = diseno.resultados
+    if r and "ganancia_frente_dBi" in r:
+        hoja.anadir(Texto(128, 176, tr("Hacia delante {0} dBi, delante/detrás {1} dB\n(simulado, en espacio libre).", fmt(r["ganancia_frente_dBi"], 1),
+                                       fmt(r["relacion_delante_detras_dB"], 0)), 6.0))
+    hoja.anadir(Texto(14, 200, tr("La Moxon es compacta ({0} de ancho para {1} MHz) y da una relación delante/detrás alta; la polarización\n"
+                                  "es la de los elementos (horizontal con ellos en horizontal). Simulada sin mástil ni cable de bajada: el coaxial\n"
+                                  "sale por detrás, en ángulo recto con los elementos, y lleva un choke.", longitud(a, diseno, 0) + " " + u, frecuencia(diseno.f_MHz)), 6.0, ROJO))
+    regla(hoja, 14, 244)
+    return [hoja]
+
+
 # ---------------------------------------------------------------- Yagi de dos bandas
 
 def hojas_yagi_bibanda(diseno: Diseno, fecha: str) -> list[Hoja]:

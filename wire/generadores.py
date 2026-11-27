@@ -447,6 +447,52 @@ def yagi(f_MHz: float, diametro_mm: float, reflector_mm: float | None = None, ex
                                + ", ".join(f"{(b - a) * 1000:.1f}" for a, b in zip(ys, ys[1:])) + " mm"))
 
 
+# ---------------------------------------------------------------- Moxon rectangular
+
+# Cotas de partida en λ (optimizadas con PyNEC a 145 MHz, alambre de 2 mm, hacia delante = +y): ancho, puntas del excitado y del
+# reflector y hueco entre puntas. El hueco central del excitado (donde va el coaxial) es 0,0097 λ.
+MOXON_X = {"ancho": 0.3617, "punta_excitado": 0.055, "punta_reflector": 0.0724, "hueco": 0.049, "centro": 0.0097}
+
+
+def moxon_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"ancho_mm": MOXON_X["ancho"] * lam, "punta_excitado_mm": MOXON_X["punta_excitado"] * lam,
+            "punta_reflector_mm": MOXON_X["punta_reflector"] * lam, "hueco_mm": MOXON_X["hueco"] * lam,
+            "centro_mm": max(6.0, MOXON_X["centro"] * lam)}
+
+
+def moxon(f_MHz: float, diametro_mm: float, ancho_mm: float | None = None, punta_excitado_mm: float | None = None,
+          punta_reflector_mm: float | None = None, hueco_mm: float | None = None, centro_mm: float | None = None,
+          barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Moxon rectangular de alambre: un rectángulo abierto por delante con el excitado en el lado de delante (y = 0) y el
+    reflector detrás, con las puntas de los dos dobladas una hacia la otra (`hueco_mm` entre ellas). Alimentación en el centro del
+    excitado (hueco de `centro_mm`). El haz sale hacia +y. Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = moxon_por_defecto(f_MHz)
+    a = (ancho_mm or p["ancho_mm"]) / 1000
+    td = (punta_excitado_mm or p["punta_excitado_mm"]) / 1000
+    tr_ = (punta_reflector_mm or p["punta_reflector_mm"]) / 1000
+    g = (hueco_mm or p["hueco_mm"]) / 1000
+    c = (centro_mm or p["centro_mm"]) / 1000
+    if min(a, td, tr_, g) <= 0 or c >= a:
+        raise ValueError("las cotas de la Moxon deben ser positivas y el hueco central menor que el ancho")
+    r = diametro_mm / 2000
+    if g <= 3 * r:
+        raise ValueError("el hueco entre las puntas es demasiado pequeño para ese diámetro")
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    y_r = -(td + g + tr_)
+    hilos = [Hilo((-c / 2, 0, 0), (c / 2, 0, 0), r, 1)]                                   # el punto de alimentación
+    for s in (1, -1):
+        hilos.append(Hilo((s * c / 2, 0, 0), (s * a / 2, 0, 0), r, _segmentos(a / 2 - c / 2, paso)))      # excitado
+        hilos.append(Hilo((s * a / 2, 0, 0), (s * a / 2, -td, 0), r, _segmentos(td, paso)))              # punta del excitado
+        hilos.append(Hilo((s * a / 2, y_r, 0), (s * a / 2, y_r + tr_, 0), r, _segmentos(tr_, paso)))     # punta del reflector
+    hilos.append(Hilo((-a / 2, y_r, 0), (a / 2, y_r, 0), r, _segmentos(a, paso)))                         # reflector
+    return Modelo("Moxon", f_MHz, tuple(hilos), Puerto(1, 1), barrido=barrido,
+                  comentarios=(f"Moxon rectangular a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Ancho {a * 1000:.1f}, puntas {td * 1000:.1f} y {tr_ * 1000:.1f}, hueco {g * 1000:.1f} mm"))
+
+
 # ---------------------------------------------------------------- Yagi de dos bandas (145 / 433 MHz) con el excitado en abanico
 
 YAGIB_RAZON = 433.0 / 145.0              # banda alta / banda baja (las cotas de partida están optimizadas para 145 y 433 MHz)

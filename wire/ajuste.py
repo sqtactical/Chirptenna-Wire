@@ -339,6 +339,29 @@ def ajustar_colineal_bibanda(f_baja: float, f_alta: float, diametro_mm: float, s
                           **_geometria_suelo(altura_m, suelo)}, "resultados": r}
 
 
+def ajustar_moxon(f_MHz: float, diametro_mm: float) -> dict:
+    """Moxon: ajusta el ancho, las dos puntas y el hueco para |S11| mínimo a f, sin perder el haz hacia delante (+y)."""
+    from .generadores import moxon, moxon_por_defecto
+    p = moxon_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    claves = ("ancho_mm", "punta_excitado_mm", "punta_reflector_mm", "hueco_mm")
+    construir = lambda x: moxon(f_MHz, diametro_mm, x[0], x[1], x[2], x[3], p["centro_mm"])  # noqa: E731
+
+    def penal(m):
+        frente, atras = motor.ganancias_en(m, f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+        maxima = motor.simular(m, Barrido(f_MHz, f_MHz, 1)).ganancia_max[0]
+        return 0.01 * max(0.0, maxima - frente) + 0.004 * max(0.0, 15.0 - (frente - atras))      # el haz hacia delante y 15 dB de delante/detrás
+
+    x = _nm_gamma(f_MHz, construir, [p[k] for k in claves], [0.01 * lam, 0.005 * lam, 0.005 * lam, 0.005 * lam],
+                  valido=lambda x: min(x) > 0.005 * lam and x[3] > 3 * diametro_mm, penalizacion=penal)
+    geometria = dict(zip(claves, x))
+    geometria["centro_mm"] = p["centro_mm"]
+    r = _con_resultados(construir(x), f_MHz, geometria)
+    frente, atras = motor.ganancias_en(construir(x), f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+    r["resultados"].update({"ganancia_frente_dBi": frente, "relacion_delante_detras_dB": frente - atras})
+    return r
+
+
 def ajustar_yagi_bibanda(f_baja: float, diametro_mm: float) -> dict:
     """Yagi de dos bandas: ajusta el largo de los dos dipolos para 50 Ω en las dos bandas (el resto de cotas son las de partida,
     ya optimizadas con la dirección del haz), con una penalización si el haz de la banda alta no sale hacia delante.

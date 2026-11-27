@@ -60,6 +60,9 @@ MINIATURAS = {
 <line x1="26" y1="8" x2="26" y2="52" stroke="{COBRE}" stroke-width="3"/>
 <line x1="58" y1="14" x2="58" y2="46" stroke="{COBRE}" stroke-width="3"/><line x1="64" y1="14" x2="64" y2="46" stroke="{COBRE}" stroke-width="3"/>
 <line x1="94" y1="18" x2="94" y2="42" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "moxon": f'''<svg {_CAB}>
+<path d="M30 10 H90 V20 M30 10 V20 M30 50 H90 M30 50 V40 M90 50 V40" stroke="{COBRE}" stroke-width="3"/>
+<path d="M54 10 H66" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>''',
     "yagi_bibanda": f'''<svg {_CAB}>
 <line x1="10" y1="30" x2="110" y2="30" stroke="currentColor" stroke-width="1.6"/>
 <line x1="20" y1="6" x2="20" y2="54" stroke="{COBRE}" stroke-width="3"/><line x1="24" y1="14" x2="24" y2="46" stroke="#b44a3a" stroke-width="2.4"/>
