@@ -60,6 +60,13 @@ MINIATURAS = {
 <line x1="26" y1="8" x2="26" y2="52" stroke="{COBRE}" stroke-width="3"/>
 <line x1="58" y1="14" x2="58" y2="46" stroke="{COBRE}" stroke-width="3"/><line x1="64" y1="14" x2="64" y2="46" stroke="{COBRE}" stroke-width="3"/>
 <line x1="94" y1="18" x2="94" y2="42" stroke="{COBRE}" stroke-width="3"/></svg>''',
+    "yagi_apilada": f'''<svg {_CAB}>
+<path d="M10 16 H110 M10 44 H110" stroke="currentColor" stroke-width="1.4"/>
+<path d="M22 10 V22 M44 12 V20 M62 12 V20 M80 13 V19 M98 14 V18 M22 38 V50 M44 40 V48 M62 40 V48 M80 41 V47 M98 42 V46" stroke="{COBRE}" stroke-width="3"/>
+<path d="M44 16 H30 V44 H44" stroke="#b44a3a" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/></svg>''',
+    "halo": f'''<svg {_CAB}>
+<path d="M82 24 A24 24 0 1 0 82 36" stroke="{COBRE}" stroke-width="3" fill="none"/>
+<path d="M36 30 H14" stroke="#b44a3a" stroke-width="1.6"/></svg>''',
     "delta": f'''<svg {_CAB}>
 <path d="M28 50 H54 M66 50 H92 M28 50 L60 8 L92 50" stroke="{COBRE}" stroke-width="3" fill="none"/>
 <path d="M54 50 H66" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>''',

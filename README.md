@@ -42,6 +42,8 @@ las decisiones pendientes están en [`docs/PROPUESTA.md`](docs/PROPUESTA.md); el
 | Quad cúbica de 2 elementos | **Simulado** en espacio libre (ROE ≈ 1,0 sin adaptador, 8,4 dBi hacia delante, delante/detrás ≈ 10 dB), sin medir ni validar frente a un caso publicado | 1 hoja A4: vistas frontal y lateral con cotas, lista de corte, ROE y ganancia |
 | Cuatro dipolos apilados en fase | **Simulado** en espacio libre con líneas ideales (75 Ω iguales; ROE ≈ 1,0, 9,6 dBi hacia los dos lados), sin medir; las pérdidas reales del coaxial restan ganancia | 1 hoja A4: vista de frente con las líneas de fase, lista de corte, ROE y ganancia |
 | Delta loop | **Simulado** en espacio libre (ROE ≈ 1,0 sin adaptador, ≈ 4 dBi hacia los dos lados del plano del lazo), sin medir ni validar frente a un caso publicado | 1 hoja A4: vista de frente con cotas, lista de corte, ROE y sensibilidad al perímetro |
+| Halo | **Simulado** en espacio libre con un transformador λ/4 ideal de 25 Ω (dos coaxiales de 50 Ω en paralelo; ROE ≈ 1,0, ≈ 1,2 dBi, omnidireccional con polarización horizontal), sin medir ni validar frente a un caso publicado | 1 hoja A4: vista desde arriba, lista de corte, ROE y sensibilidad al radio |
+| Dos Yagis de 5 elementos apiladas | **Simulado** en espacio libre con líneas ideales de 75 Ω iguales (ROE ≈ 1,0, 12,2 dBi hacia delante, delante/detrás ≈ 10 dB), sin medir | 2 hojas A4: vista lateral con las líneas de fase y lista de corte, y los elementos de cada Yagi |
 | Batwing (dipolo de alas) | **Simulado**, sin medir ni validar frente a un caso publicado | 1 hoja A4: vista, lista de corte (radios y borde), ROE y abanico a 1:1 |
 
 ### Ganancia teórica
@@ -61,6 +63,8 @@ propia simulación, el cajetín da esa.
 | Quad cúbica de 2 elementos | 8,4 |
 | Cuatro dipolos apilados en fase | 9,6 |
 | Delta loop | 4,1 |
+| Halo | 1,2 |
+| Dos Yagis de 5 elementos apiladas | 12,2 |
 | CoCo de coaxial (4 tramos) | 6,2 |
 | Yagi, 3 / 5 / 7 / 10 / 15 elementos | 8,7 / 10,2 / 11,7 / 12,2 / 13,2 |
 | HF sobre suelo (dipolo, EFHW, G5RV, trampas, V invertida) | 5,2 a 6,4 |

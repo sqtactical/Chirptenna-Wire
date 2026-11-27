@@ -377,6 +377,102 @@ def hojas_quad(diseno: Diseno, fecha: str) -> list[Hoja]:
     return [hoja]
 
 
+# ---------------------------------------------------------------- Dos Yagis apiladas
+
+def hojas_yagi_apilada(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    refl, exc, sp = g["reflector_mm"], g["excitado_mm"], g["sep_plegado_mm"]
+    dires, seps = list(g["directores_mm"]), list(g["seps_directores_mm"])
+    sep, lin, z0, vf = g["separacion_mm"], g["linea_mm"], g["z0_linea"], g["vf_linea"]
+    n = len(dires) + 2
+    d, u, sob = diseno.diametro_mm, unidad(diseno), diseno.sobrante_mm
+    ys = [0.0, g["sep_reflector_mm"]]
+    for s in seps:
+        ys.append(ys[-1] + s)
+    nombres = ["R", "P"] + [f"D{k}" for k in range(1, n - 1)]
+    largos = [refl, exc] + dires
+    hoja = hoja_a4(diseno, tr("Dos Yagis de {0} elementos apiladas · {1} MHz ({2})", n, frecuencia(diseno.f_MHz), texto_banda(diseno.f_MHz)),
+                   tr("Dos Yagis iguales con dipolo plegado, una sobre otra, alimentadas en fase con líneas iguales de {0} Ω · coaxial de 50 Ω", fmt(z0, 0)))
+    seccion(hoja, 14, 33, tr("VISTA LATERAL"), tr("Sin escala · el haz sale hacia la derecha · medidas en {0}", u))
+    esc = min(120.0 / ys[-1], 34.0 / sep)
+    x0, ya = 30.0, 52.0
+    yb = ya + sep * esc
+    for y_eje in (ya, yb):
+        hoja.anadir(Linea(x0 - 4, y_eje, x0 + ys[-1] * esc + 4, y_eje, GRIS, 0.5))
+        for y, lg in zip(ys, largos):
+            hoja.anadir(Linea(x0 + y * esc, y_eje - 3, x0 + y * esc, y_eje + 3, COBRE, 1.4))
+    jx = x0 + g["sep_reflector_mm"] * esc
+    ym = (ya + yb) / 2
+    hoja.anadir(Linea(jx, ya, jx + 14, ya, ROJO, 0.5, (1.5, 1.0)), Linea(jx, yb, jx + 14, yb, ROJO, 0.5, (1.5, 1.0)),
+                Linea(jx + 14, ya, jx + 14, yb, ROJO, 0.5, (1.5, 1.0)), Circulo(jx + 14, ym, 1.4, TINTA, 0.2, BLANCO),
+                Cota(x0 - 12, ya, x0 - 12, yb, longitud(sep, diseno, 0), tam=5.0),
+                Texto(jx + 18, ym + 1.5, tr("unión: coaxial de 50 Ω a la estación"), 5.6),
+                Texto(jx + 18, ya + 1.5, tr("línea de {0} Ω, {1}, igual en las dos", fmt(z0, 0), longitud(lin, diseno, 0)), 5.6, ROJO))
+    seccion(hoja, 14, 101, tr("LISTA DE CORTE"), tr("Para las dos Yagis; la hoja 2 trae cada elemento"), VERDE)
+    cierre = sp + d
+    filas = [
+        [tr("Reflector, Ø {0} mm", fmt(d, 1)), "2", f"{longitud(refl, diseno)} {u}", f"{longitud(refl + sob, diseno, 0)} {u}"],
+        [tr("Dipolo plegado, Ø {0} mm", fmt(d, 1)), "4", f"{longitud(exc, diseno)} {u}", f"{longitud(exc + sob, diseno, 0)} {u}"],
+        [tr("Cierres del plegado, Ø {0} mm", fmt(d, 1)), "4", f"{longitud(cierre, diseno)} {u}", f"{longitud(cierre + 6, diseno, 0)} {u}"],
+        [tr("Directores, Ø {0} mm", fmt(d, 1)), str(2 * (n - 2)), tr("hoja 2"), tr("hoja 2")],
+        [tr("Línea de fase, coaxial de {0} Ω (VF {1})", fmt(z0, 0), fmt(vf, 2)), "2", f"{longitud(lin, diseno, 0)} {u}", tr("iguales")],
+        [tr("Ejes no metálicos (PVC) y mástil"), "2 + 1", f"{longitud(ys[-1] + 120, diseno, 0)} {u}", "—"],
+    ]
+    tabla(hoja, 14, 113, [0, 58, 68, 88], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 108)
+    _simulacion_roe(hoja, diseno)
+    r = diseno.resultados
+    if r and "ganancia_frente_dBi" in r:
+        hoja.anadir(Texto(128, 176, tr("Hacia delante {0} dBi, delante/detrás {1} dB\n(simulado, en espacio libre).", fmt(r["ganancia_frente_dBi"], 1),
+                                       fmt(r["relacion_delante_detras_dB"], 0)), 6.0))
+    hoja.anadir(Texto(14, 200, tr("Las dos líneas de fase deben ser idénticas (largo y coaxial). Cada Yagi lleva su dipolo plegado en la hoja de la\n"
+                                  "Yagi sola; aquí van las dos con los ejes uno sobre otro. Apilarlas da unos 2 dB más que una sola y estrecha el haz\n"
+                                  "en vertical. Simulada con líneas ideales y sin mástil: las pérdidas reales del coaxial restan algo de ganancia."), 6.0, ROJO))
+    regla(hoja, 14, 244)
+    return [hoja, _hoja_elementos_yagi(diseno, nombres, largos, ys, 0.0, "ninguno", 0.0, ys[-1] + 120)]
+
+
+# ---------------------------------------------------------------- Halo
+
+def hojas_halo(diseno: Diseno, fecha: str) -> list[Hoja]:
+    g = diseno.geometria
+    radio, lin, ab, z0, vf = g["radio_mm"], g["linea_mm"], g["abertura"], g["z0_linea"], g["vf_linea"]
+    d, u, sob = diseno.diametro_mm, unidad(diseno), diseno.sobrante_mm
+    arco = radio * (2 * math.pi - math.radians(ab))
+    hoja = hoja_a4(diseno, _titulo(N_("Halo · {0} MHz ({1})"), diseno),
+                   tr("Dipolo de media onda doblado en aro de alambre o varilla de Ø {0} mm · transformador λ/4 de {1} Ω y coaxial de 50 Ω", fmt(d, 1), fmt(z0, 0)))
+    seccion(hoja, 14, 33, tr("VISTA GENERAL"), tr("Vista desde arriba, sin escala · medidas en {0} al eje del alambre", u))
+    esc = 34.0 / (2 * radio)
+    cx, cy = 66.0, 52.0 + 17.0
+    a0 = math.radians(ab) / 2
+    R = radio * esc
+    pts = [(cx + R * math.cos(a0 + (2 * math.pi - 2 * a0) * k / 48), cy - R * math.sin(a0 + (2 * math.pi - 2 * a0) * k / 48)) for k in range(49)]
+    for p, q in zip(pts, pts[1:]):
+        hoja.anadir(Linea(p[0], p[1], q[0], q[1], COBRE, 0.85))
+    hoja.anadir(Linea(cx - R, cy, cx - R - 14, cy, ROJO, 0.6),
+                Texto(cx - R - 16, cy + 1.5, tr("transformador λ/4"), 5.6, ROJO, ancla="derecha"),
+                Texto(cx + R + 3, cy + 1.5, tr("hueco {0}°", fmt(ab, 0)), 5.6),
+                Cota(cx - R, cy + R + 4, cx + R, cy + R + 4, longitud(2 * radio, diseno, 0), tam=5.0),
+                Texto(cx, cy - R - 3, tr("el coaxial va al lado opuesto del hueco"), 5.6, GRIS, ancla="centro"))
+    seccion(hoja, 14, 101, tr("LISTA DE CORTE"), tr("Corta con el sobrante, dobla y ajusta después"), VERDE)
+    filas = [
+        [tr("Aro de alambre o varilla Ø {0} mm (abierto en el hueco)", fmt(d, 1)), "1", f"{longitud(arco, diseno)} {u}", f"{longitud(arco + sob, diseno, 0)} {u}"],
+        [tr("Transformador: coaxial de 50 Ω, dos en paralelo (VF {0})", fmt(vf, 2)), "2", f"{longitud(lin, diseno, 0)} {u}", tr("iguales")],
+        [tr("Soporte de PVC o metacrilato para el aro"), "1", f"{longitud(2 * radio + 40, diseno, 0)} {u}", "—"],
+        [tr("Coaxial RG-58, bajada + choke"), "1", tr("a medida"), "—"],
+    ]
+    tabla(hoja, 14, 113, [0, 62, 72, 92], [tr("Pieza"), tr("Cant."), tr("Final"), tr("Cortar a")], filas, 108)
+    hoja.anadir(Texto(14, 145, tr("Los dos coaxiales de 50 Ω en paralelo hacen {0} Ω: en λ/4 pasan los ≈ 14 Ω del halo a 50 Ω.\nVan soldados juntos en los dos extremos: en el aro, vivo con vivo y malla con malla\n(a los dos lados del punto de alimentación), y en el otro extremo al coaxial de bajada.\nAjuste: el radio del aro mueve la frecuencia; el largo de los coaxiales, la adaptación.", fmt(z0, 0)), 6.0, VERDE))
+    _simulacion_roe(hoja, diseno)
+    r = diseno.resultados
+    if r and "sensibilidad_MHz_por_mm" in r:
+        hoja.anadir(Texto(128, 176, tr("Cada mm menos de radio sube la frecuencia\n≈ {0} MHz.", fmt(abs(r["sensibilidad_MHz_por_mm"]), 2)), 6.0, VERDE))
+    hoja.anadir(Texto(14, 190, tr("Omnidireccional en el plano del aro con polarización horizontal; la ganancia es de ≈ 1 dBi y\n"
+                                  "casi nada hacia arriba y abajo. Simulado con un transformador ideal y sin mástil ni cable de\n"
+                                  "bajada: el coaxial de bajada sale por debajo del aro y lleva un choke."), 6.0, ROJO))
+    regla(hoja, 14, 244)
+    return [hoja]
+
+
 # ---------------------------------------------------------------- Delta loop
 
 def hojas_delta(diseno: Diseno, fecha: str) -> list[Hoja]:

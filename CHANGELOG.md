@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Dos tipos nuevos, ajustados solo a 145 y 433 MHz (el halo) o a 145 MHz (las Yagis apiladas) y sin medir: **Halo** (`halo`: dipolo de media onda doblado en aro con transformador λ/4 de 25 Ω, dos coaxiales de 50 Ω en paralelo; un halo solo da ≈ 14 Ω; ROE 1,02 y 1,09, ≈ 1,2 dBi, omnidireccional horizontal) y **dos Yagis de 5 elementos apiladas** (`yagi_apilada`: dos Yagis ajustadas con líneas de fase iguales de 75 Ω; ROE 1,0, 12,2 dBi hacia delante frente a 10,2 dBi de una sola, a 0,54 λ entre ejes). Planos de 1 y 2 hojas. La simulación de la que salen los dos no incluye las pérdidas del coaxial ni el mástil.
+
 - Tipo nuevo **Delta loop** (`delta`): lazo triangular de alambre con el vértice arriba y la fuente en el centro de la base, un solo coaxial y sin adaptador. Ajustado con PyNEC a 145 y 433 MHz: ROE 1,0 y 4,1 / 4,3 dBi hacia los dos lados del plano del lazo (base ≈ 0,28 λ, altura ≈ 0,39 λ, perímetro ≈ 1,1 λ); con la fuente en una esquina también adapta (≈ 4,2 dBi) pero no se ha incluido. Plano de 1 hoja con cotas, lista de corte, ROE y sensibilidad al perímetro. Sin medir ni validar frente a un caso publicado.
 
 - Dos tipos nuevos, solo ajustados a 145 y 433 MHz y sin medir: **quad cúbica de 2 elementos** (`quad`: dos lazos cuadrados, el reflector algo mayor; ROE 1,0 sin adaptador, 8,4 y 8,6 dBi hacia delante, delante/detrás de 10 dB) y **cuatro dipolos apilados en fase** (`apilados`: dipolos horizontales a 0,57 λ con cuatro líneas iguales de 75 Ω; ROE 1,0, 9,6 y 9,5 dBi hacia los dos lados). La de dipolos apilados exige que las líneas lleguen del punto de unión al dipolo más lejano (0,9 λ de largo). Planos de 1 hoja cada uno.

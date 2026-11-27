@@ -386,6 +386,46 @@ def ajustar_quad(f_MHz: float, diametro_mm: float) -> dict:
     return r
 
 
+def ajustar_yagi_apilada(f_MHz: float, diametro_mm: float) -> dict:
+    """Dos Yagis de 5 elementos apiladas: ajusta una Yagi sola (como `ajustar_yagi`) y luego la separación entre ejes y el largo
+    de las líneas de fase para |S11| mínimo a f con el haz hacia delante (+y)."""
+    from .generadores import YAGIA_N, yagi_apilada, yagi_apilada_por_defecto
+    p = yagi_apilada_por_defecto(f_MHz)
+    una = ajustar_yagi(f_MHz, diametro_mm, n_elementos=YAGIA_N)["geometria"]
+    base = {k: una[k] for k in ("reflector_mm", "excitado_mm", "sep_reflector_mm", "sep_plegado_mm", "directores_mm", "seps_directores_mm")}
+    lam = 299792.458 / f_MHz
+    construir = lambda x: yagi_apilada(f_MHz, diametro_mm, **base, separacion_mm=x[0], linea_mm=x[1])  # noqa: E731
+
+    def penal(m):
+        frente, atras = motor.ganancias_en(m, f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+        return -0.012 * frente + 0.004 * max(0.0, 10.0 - (frente - atras))
+
+    x = _nm_gamma(f_MHz, construir, [p["separacion_mm"], p["linea_mm"]], [0.04 * lam, 0.04 * lam],
+                  valido=lambda x: x[0] > 0.5 * lam and x[1] >= x[0] / 2 + 20.0, penalizacion=penal)
+    geometria = {**base, "n_elementos": float(YAGIA_N), "separacion_mm": x[0], "linea_mm": x[1], "z0_linea": p["z0_linea"], "vf_linea": p["vf_linea"]}
+    r = _con_resultados(construir(x), f_MHz, geometria)
+    frente, atras = motor.ganancias_en(construir(x), f_MHz, [(90.0, 90.0), (90.0, 270.0)])
+    r["resultados"].update({"ganancia_frente_dBi": frente, "relacion_delante_detras_dB": frente - atras})
+    return r
+
+
+def ajustar_halo(f_MHz: float, diametro_mm: float) -> dict:
+    """Halo: ajusta el radio del aro y el largo del transformador λ/4 para |S11| mínimo a f (el hueco queda fijo)."""
+    from .generadores import halo, halo_por_defecto
+    p = halo_por_defecto(f_MHz)
+    lam = 299792.458 / f_MHz
+    construir = lambda x: halo(f_MHz, diametro_mm, x[0], x[1], p["abertura"], p["z0_linea"], p["vf_linea"])  # noqa: E731
+    x = _nm_gamma(f_MHz, construir, [p["radio_mm"], p["linea_mm"]], [0.005 * lam, 0.02 * lam],
+                  valido=lambda x: x[0] > 0.05 * lam and x[1] > 0.02 * lam)
+
+    def sens(m, f0):
+        corto = halo(f_MHz, diametro_mm, x[0] - 2, x[1], p["abertura"], p["z0_linea"], p["vf_linea"])
+        return {"sensibilidad_MHz_por_mm": (minimo_roe(corto, 0.9 * f_MHz, 1.15 * f_MHz) - f0) / 2, "sensibilidad_pieza": "el radio del aro"}
+
+    geometria = {"radio_mm": x[0], "linea_mm": x[1], "abertura": p["abertura"], "z0_linea": p["z0_linea"], "vf_linea": p["vf_linea"]}
+    return _con_resultados(construir(x), f_MHz, geometria, sens)
+
+
 def ajustar_delta(f_MHz: float, diametro_mm: float) -> dict:
     """Delta loop: ajusta la base y la altura del triángulo para |S11| mínimo a f (la fuente queda en el centro de la base)."""
     from .generadores import delta, delta_por_defecto

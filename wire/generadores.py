@@ -539,6 +539,92 @@ def quad(f_MHz: float, diametro_mm: float, lado_excitado_mm: float | None = None
                                f"Lados {le * 1000:.1f} y {lr * 1000:.1f} mm, separacion {s * 1000:.1f} mm"))
 
 
+# ---------------------------------------------------------------- Dos Yagis de 5 elementos apiladas
+
+YAGIA_N = 5
+YAGIA_Z0, YAGIA_VF = 75.0, 0.66
+# Cotas de partida en λ (optimizadas con PyNEC a 145 MHz con las Yagis ya ajustadas): separación vertical entre los dos ejes y
+# largo físico de cada línea de fase (iguales: del punto de unión a la alimentación de cada Yagi).
+YAGIA_X = {"separacion": 0.537, "linea": 0.482}
+
+
+def yagi_apilada_por_defecto(f_MHz: float) -> dict:
+    """Cotas de partida de las dos Yagis (las de `yagi_por_defecto`, sin ajustar) y del apilado."""
+    p = yagi_por_defecto(f_MHz, YAGIA_N)
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"reflector_mm": p["reflector_mm"], "excitado_mm": p["excitado_mm"], "sep_reflector_mm": p["sep_reflector_mm"],
+            "sep_plegado_mm": p["sep_plegado_mm"], "directores_mm": list(p["directores_mm"]), "seps_directores_mm": list(p["seps_directores_mm"]),
+            "n_elementos": float(YAGIA_N), "separacion_mm": YAGIA_X["separacion"] * lam, "linea_mm": YAGIA_X["linea"] * lam,
+            "z0_linea": YAGIA_Z0, "vf_linea": YAGIA_VF}
+
+
+def yagi_apilada(f_MHz: float, diametro_mm: float, *, reflector_mm: float, excitado_mm: float, sep_reflector_mm: float,
+                 sep_plegado_mm: float, directores_mm: list[float], seps_directores_mm: list[float], separacion_mm: float,
+                 linea_mm: float, z0_linea: float = YAGIA_Z0, vf_linea: float = YAGIA_VF, n_elementos: float | None = None,
+                 barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Dos Yagis iguales, una sobre otra (separadas `separacion_mm` en z, el haz hacia +y), alimentadas en fase desde un punto común
+    por dos líneas iguales de `linea_mm`. Cada una lleva el excitado en dipolo plegado (ver `yagi`). Espacio libre."""
+    if linea_mm < separacion_mm / 2:
+        raise ValueError("las líneas de fase no llegan del punto de unión a las Yagis: alárgalas o acerca los ejes")
+    una = yagi(f_MHz, diametro_mm, reflector_mm=reflector_mm, excitado_mm=excitado_mm, sep_reflector_mm=sep_reflector_mm,
+               sep_plegado_mm=sep_plegado_mm, directores_mm=list(directores_mm), seps_directores_mm=list(seps_directores_mm),
+               densidad=densidad)
+    desp = separacion_mm / 2000
+    hilos = [Hilo(h.inicio[:2] + (h.inicio[2] + s * desp,), h.fin[:2] + (h.fin[2] + s * desp,), h.radio, h.segmentos)
+             for s in (1, -1) for h in una.hilos]
+    n = len(una.hilos)
+    hilos.append(Hilo((0, -1.0, 0), (0, -1.0, 0.01), una.hilos[0].radio, 1))                  # origen de las líneas: la fuente
+    k = len(hilos)
+    lineas = (Linea(k, 1, una.puerto.hilo, una.puerto.segmento, z0_linea, linea_mm / 1000, vf_linea),
+              Linea(k, 1, n + una.puerto.hilo, una.puerto.segmento, z0_linea, linea_mm / 1000, vf_linea))
+    return Modelo("Yagis apiladas", f_MHz, tuple(hilos), Puerto(k, 1), lineas=lineas, barrido=barrido,
+                  comentarios=(f"Dos Yagis de {len(directores_mm) + 2} elementos apiladas a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Ejes separados {separacion_mm:.1f} mm, lineas de {linea_mm:.1f} mm ({z0_linea:g} ohm, VF {vf_linea:g})"))
+
+
+# ---------------------------------------------------------------- Halo
+
+HALO_ABERTURA = 10.0                      # grados del hueco entre las puntas
+HALO_Z0, HALO_VF = 25.0, 0.66             # transformador λ/4: dos coaxiales de 50 Ω en paralelo (25 Ω), aislante de PE
+HALO_SEGMENTOS = 24                       # tramos rectos del aro
+# Cotas de partida en λ (optimizadas con PyNEC a 145 MHz, alambre de 2 mm): radio del aro y largo físico del transformador.
+HALO_X = {"radio": 0.0783, "linea": 0.181}
+
+
+def halo_por_defecto(f_MHz: float) -> dict[str, float]:
+    lam = longitud_onda_m(f_MHz) * 1000
+    return {"radio_mm": HALO_X["radio"] * lam, "linea_mm": HALO_X["linea"] * lam, "abertura": HALO_ABERTURA,
+            "z0_linea": HALO_Z0, "vf_linea": HALO_VF}
+
+
+def halo(f_MHz: float, diametro_mm: float, radio_mm: float | None = None, linea_mm: float | None = None,
+         abertura: float = HALO_ABERTURA, z0_linea: float = HALO_Z0, vf_linea: float = HALO_VF,
+         barrido: Barrido | None = None, densidad: float = 1.0) -> Modelo:
+    """Halo: un dipolo de media onda doblado en aro horizontal (plano x–y) con un hueco de `abertura` grados entre las puntas,
+    alimentado en el punto opuesto al hueco a través de un transformador λ/4 de `z0_linea` Ω (un halo solo da ~14 Ω).
+    Omnidireccional con polarización horizontal. Espacio libre."""
+    if f_MHz <= 0 or diametro_mm <= 0:
+        raise ValueError("la frecuencia y el diámetro deben ser positivos")
+    p = halo_por_defecto(f_MHz)
+    radio = (radio_mm or p["radio_mm"]) / 1000
+    lin = (linea_mm or p["linea_mm"]) / 1000
+    if not 2 <= abertura <= 90:
+        raise ValueError("la abertura del halo debe estar entre 2° y 90°")
+    r = diametro_mm / 2000
+    if radio * math.radians(abertura) <= 3 * r:
+        raise ValueError("el hueco entre las puntas es demasiado pequeño para ese diámetro")
+    paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
+    n = HALO_SEGMENTOS
+    a0 = math.radians(abertura) / 2
+    pts = [(radio * math.cos(a0 + (2 * math.pi - 2 * a0) * k / n), radio * math.sin(a0 + (2 * math.pi - 2 * a0) * k / n), 0.0) for k in range(n + 1)]
+    hilos = [Hilo(a, b, r, 1 if k == n // 2 else _segmentos(math.dist(a, b), paso)) for k, (a, b) in enumerate(zip(pts, pts[1:]))]
+    hilos.append(Hilo((0, 0, -0.5), (0, 0, -0.49), r, 1))                       # origen de la línea: ahí va la fuente
+    return Modelo("Halo", f_MHz, tuple(hilos), Puerto(len(hilos), 1), barrido=barrido,
+                  lineas=(Linea(len(hilos), 1, n // 2 + 1, 1, z0_linea, lin, vf_linea),),
+                  comentarios=(f"Halo a {f_MHz:g} MHz, alambre de {diametro_mm:g} mm",
+                               f"Radio {radio * 1000:.1f} mm, abertura {abertura:g} grados, transformador de {lin * 1000:.1f} mm ({z0_linea:g} ohm, VF {vf_linea:g})"))
+
+
 # ---------------------------------------------------------------- Delta loop
 
 # Cotas de partida en λ (optimizadas con PyNEC a 145 MHz, alambre de 2 mm): base y altura del triángulo (perímetro ≈ 1,1 λ) y
