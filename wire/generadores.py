@@ -423,7 +423,8 @@ def yagi(f_MHz: float, diametro_mm: float, reflector_mm: float | None = None, ex
     y1 = (sep_reflector_mm or p["sep_reflector_mm"]) / 1000
     sp = (sep_plegado_mm or p["sep_plegado_mm"]) / 1000
     if sp <= 2 * diametro_mm / 1000:
-        raise ValueError("la separación del dipolo plegado es demasiado pequeña para ese diámetro")
+        raise ValueError(f"la separación del dipolo plegado es demasiado pequeña para ese diámetro: a {f_MHz:g} MHz usa "
+                         f"un alambre de menos de {sp * 500:.1f} mm")
     r = diametro_mm / 2000
     paso = longitud_onda_m(f_MHz) / SEGMENTOS_POR_LAMBDA / densidad
     ys = [0.0, y1]

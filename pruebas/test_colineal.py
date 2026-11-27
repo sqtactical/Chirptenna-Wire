@@ -61,6 +61,18 @@ def test_bibanda_lleva_enlaces_l_c_en_serie(n):
     assert Diseno.desde_json(d.a_json()).modelo().hilos == m.hilos
 
 
+@pytest.mark.parametrize("n", [2, 4])
+def test_bibanda_433_1296_se_genera(n):
+    d = disenar("colineal_bibanda", 433.0, 2.0, ajustar=False, elementos=n, f_alta_MHz=1296.0)
+    assert d.geometria["f_alta_MHz"] == 1296.0 and len(d.modelo().cargas) == n - 1
+    assert Diseno.desde_json(d.a_json()).modelo().hilos == d.modelo().hilos
+
+
+def test_yagi_hilo_grueso_a_1296_dice_el_maximo():
+    with pytest.raises(ValueError, match="menos de"):
+        disenar("yagi", 1296.0, 1.5, ajustar=False, elementos=7).modelo()
+
+
 def test_bibanda_validaciones():
     with pytest.raises(ValueError):
         disenar("colineal_bibanda", 145.0, 3.0, ajustar=False, elementos=3)          # ≈ λ/2 en la banda baja
