@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Chirptenna VNA tiene la herramienta **«Transformador de la EFHW»** (9:1, 49:1, 64:1): con una resistencia de relación × 50 Ω en el lado del hilo, da la ROE mínima y máxima por banda de HF y un consejo (vueltas, fugas); la hoja de ajuste del transformador de Wire apunta a ella. Sin probar con un NanoVNA ni un transformador reales. El asistente de las trampas ya existía como «Trampa o circuito resonante (Q)».
+
 - Colineal bibanda **433 / 1296 MHz** (`--f-alta 1296`): ajustada con PyNEC a 50 Ω en las dos bandas (ROE 1,0; 2 secciones: 2,2 y 3,8 dBi; 4 secciones: 3,3 y 4,3 dBi en espacio libre; la relación 3,0 está dentro del rango de 2,5 a 3,5). Sin medir. La Yagi con alambre grueso a 1296 MHz ahora dice el diámetro máximo que admite (< 1,4 mm).
 
 - Recomendador (`wire/recomendar.py`, `python -m wire recomendar <MHz> --ganancia <dBi> --tamano <m>`): ordena por ganancia los tipos (Yagi de 3 a 15 elementos, colineales de 2 a 6 secciones y los dipolos, J-pole, ground plane… en VHF/UHF; dipolo, V invertida, EFHW, G5RV y vertical en HF) que cumplen una ganancia mínima y un tamaño máximo. Usa las ganancias teóricas de referencia y el tamaño de las cotas de partida, sin simular. También en la pantalla «Elegir antena» del escritorio y de la web («¿No sabes cuál elegir?», con botón «Usar»; `web_api.recomendar_json`).

@@ -196,8 +196,8 @@ def _hoja_ajuste(diseno: Diseno) -> Hoja:
         [tr("Bien con la carga y mal con la antena"), tr("Es la antena"), tr("Retoca el largo del hilo y el contrapeso (hoja 1)")],
     ]
     tabla(hoja, 14, 124, [0, 62, 98], [tr("Síntoma"), tr("Causa probable"), tr("Qué hacer")], filas, 180)
-    seccion(hoja, 14, 180, tr("MÁS ADELANTE"), tr("Un asistente de Chirptenna VNA hará esta medida paso a paso"), VERDE)
-    hoja.anadir(Texto(14, 192, tr("Todavía no existe: hoy la medida es manual, con el NanoVNA y la carga de prueba. Los valores de esta hoja\n"
-                                  "(vueltas, condensador y reglas) salen de montajes de aficionados y no están comprobados aquí."), 6.2, GRIS))
+    seccion(hoja, 14, 180, tr("CON CHIRPTENNA VNA"), tr("Modo Avanzado → «Transformador de la EFHW»"), VERDE)
+    hoja.anadir(Texto(14, 192, tr("Elige la relación y carga el barrido de 1,5 a 30 MHz: da la ROE mínima y máxima de cada banda y un consejo.\n"
+                                  "Los valores de esta hoja (vueltas, condensador y reglas) salen de montajes de aficionados y no están comprobados aquí."), 6.2, GRIS))
     regla(hoja, 14, 244)
     return hoja
